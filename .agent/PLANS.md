@@ -331,7 +331,7 @@ and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is
 | 0 | Frame transition and atomicity contract | complete | this plan; ADR-0007 |
 | 1 | Implement reusable advance operation | complete | `82fb023`; atomic writer and tests |
 | 2 | Add CLI, result formats, and exit tests | complete | production CLI exits 0/1/2 |
-| 3 | Document, verify, and review | in_progress | authority updates; final audit pending |
+| 3 | Document, verify, and review | complete | all checks and full diff audit pass |
 
 ### Decision log
 
@@ -359,8 +359,21 @@ and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
 - 2026-08-17: `82fb023` adds the library, CLI, atomic writer, and focused tests. After one
   usage-format compatibility fix, format, lint, typecheck, and all 46 tests passed.
+- 2026-08-17: Final `npm install` audited 164 packages with zero vulnerabilities. Format,
+  lint, strict typecheck, production build, and all 47 tests passed; schema verification ran
+  4 tests covering seven Draft 2020-12 schemas, examples, and property traces.
+- 2026-08-17: Production CLI evidence was validate human/JSON 0, S10→S11 advance 0,
+  post-advance validate 0, missing-observable block 1, and unsupported S7→S8 2.
+- 2026-08-17: A first combined manual script was rejected before execution because cleanup
+  used recursive deletion; the split rerun passed and its exact temporary directory was moved
+  to Trash. No repository artifact was affected.
+- 2026-08-17: Link audit checked 100 local Markdown links; 32 policy/doc/schema files met line
+  budgets. Diff, benchmark non-modification, and public Ajv/fs declaration audits passed.
+- 2026-08-17: Deterministic structural and transition checks passed. Assisted findings were
+  exercised as non-blocking warnings; judgment was not run and remains unsupported. This was
+  not a scored benchmark run.
 
 ### Handoff
 
-Complete the production CLI/schema/link/declaration/diff audits, record exact results, and
-commit the documented, reviewed slice without pushing.
+Next, implement the S8 candidate-comparison gate and exact S7→S8 advancement without widening
+this slice into S9 decisions, reasoning prompts, or benchmark judging.
