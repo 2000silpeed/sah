@@ -23,7 +23,7 @@ documents link or apply it.
 | Benchmark expectations | 벤치마크 기대 결과 | Hidden acceptable conclusions, alternatives, failures, and mandatory trade-offs used only after a run is frozen. | benchmark-strategy.md |
 | Boundary | 경계 | A grouping that protects a named change, invariant, authority, risk, or failure mode. | architecture-model.md |
 | Bundle manifest | 번들 매니페스트 | Non-semantic, schema-validated metadata declaring a design bundle's completed stage, profile, artifact paths, and schema IDs. | harness-architecture.md |
-| Candidate assessment | 후보 평가 | Scenario-based result, evidence, sensitivity points, risks, and trade-offs for an architecture candidate. | design-reasoning-model.md |
+| Candidate assessment | 후보 평가 | A candidate/scenario result with evidence, sensitivity points, risks, and trade-offs; every must pair appears exactly once after S9. | design-reasoning-model.md |
 | Candidate set | 후보 집합 | The explicit S8 alternatives under evaluation; one member requires resolved short-path or forcing-constraint justification. | architecture-model.md |
 | Characterization | 특성화 | Evidence-backed description of design forces before selecting a strategy or representation. | system-characterization.md |
 | Characterization dimension | 특성화 차원 | One canonical axis used to compare problem regions without deciding implementation form. | system-characterization.md |

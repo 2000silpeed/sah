@@ -123,8 +123,8 @@ inputs and expectations remain untouched.
 |---|---|---|---|
 | 0 | Frame S9 observable predicate and plan | complete | `2c69efb` |
 | 1 | Implement S9 gate, advance, and focused tests | complete | 89 tests pass |
-| 2 | Update affected authority documentation | in_progress | — |
-| 3 | Run full verification and adversarial review | pending | — |
+| 2 | Update affected authority documentation | complete | S9/CLI/runtime authority aligned |
+| 3 | Run full verification and adversarial review | in_progress | — |
 
 ### Decision log
 
@@ -156,7 +156,10 @@ inputs and expectations remain untouched.
 - 2026-08-17: After implementation, formatting, lint, strict typecheck, and 89/89 tests passed
   across six files. The 17 S9 tests cover Cartesian/missing/duplicate/priority behavior,
   assisted non-pass review, candidate/decision/option stage state, and dangling references.
+- 2026-08-17: Architecture, reasoning, validation, CLI, harness, dogfood, glossary, index,
+  ADR-0007, and operating guidance now agree on S9 coverage and S8→S9 support. Local Markdown
+  links, file budgets, and `git diff --check` passed.
 
 ### Handoff
 
-Update affected authority docs, then run the complete source/CLI/schema/diff verification loop.
+Run the complete source/CLI/schema/diff verification loop and commit the clean handoff.

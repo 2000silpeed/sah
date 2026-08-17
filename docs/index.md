@@ -93,8 +93,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
-  [S8 tests](../test/s8-stage.test.ts), [advance tests](../test/advance-bundle.test.ts),
-  [CLI tests](../test/cli.test.ts), and
+  [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts),
+  [advance tests](../test/advance-bundle.test.ts), [CLI tests](../test/cli.test.ts), and
   [schema contract tests](../test/schema-contracts.test.ts) — generate isolated mutations and
   verify validation, atomic transition, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

@@ -102,12 +102,13 @@ constraint.
 
 ### S9 — Evaluate quality and trade-offs
 
-**Consumes:** candidates and quality scenarios. **Produces:** proposed Architecture Decision
-IR options with scenario results tied to their candidate, risks, sensitivity points, costs,
-and reversal evidence.
-**Complete when:** every must scenario is met or its risk is assigned to an authorized human,
-and trade-offs name what worsens. **Loop-back:** a failed scenario returns to S8; a scenario
-that cannot discriminate returns to S1; a hidden responsibility returns to S3.
+**Consumes:** candidates and quality scenarios. **Produces:** exactly one assessment for every
+candidate/must-scenario pair and proposed Architecture Decision IR options with no selected
+option, plus risks, sensitivity points, costs, and reversal evidence. **Complete when:**
+coverage and proposed state pass deterministic checks, every must scenario is met or its risk
+is assigned to an authorized human through assisted/judgment review, and trade-offs name what
+worsens. **Loop-back:** a failed scenario returns to S8; a scenario that cannot discriminate
+returns to S1; a hidden responsibility returns to S3.
 
 ### S10 — Select and record architecture
 

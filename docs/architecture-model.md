@@ -70,7 +70,8 @@ stronger conditions:
 - after S8, the candidate set contains at least two proposed candidates, or one proposed
   candidate with resolved forcing-constraint evidence or eligible short-path evidence tied
   to S2 alternatives;
-- after S9, must-priority scenarios have an assessment for every candidate;
+- after S9, every candidate/must-priority scenario pair has exactly one assessment, candidates
+  and decisions remain `proposed`, and no decision option is selected before S10;
 - after S10, exactly one candidate is `selected`, every other candidate is `rejected`,
   accepted decisions have a selected option and authority, and rejected alternatives remain
   in the log; proposed decisions may
@@ -85,6 +86,11 @@ reasoning consumer.
 Candidate count, status, and reference resolution are deterministic. Whether candidates are
 coherent, materially different, proportionate, or good trade-offs remains judgment; a valid
 candidate set is not an architecture-quality endorsement.
+
+Assessment coverage and pair uniqueness are deterministic because candidate IDs, scenario
+priorities, and assessment references are complete inputs. A non-pass result triggers assisted
+review: the serialized enum cannot prove the measure, causal evidence, or risk authority is
+adequate.
 
 ## Elements and relations
 

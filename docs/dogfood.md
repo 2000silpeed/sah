@@ -45,9 +45,10 @@ services, broker, or single-implementation interfaces were justified.
 
 After R2, S8 used an explicit one-member candidate set. Its structured short-path
 justification resolves to the S2 alternative and its evidence, while the candidate identifies
-its topology and operational consequences. S9 accepted the operational simplicity cost:
-richer rules would force re-entry at S2/S3. It kept concurrent editing as an isolated proposed
-policy. S10 selected the modular candidate without pretending that policy was decided.
+its topology and operational consequences. S9 assessed the candidate against the must edit
+scenario exactly once and accepted the operational simplicity cost: richer rules would force
+re-entry at S2/S3. It kept concurrent editing as an isolated proposed policy. S10 selected the
+modular candidate without pretending that policy was decided.
 
 S11 classified uniqueness, authorization, audit append/retention, and archive-query behavior
 as deterministic when mapped to storage/API facts. Catch-all naming and future model richness

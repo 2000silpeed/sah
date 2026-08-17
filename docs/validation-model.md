@@ -110,7 +110,7 @@ Proposed-decision isolation produces an assisted warning: the current six IRs do
 S12 implementation slices, so the validator cannot prove isolation or blocker coverage.
 
 Run 3 reuses those same deterministic predicates to test a proposed exact-next lifecycle
-before committing it. Target gates S5, S6, S7, S8, S10, and S11 are executable. Missing gate
+before committing it. Target gates S5, S6, S7, S8, S9, S10, and S11 are executable. Missing gate
 implementations are operational `unsupported` outcomes, not validation passes. Deterministic
 errors block advancement; the assisted proposed-decision isolation finding remains a warning
 and cannot become a hard failure merely because the command can write lifecycle metadata.
@@ -120,8 +120,13 @@ status, candidate topology and assessment references, and resolved evidence for 
 single candidate. A short-path justification must match the manifest profile, S2 eligibility,
 and every selection's evidence and alternative analysis; a forcing justification must resolve
 to a declared hard constraint. Candidate coherence, material difference, proportionality,
-and trade-off quality remain judgment capabilities. S9 assessment coverage is still
-unsupported, so advancement from S8 to S9 cannot claim a pass.
+and trade-off quality remain judgment capabilities.
+
+Run 5 makes S9 structurally executable. It requires exactly one assessment for every
+candidate/must-scenario pair, rejects duplicate pairs, and keeps candidates, decisions, and
+selected-option state pre-selection through S9. A non-pass must result emits an assisted
+warning because result adequacy and risk acceptance are contextual. Missing coverage or wrong
+stage state blocks S8→S9; the warning alone does not.
 
 This slice validates constraint declarations but does not bind code-fact adapters or execute
 compiled project constraints. A structurally valid deterministic observable is therefore not

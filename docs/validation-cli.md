@@ -64,12 +64,16 @@ ADR-0008 records why a dual representation was rejected.
 ## Stage advancement
 
 Advancement is forward-only and exactly one stage. The executable target gates are S5, S6,
-S7, S8, S10, and S11, so successful transitions can currently be S4→S5, S5→S6, S6→S7,
-S7→S8, S9→S10, or S10→S11. An exact-next target without an implemented gate, such as S8→S9,
-returns
+S7, S8, S9, S10, and S11, so successful transitions can currently be S4→S5, S5→S6, S6→S7,
+S7→S8, S8→S9, S9→S10, or S10→S11. An exact-next target without an implemented gate, such as
+S11→S12, returns
 `ADVANCE_STAGE_UNSUPPORTED` and exit 2. Equal/backward, skipped, and invalid targets are also
 operational failures. A warning alone does not block; any error-severity proposed-stage
 diagnostic returns `blocked` and exit 1.
+
+At S9, missing or duplicate candidate/must-scenario coverage and premature decision selection
+are errors. A `risk`, `fail`, or `unknown` must result is an assisted warning and can advance;
+the result alone cannot prove scenario satisfaction or authorized risk acceptance.
 
 The Model Repository loads one byte snapshot, evaluates schema, references, and applicable
 gates as if `targetStage` were completed, and writes only after that result passes. Success
