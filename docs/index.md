@@ -4,8 +4,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
 [design reasoning model](design-reasoning-model.md). Terms are canonical in the
 [glossary](glossary.md). The root [AGENTS.md](../AGENTS.md) is the permanent operating policy;
 [the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks;
-[Runs 1–3](../.agent/plans/run-1-3.md) and [Runs 4–7](../.agent/plans/run-4-7.md) preserve
-completed execution history.
+[Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md), and
+[Runs 8–10](../.agent/plans/run-8-10.md) preserve completed execution history.
 
 ## Product and reasoning authority
 
@@ -61,6 +61,8 @@ completed execution history.
   path aliases and static re-exports through an explicit confined TypeScript project.
 - [ADR-0013](adr/0013-scope-verification-with-explicit-changed-paths.md) — selects S12
   constraints from explicit changed paths and falls back safely when mapping is incomplete.
+- [ADR-0014](adr/0014-pin-full-verification-evidence-for-s13.md) — pins one schema-validated
+  full-verification record as the atomic S12→S13 completion evidence.
 
 ## JSON Schema contracts
 
