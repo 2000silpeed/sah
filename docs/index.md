@@ -3,7 +3,9 @@
 Start with [vision](vision.md), [principles](principles.md), and the
 [design reasoning model](design-reasoning-model.md). Terms are canonical in the
 [glossary](glossary.md). The root [AGENTS.md](../AGENTS.md) is the permanent operating policy;
-[the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks.
+[the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks;
+[Runs 1–3](../.agent/plans/run-1-3.md) and [Runs 4–7](../.agent/plans/run-4-7.md) preserve
+completed execution history.
 
 ## Product and reasoning authority
 
@@ -53,6 +55,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   without mixing semantic handoff facts into the bundle manifest or Architecture IR.
 - [ADR-0010](adr/0010-start-s13-with-filesystem-artifact-presence.md) — starts continuous S13
   verification with one confined filesystem fact adapter and an explicit target root.
+- [ADR-0011](adr/0011-use-explicit-typescript-source-mapping.md) — keeps source ownership in
+  explicit target-local adapter configuration and selects bounded TypeScript compiler parsing.
 
 ## JSON Schema contracts
 
