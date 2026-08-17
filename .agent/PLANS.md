@@ -79,7 +79,7 @@ determinism question.
 | 2 | Define iterative design reasoning | complete | S0–S13 contracts and ten-question map documented |
 | 3 | Define traced IRs and schemas | complete | 6 Draft 2020-12 schemas, examples, and trace audit pass |
 | 4 | Decide SAH architecture and delivery | complete | component contracts, validator catalogue, ADR-0001–0004 |
-| 5 | Specify eight benchmarks | pending | 24 benchmark files; coverage comparison |
+| 5 | Specify eight benchmarks | complete | 8 directories × 3 files; distinct coverage vectors |
 | 6 | Dogfood two contrasting cases | pending | walkthroughs and recorded model repairs |
 | 7 | Evaluate and verify the foundation | pending | rubric scores ≥4; definition-of-done evidence |
 
@@ -105,6 +105,10 @@ determinism question.
   second source reconstructed by parsing prose.
 - 2026-08-17: Classify enforcement as deterministic, assisted, or judgment according to
   observability. Unsupported fact extraction is coverage failure, never pass.
+- 2026-08-17: Score benchmarks on a 100-point common rubric with a fatal-failure cap of 49
+  and an explicit over-engineering penalty up to 20 points.
+- 2026-08-17: Use two independent LLM judges for contextual categories and human arbitration
+  for disagreement/fixture changes; deterministic checks own structural evidence only.
 
 ### Discovery log
 
@@ -125,6 +129,9 @@ determinism question.
   S6 must materialize every reserved owner or the bundle fails reference validation.
 - 2026-08-17: Evaluation must drive only public skill/CLI/library surfaces and cannot expose
   benchmark expectations to product components during a run.
+- 2026-08-17: Similar distribution ratings are deliberate across logistics, payment,
+  realtime, and enterprise integration; their discriminators are custody/time, atomic value,
+  convergence/latency, and semantic translation respectively.
 
 ### Verification log
 
@@ -140,8 +147,11 @@ determinism question.
   all embedded examples, and the audit that every property has non-empty writer/readers.
 - 2026-08-17: Every v0.1 validator capability has an explicit D/A/J class; an automated table
   check found no missing or invalid classification.
+- 2026-08-17: Structural verification found exactly eight benchmark directories and 24 files;
+  every case has problem/expectations/scoring, failure and MUST anchors, all scorer roles,
+  and no prohibited design-leading terms in stakeholder problem text.
 
 ### Handoff
 
-Start Phase 5 by defining one shared scoring contract and eight stakeholder-style benchmark
-fixtures whose characterization vectors expose strategy errors and over-engineering.
+Start Phase 6 by manually executing S0–S11 for simple-crud and data-pipeline, repairing the
+reasoning model wherever the walkthrough exposes ambiguity or a wrong strategy.
