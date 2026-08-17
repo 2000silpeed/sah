@@ -160,11 +160,40 @@ describe("sah advance CLI", () => {
     );
   });
 
+  it("advances S7 to S8 through the production JSON CLI", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S7");
+    await mutateJson<{ candidates: Array<{ status: string }> }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        model.candidates.forEach((candidate) => {
+          candidate.status = "proposed";
+        });
+      },
+    );
+
+    const execution = await runCli(["advance", bundle, "S8", "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      bundle: { previousStage: string; completedStage: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("advanced");
+    expect(output.bundle).toEqual(
+      expect.objectContaining({
+        previousStage: "S7",
+        completedStage: "S8",
+      }),
+    );
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S7", "S8", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S8", "S9", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "returns exit 2 for the %s to %s transition",
     async (current, target, code) => {

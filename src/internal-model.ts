@@ -56,6 +56,7 @@ export type DesignStrategy = {
   selections: Array<{
     subsystemRef: string;
     rationale: { evidenceRefs: string[] };
+    alternatives: Array<{ strategy: string }>;
   }>;
   compositionSeams: Array<{
     id: string;
@@ -63,6 +64,7 @@ export type DesignStrategy = {
     toSubsystemRef: string;
     evidenceRefs: string[];
   }>;
+  shortPath: { eligible: boolean };
 };
 
 export type ResponsibilityModel = {
@@ -104,9 +106,19 @@ export type ArchitectureModel = {
   strategyRef: string;
   responsibilityModelRef: string;
   invariantModelRef: string;
-  candidate: {
+  candidates: Array<{
     id: string;
     status: "proposed" | "selected" | "rejected";
+    elementRefs: string[];
+    boundaryRefs: string[];
+    relationRefs: string[];
+    interfaceRefs: string[];
+  }>;
+  singleCandidateJustification?: {
+    kind: "short-path" | "forcing-constraint";
+    evidenceRefs: string[];
+    strategyAlternativeRefs: string[];
+    hardConstraintRefs: string[];
   };
   elements: Array<{
     id: string;
@@ -138,6 +150,7 @@ export type ArchitectureModel = {
     decisionRefs: string[];
   }>;
   qualityAssessments: Array<{
+    candidateRef: string;
     scenarioRef: string;
     tradeoffRefs: string[];
   }>;

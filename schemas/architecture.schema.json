@@ -1,18 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/architecture/v0.1.0",
+  "$id": "https://sah.dev/schemas/architecture/v0.2.0",
   "title": "SAH Architecture IR",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "modelId", "systemRef", "strategyRef", "responsibilityModelRef", "invariantModelRef", "candidate", "elements", "boundaries", "relations", "interfaces", "qualityAssessments", "constraints"],
+  "required": ["schemaVersion", "modelId", "systemRef", "strategyRef", "responsibilityModelRef", "invariantModelRef", "candidates", "elements", "boundaries", "relations", "interfaces", "qualityAssessments", "constraints"],
   "properties": {
-    "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["schema-validator", "S13"]}},
+    "schemaVersion": {"const": "0.2.0", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["schema-validator", "S13"]}},
     "modelId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "S9", "S10", "S11", "S13"]}},
     "systemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S8", "S12"]}},
     "strategyRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "S8", "strategy-conformance-judge"]}},
     "responsibilityModelRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "responsibility-coverage-validator"]}},
     "invariantModelRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "invariant-coverage-validator"]}},
-    "candidate": {"$ref": "#/$defs/candidate", "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "S10", "S11", "S12"]}},
+    "candidates": {"type": "array", "items": {"$ref": "#/$defs/candidate"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S8", "S9", "S10", "S11", "S12", "reference-validator"]}},
+    "singleCandidateJustification": {"$ref": "#/$defs/singleCandidateJustification", "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S8", "reference-validator", "human-reviewer"]}},
     "elements": {"type": "array", "items": {"$ref": "#/$defs/element"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S6", "S7", "S8"], "readBy": ["S9", "S10", "S11", "S12", "reference-validator"]}},
     "boundaries": {"type": "array", "items": {"$ref": "#/$defs/boundary"}, "x-sah-trace": {"writtenBy": ["S6", "S8"], "readBy": ["S9", "S10", "S11", "boundary-judge"]}},
     "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}, "x-sah-trace": {"writtenBy": ["S6", "S8"], "readBy": ["S9", "S10", "S11", "dependency-validator"]}},
@@ -24,12 +25,28 @@
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
     "candidate": {
       "type": "object", "additionalProperties": false,
-      "required": ["id", "name", "status", "rationale"],
+      "required": ["id", "name", "status", "rationale", "elementRefs", "boundaryRefs", "relationRefs", "interfaceRefs", "operationalConsequences"],
       "properties": {
         "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "S10"]}},
         "name": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S9", "S10", "human-reviewer"]}},
         "status": {"enum": ["proposed", "selected", "rejected"], "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "S11", "S12"]}},
-        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "human-reviewer"]}}
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "human-reviewer"]}},
+        "elementRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "view-adapter"]}},
+        "boundaryRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "view-adapter"]}},
+        "relationRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "view-adapter"]}},
+        "interfaceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "view-adapter"]}},
+        "operationalConsequences": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S9", "S10", "human-reviewer"]}}
+      }
+    },
+    "singleCandidateJustification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "rationale", "evidenceRefs", "strategyAlternativeRefs", "hardConstraintRefs"],
+      "properties": {
+        "kind": {"enum": ["short-path", "forcing-constraint"], "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S8", "candidate-count-validator"]}},
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S9", "human-reviewer"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S8"]}},
+        "strategyAlternativeRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S8"]}},
+        "hardConstraintRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S8"]}}
       }
     },
     "element": {
@@ -91,8 +108,9 @@
     },
     "qualityAssessment": {
       "type": "object", "additionalProperties": false,
-      "required": ["scenarioRef", "result", "evidence", "sensitivityPoints", "tradeoffRefs"],
+      "required": ["candidateRef", "scenarioRef", "result", "evidence", "sensitivityPoints", "tradeoffRefs"],
       "properties": {
+        "candidateRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10", "quality-gate-validator"]}},
         "scenarioRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "quality-gate-validator"]}},
         "result": {"enum": ["pass", "risk", "fail", "unknown"], "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "quality-gate-validator"]}},
         "evidence": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "human-reviewer"]}},
@@ -146,13 +164,14 @@
     }
   },
   "examples": [{
-    "schemaVersion": "0.1.0",
+    "schemaVersion": "0.2.0",
     "modelId": "catalog-admin-architecture",
     "systemRef": "catalog-admin-characterization",
     "strategyRef": "catalog-admin-strategy",
     "responsibilityModelRef": "catalog-admin-responsibilities",
     "invariantModelRef": "catalog-admin-invariants",
-    "candidate": {"id": "modular-operations", "name": "Modular catalog operations", "status": "selected", "rationale": "A local operation satisfies the evidenced forces"},
+    "candidates": [{"id": "modular-operations", "name": "Modular catalog operations", "status": "selected", "rationale": "A local operation satisfies the evidenced forces", "elementRefs": ["catalog-operations"], "boundaryRefs": ["catalog-boundary"], "relationRefs": [], "interfaceRefs": [], "operationalConsequences": ["One in-process transaction boundary owns catalog changes"]}],
+    "singleCandidateJustification": {"kind": "short-path", "rationale": "The S2 alternative adds ceremony without evidenced protection", "evidenceRefs": ["ev-product-edit"], "strategyAlternativeRefs": ["responsibility-centered-domain"], "hardConstraintRefs": []},
     "elements": [{"id": "catalog-operations", "name": "Catalog operations", "subsystemRef": "catalog-admin", "logicalRole": "Own catalog record changes", "representation": "module", "authority": "Controls the catalog transaction", "responsibilityRefs": ["maintain-product-record"], "invariantRefs": ["product-sku-present"], "decisionRefs": ["choose-modular-operations"]}],
     "boundaries": [{"id": "catalog-boundary", "name": "Catalog boundary", "insideElementRefs": ["catalog-operations"], "protectedChange": "Catalog maintenance rules", "ownerElementRef": "catalog-operations", "decisionRefs": ["choose-modular-operations"]}],
     "relations": [],

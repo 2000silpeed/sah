@@ -145,7 +145,9 @@ function collectIds(models: LoadedModels): IdOccurrence[] {
   const architecture = models.architecture;
   if (architecture !== undefined) {
     add("architecture", architecture.modelId, "/modelId");
-    add("architecture", architecture.candidate.id, "/candidate/id");
+    architecture.candidates.forEach(({ id }, index) =>
+      add("architecture", id, `/candidates/${index}/id`),
+    );
     architecture.elements.forEach(({ id }, index) =>
       add("architecture", id, `/elements/${index}/id`),
     );
@@ -247,6 +249,9 @@ export function validateReferences(
   }
 
   const evidenceIds = new Set(system?.evidence.map(({ id }) => id) ?? []);
+  const hardConstraintIds = new Set(
+    system?.hardConstraints.map(({ id }) => id) ?? [],
+  );
   const subsystemIds = new Set(system?.subsystems.map(({ id }) => id) ?? []);
   const scenarioIds = new Set(
     system?.qualityScenarios.map(({ id }) => id) ?? [],
@@ -258,6 +263,12 @@ export function validateReferences(
     invariants?.invariants.map(({ id }) => id) ?? [],
   );
   const elementIds = new Set(architecture?.elements.map(({ id }) => id) ?? []);
+  const boundaryIds = new Set(
+    architecture?.boundaries.map(({ id }) => id) ?? [],
+  );
+  const relationIds = new Set(
+    architecture?.relations.map(({ id }) => id) ?? [],
+  );
   const interfaceIds = new Set(
     architecture?.interfaces.map(({ id }) => id) ?? [],
   );
@@ -269,6 +280,14 @@ export function validateReferences(
   );
   const constraintIds = new Set(
     architecture?.constraints.map(({ id }) => id) ?? [],
+  );
+  const candidateIds = new Set(
+    architecture?.candidates.map(({ id }) => id) ?? [],
+  );
+  const strategyAlternativeIds = new Set(
+    strategy?.selections.flatMap(({ alternatives }) =>
+      alternatives.map(({ strategy: alternative }) => alternative),
+    ) ?? [],
   );
 
   if (system !== undefined) {
@@ -614,6 +633,83 @@ export function validateReferences(
       );
     }
 
+    architecture.candidates.forEach((candidate, index) => {
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        `/candidates/${index}/elementRefs`,
+        candidate.elementRefs,
+        elementIds,
+        "architecture element",
+        "S8",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        `/candidates/${index}/boundaryRefs`,
+        candidate.boundaryRefs,
+        boundaryIds,
+        "architecture boundary",
+        "S8",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        `/candidates/${index}/relationRefs`,
+        candidate.relationRefs,
+        relationIds,
+        "architecture relation",
+        "S8",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        `/candidates/${index}/interfaceRefs`,
+        candidate.interfaceRefs,
+        interfaceIds,
+        "architecture interface",
+        "S8",
+      );
+    });
+
+    const justification = architecture.singleCandidateJustification;
+    if (justification !== undefined) {
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        "/singleCandidateJustification/evidenceRefs",
+        justification.evidenceRefs,
+        evidenceIds,
+        "evidence",
+        "S8",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        "/singleCandidateJustification/strategyAlternativeRefs",
+        justification.strategyAlternativeRefs,
+        strategyAlternativeIds,
+        "S2 strategy alternative",
+        "S8",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "architecture",
+        "/singleCandidateJustification/hardConstraintRefs",
+        justification.hardConstraintRefs,
+        hardConstraintIds,
+        "hard constraint",
+        "S8",
+      );
+    }
+
     architecture.elements.forEach((element, index) => {
       checkReference(
         diagnostics,
@@ -791,6 +887,16 @@ export function validateReferences(
     });
 
     architecture.qualityAssessments.forEach((assessment, index) => {
+      checkReference(
+        diagnostics,
+        paths,
+        "architecture",
+        `/qualityAssessments/${index}/candidateRef`,
+        assessment.candidateRef,
+        candidateIds,
+        "architecture candidate",
+        "S9",
+      );
       checkReference(
         diagnostics,
         paths,

@@ -293,19 +293,20 @@ describe("validateBundle", () => {
     );
   });
 
-  it("fails an architecture candidate that is not selected after S10", async () => {
+  it("fails when no architecture candidate is selected after S10", async () => {
     const bundle = await copyFixture();
     await mutateJson<{
-      candidate: { status: string };
+      candidates: Array<{ status: string }>;
     }>(bundle, "architecture.json", (model) => {
-      model.candidate.status = "proposed";
+      const candidate = model.candidates[0];
+      if (candidate !== undefined) candidate.status = "proposed";
     });
 
     const validation = await validateBundle(bundle);
 
     expect(validation.status).toBe("violations");
     expect(validation.diagnostics.map(({ code }) => code)).toContain(
-      "STAGE_S10_CANDIDATE_NOT_SELECTED",
+      "STAGE_S10_CANDIDATE_SELECTION_COUNT",
     );
   });
 

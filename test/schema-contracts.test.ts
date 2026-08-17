@@ -73,7 +73,7 @@ describe("schema contracts", () => {
     );
 
     expect(publicDeclarations.join("\n")).not.toMatch(
-      /\bAjv\b|ErrorObject|ValidateFunction/u,
+      /\bAjv\b|ErrorObject|ValidateFunction|node:fs|FileHandle|\bStats\b/u,
     );
   });
 });

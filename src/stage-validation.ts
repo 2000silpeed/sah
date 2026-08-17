@@ -1,4 +1,5 @@
 import type {
+  LifecycleProfile,
   SahDiagnostic,
   Stage,
   ValidationClassification,
@@ -82,6 +83,7 @@ export function requiredArtifactDiagnostics(
 
 export function validateStageGates(
   completedStage: Stage,
+  profile: LifecycleProfile,
   models: LoadedModels,
   paths: ArtifactPaths,
 ): SahDiagnostic[] {
@@ -90,6 +92,7 @@ export function validateStageGates(
   const invariants = models.invariant;
   const architecture = models.architecture;
   const decisionLog = models.architectureDecision;
+  const strategy = models.designStrategy;
 
   if (atLeast(completedStage, "S5")) {
     if (responsibilities !== undefined) {
@@ -216,25 +219,194 @@ export function validateStageGates(
     });
   }
 
-  if (atLeast(completedStage, "S10")) {
-    if (
-      architecture !== undefined &&
-      architecture.candidate.status !== "selected"
-    ) {
+  if (atLeast(completedStage, "S8") && architecture !== undefined) {
+    if (!atLeast(completedStage, "S10")) {
+      architecture.candidates.forEach((candidate, index) => {
+        if (candidate.status !== "proposed") {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S8_CANDIDATE_STATUS_INVALID",
+              capability: "Candidate count or single-option evidence",
+              artifactPath: paths.architecture,
+              jsonPointer: `/candidates/${index}/status`,
+              reference: candidate.id,
+              message: `Candidate ${candidate.id} is ${candidate.status} before S10 selection.`,
+              expected: "every candidate to remain proposed through S8 and S9",
+              repair:
+                "Return the candidate to proposed, or record selection only after S10.",
+              owningStage: "S8",
+            }),
+          );
+        }
+      });
+    }
+
+    const justification = architecture.singleCandidateJustification;
+    if (architecture.candidates.length > 1 && justification !== undefined) {
       diagnostics.push(
         gateIssue({
-          code: "STAGE_S10_CANDIDATE_NOT_SELECTED",
-          capability: "Stage-state completeness",
+          code: "STAGE_S8_SINGLE_JUSTIFICATION_NOT_APPLICABLE",
+          capability: "Candidate count or single-option evidence",
           artifactPath: paths.architecture,
-          jsonPointer: "/candidate/status",
-          reference: architecture.candidate.id,
-          message: `The sole architecture candidate is ${architecture.candidate.status}, not selected.`,
-          expected: "exactly one selected architecture candidate after S10",
+          jsonPointer: "/singleCandidateJustification",
+          message:
+            "A single-candidate justification is present for a multi-candidate set.",
+          expected:
+            "singleCandidateJustification only when exactly one candidate exists",
           repair:
-            "Select the coherent candidate in S10 or correct completedStage.",
-          owningStage: "S10",
+            "Remove the waiver and compare the serialized candidates through S9.",
+          owningStage: "S8",
         }),
       );
+    }
+
+    if (architecture.candidates.length === 1) {
+      const singleCandidateId = architecture.candidates[0]?.id;
+      if (justification === undefined) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S8_SINGLE_CANDIDATE_JUSTIFICATION_MISSING",
+            capability: "Candidate count or single-option evidence",
+            artifactPath: paths.architecture,
+            jsonPointer: "/singleCandidateJustification",
+            ...(singleCandidateId === undefined
+              ? {}
+              : { reference: singleCandidateId }),
+            message:
+              "The S8 candidate set contains only one candidate without a waiver.",
+            expected:
+              "at least two candidates, or structured short-path/forcing evidence for one",
+            repair:
+              "Add a credible candidate or record the applicable evidence-owned justification in S8.",
+            owningStage: "S8",
+          }),
+        );
+      } else if (justification.kind === "short-path") {
+        if (profile !== "short" || strategy?.shortPath.eligible !== true) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S8_SHORT_PATH_NOT_ELIGIBLE",
+              capability: "Candidate count or single-option evidence",
+              artifactPath: paths.architecture,
+              jsonPointer: "/singleCandidateJustification/kind",
+              ...(singleCandidateId === undefined
+                ? {}
+                : { reference: singleCandidateId }),
+              message:
+                "The single candidate claims short-path justification without both manifest and S2 eligibility.",
+              expected:
+                "manifest profile short and Design Strategy shortPath.eligible true",
+              repair:
+                "Correct the lifecycle/profile evidence or produce multiple candidates in S8.",
+              owningStage: "S8",
+            }),
+          );
+        }
+
+        strategy?.selections.forEach((selection, index) => {
+          if (
+            !selection.alternatives.some(({ strategy: alternative }) =>
+              justification.strategyAlternativeRefs.includes(alternative),
+            )
+          ) {
+            diagnostics.push(
+              gateIssue({
+                code: "STAGE_S8_SHORT_PATH_ALTERNATIVE_COVERAGE_MISSING",
+                capability: "Candidate count or single-option evidence",
+                artifactPath: paths.architecture,
+                jsonPointer:
+                  "/singleCandidateJustification/strategyAlternativeRefs",
+                reference: selection.subsystemRef,
+                message: `No referenced S2 alternative covers subsystem ${selection.subsystemRef}.`,
+                expected:
+                  "at least one referenced S2 alternative for every strategy selection",
+                repair: `Reference an evaluated alternative from /selections/${index}/alternatives or produce another candidate.`,
+                owningStage: "S8",
+              }),
+            );
+          }
+          if (
+            !selection.rationale.evidenceRefs.some((reference) =>
+              justification.evidenceRefs.includes(reference),
+            )
+          ) {
+            diagnostics.push(
+              gateIssue({
+                code: "STAGE_S8_SHORT_PATH_EVIDENCE_COVERAGE_MISSING",
+                capability: "Candidate count or single-option evidence",
+                artifactPath: paths.architecture,
+                jsonPointer: "/singleCandidateJustification/evidenceRefs",
+                reference: selection.subsystemRef,
+                message: `No justification evidence traces through the S2 rationale for ${selection.subsystemRef}.`,
+                expected:
+                  "at least one S2 rationale evidence reference for every strategy selection",
+                repair:
+                  "Reference the proportionality evidence used by S2 or produce another candidate.",
+                owningStage: "S8",
+              }),
+            );
+          }
+        });
+      } else if (justification.hardConstraintRefs.length === 0) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S8_FORCING_CONSTRAINT_MISSING",
+            capability: "Candidate count or single-option evidence",
+            artifactPath: paths.architecture,
+            jsonPointer: "/singleCandidateJustification/hardConstraintRefs",
+            ...(singleCandidateId === undefined
+              ? {}
+              : { reference: singleCandidateId }),
+            message:
+              "The single candidate claims forcing-constraint justification without a constraint.",
+            expected: "at least one referenced hard constraint",
+            repair:
+              "Reference the forcing S1 constraint or produce another candidate.",
+            owningStage: "S8",
+          }),
+        );
+      }
+    }
+  }
+
+  if (atLeast(completedStage, "S10")) {
+    if (architecture !== undefined) {
+      const selectedCandidates = architecture.candidates.filter(
+        ({ status }) => status === "selected",
+      );
+      if (selectedCandidates.length !== 1) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S10_CANDIDATE_SELECTION_COUNT",
+            capability: "Stage-state completeness",
+            artifactPath: paths.architecture,
+            jsonPointer: "/candidates",
+            message: `${selectedCandidates.length} architecture candidates are selected after S10.`,
+            expected: "exactly one selected architecture candidate after S10",
+            repair:
+              "Select one coherent candidate and reject the remaining candidates in S10.",
+            owningStage: "S10",
+          }),
+        );
+      }
+      architecture.candidates.forEach((candidate, index) => {
+        if (candidate.status === "proposed") {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S10_CANDIDATE_NOT_DISPOSITIONED",
+              capability: "Stage-state completeness",
+              artifactPath: paths.architecture,
+              jsonPointer: `/candidates/${index}/status`,
+              reference: candidate.id,
+              message: `Candidate ${candidate.id} remains proposed after S10.`,
+              expected:
+                "one selected candidate and every other candidate rejected",
+              repair: "Select or reject the candidate through S10 authority.",
+              owningStage: "S10",
+            }),
+          );
+        }
+      });
     }
 
     decisionLog?.decisions.forEach((decision, index) => {

@@ -124,6 +124,60 @@ describe("advanceBundle", () => {
     expect(manifest.lifecycle.completedStage).toBe("S6");
   });
 
+  it("advances S7 to S8 after validating proposed candidate evidence", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S7");
+    await mutateJson<{ candidates: Array<{ status: string }> }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        model.candidates.forEach((candidate) => {
+          candidate.status = "proposed";
+        });
+      },
+    );
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const architecturePath = join(bundle, "architecture.json");
+    const before = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      lifecycle: { completedStage: Stage };
+    };
+    const architectureBefore = await readFile(architecturePath);
+
+    const advancement = await advanceBundle(bundle, "S8");
+
+    expect(advancement.status).toBe("advanced");
+    expect(advancement.bundle?.completedStage).toBe("S8");
+    expect(JSON.parse(await readFile(manifestPath, "utf8"))).toEqual({
+      ...before,
+      lifecycle: { ...before.lifecycle, completedStage: "S8" },
+    });
+    expect(await readFile(architecturePath)).toEqual(architectureBefore);
+  });
+
+  it("blocks S7 to S8 without single-candidate evidence", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S7");
+    await mutateJson<{
+      candidates: Array<{ status: string }>;
+      singleCandidateJustification?: unknown;
+    }>(bundle, "architecture.json", (model) => {
+      model.candidates.forEach((candidate) => {
+        candidate.status = "proposed";
+      });
+      delete model.singleCandidateJustification;
+    });
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+
+    const advancement = await advanceBundle(bundle, "S8");
+
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S8_SINGLE_CANDIDATE_JUSTIFICATION_MISSING",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
   it("allows assisted warnings without treating them as gate failures", async () => {
     const bundle = await copyFixture();
     await setStage(bundle, "S9");
@@ -154,7 +208,7 @@ describe("advanceBundle", () => {
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S7", "S8", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S8", "S9", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "rejects the %s to %s transition with %s",
     async (current, target, code) => {

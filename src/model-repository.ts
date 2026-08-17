@@ -37,7 +37,7 @@ import {
 
 const manifestName = "sah.bundle.json";
 const manifestSchemaId =
-  "https://sah.dev/schemas/design-bundle-manifest/v0.1.0";
+  "https://sah.dev/schemas/design-bundle-manifest/v0.2.0";
 
 type JsonReadResult =
   | { ok: true; data: unknown; source: Uint8Array }
@@ -499,7 +499,12 @@ function evaluatePreparedBundle(
   const models = toModels(prepared.artifacts);
   validationDiagnostics.push(...validateReferences(models, prepared.paths));
   validationDiagnostics.push(
-    ...validateStageGates(completedStage, models, prepared.paths),
+    ...validateStageGates(
+      completedStage,
+      prepared.manifest.lifecycle.profile,
+      models,
+      prepared.paths,
+    ),
   );
   return result(
     hasErrors(validationDiagnostics) ? "violations" : "passed",
@@ -525,6 +530,7 @@ const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([
   "S5",
   "S6",
   "S7",
+  "S8",
   "S10",
   "S11",
 ]);
