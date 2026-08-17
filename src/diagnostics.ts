@@ -6,6 +6,9 @@ import type {
   ValidationResult,
   ValidationStatus,
   ValidatedBundle,
+  VerificationCheck,
+  VerificationResult,
+  VerificationStatus,
 } from "./contracts.js";
 
 function orderDiagnostics(diagnostics: SahDiagnostic[]): SahDiagnostic[] {
@@ -69,6 +72,43 @@ export function advanceResult(
     ...(bundle === undefined ? {} : { bundle }),
     diagnostics: ordered,
     summary: summarize(ordered),
+  };
+}
+
+export function verificationResult(
+  status: VerificationStatus,
+  bundleDirectory: string,
+  targetDirectory: string,
+  checks: VerificationCheck[],
+  diagnostics: SahDiagnostic[],
+  bundle?: ValidatedBundle,
+): VerificationResult {
+  const orderedDiagnostics = orderDiagnostics(diagnostics);
+  const orderedChecks = [...checks].sort((left, right) =>
+    [left.constraintId, left.code]
+      .join("\0")
+      .localeCompare([right.constraintId, right.code].join("\0")),
+  );
+  return {
+    status,
+    bundleDirectory,
+    targetDirectory,
+    ...(bundle === undefined ? {} : { bundle }),
+    checks: orderedChecks,
+    diagnostics: orderedDiagnostics,
+    summary: {
+      ...summarize(orderedDiagnostics),
+      passed: orderedChecks.filter(({ status: check }) => check === "pass")
+        .length,
+      violations: orderedChecks.filter(
+        ({ status: check }) => check === "violation",
+      ).length,
+      pending: orderedChecks.filter(({ status: check }) => check === "pending")
+        .length,
+      unsupported: orderedChecks.filter(
+        ({ status: check }) => check === "unsupported",
+      ).length,
+    },
   };
 }
 

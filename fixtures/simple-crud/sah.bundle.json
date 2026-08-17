@@ -3,7 +3,7 @@
   "manifestVersion": "0.3.0",
   "bundleId": "equipment-register",
   "lifecycle": {
-    "completedStage": "S11",
+    "completedStage": "S12",
     "profile": "short"
   },
   "artifacts": {

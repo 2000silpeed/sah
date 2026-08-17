@@ -13,5 +13,14 @@ export type {
   ValidationResult,
   ValidationStatus,
   ValidationSummary,
+  VerificationCheck,
+  VerificationCheckStatus,
+  VerificationResult,
+  VerificationStatus,
+  VerificationSummary,
 } from "./contracts.js";
-export { advanceBundle, validateBundle } from "./model-repository.js";
+export {
+  advanceBundle,
+  validateBundle,
+  verifyBundle,
+} from "./model-repository.js";

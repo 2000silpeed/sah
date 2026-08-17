@@ -11,6 +11,7 @@ import {
   copyFixture,
   fixtureDirectory,
   mutateJson,
+  verificationTargetDirectory,
 } from "./helpers.js";
 
 afterEach(cleanupFixtures);
@@ -49,7 +50,7 @@ describe("sah validate CLI", () => {
     expect(execution.stderr).toBe("");
     expect(execution.stdout).toContain("SAH validation passed");
     expect(execution.stdout).toContain(
-      "Bundle: equipment-register (S11, short)",
+      "Bundle: equipment-register (S12, short)",
     );
     expect(execution.stdout).toContain("Summary: 0 error(s), 0 warning(s)");
   });
@@ -115,6 +116,33 @@ async function setStage(bundle: string, completedStage: Stage): Promise<void> {
       manifest.lifecycle.completedStage = completedStage;
     },
   );
+}
+
+async function setFilesystemConstraint(
+  bundle: string,
+  selector: string,
+): Promise<void> {
+  await mutateJson<{
+    constraints: Array<{
+      observable: {
+        factSource: string;
+        selector: string;
+        predicate: string;
+        expected: string;
+      };
+      enforcement: { adapterCapability: string };
+    }>;
+  }>(bundle, "architecture.json", (architecture) => {
+    const constraint = architecture.constraints[0];
+    if (constraint === undefined) return;
+    constraint.observable = {
+      factSource: "filesystem",
+      selector,
+      predicate: "regular-file-exists",
+      expected: "true",
+    };
+    constraint.enforcement.adapterCapability = "filesystem-artifact-presence";
+  });
 }
 
 async function prepareForS9(bundle: string): Promise<void> {
@@ -347,6 +375,110 @@ describe("sah advance CLI", () => {
     expect(output.status).toBe("operational-error");
     expect(output.diagnostics.map(({ code }) => code)).toContain(
       "CLI_INVALID_INVOCATION",
+    );
+  });
+});
+
+describe("sah verify CLI", () => {
+  it("returns exit 0 with human-readable pass evidence", async () => {
+    const bundle = await copyFixture();
+    await setFilesystemConstraint(
+      bundle,
+      "checks/equipment-operations.integration.txt",
+    );
+
+    const execution = await runCli([
+      "verify",
+      bundle,
+      verificationTargetDirectory,
+    ]);
+
+    expect(execution.code).toBe(0);
+    expect(execution.stderr).toBe("");
+    expect(execution.stdout).toContain("SAH verification passed");
+    expect(execution.stdout).toContain(
+      "[PASS] CONSTRAINT_PASSED (deterministic) constraint=equipment-owns-writes",
+    );
+    expect(execution.stdout).toContain(
+      "Summary: 1 passed, 0 violation(s), 0 pending, 0 unsupported",
+    );
+  });
+
+  it("returns exit 1 with machine-readable violation evidence", async () => {
+    const bundle = await copyFixture();
+    await setFilesystemConstraint(bundle, "checks/missing.txt");
+
+    const execution = await runCli([
+      "verify",
+      bundle,
+      verificationTargetDirectory,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      checks: Array<{
+        code: string;
+        constraintId: string;
+        status: string;
+        expected?: string;
+        observed?: string;
+        repair?: string;
+      }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(execution.stderr).toBe("");
+    expect(output.status).toBe("violations");
+    expect(output.checks).toContainEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_VIOLATION",
+        constraintId: "equipment-owns-writes",
+        status: "violation",
+        expected: "true",
+        observed: "missing path checks/missing.txt",
+        repair: expect.any(String),
+      }),
+    );
+  });
+
+  it("returns exit 2 when a declared adapter is unsupported", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      verificationTargetDirectory,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      checks: Array<{ code: string; status: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("incomplete");
+    expect(output.checks).toContainEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_ADAPTER_UNSUPPORTED",
+        status: "unsupported",
+      }),
+    );
+  });
+
+  it("returns exit 2 for an unavailable target directory", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      join(verificationTargetDirectory, "missing"),
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("operational-error");
+    expect(output.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "VERIFICATION_TARGET_UNREADABLE" }),
     );
   });
 });

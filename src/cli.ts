@@ -8,13 +8,20 @@ import {
   type SahDiagnostic,
   type Stage,
   type ValidationResult,
+  type VerificationCheck,
+  type VerificationResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
-import { advanceBundle, validateBundle } from "./model-repository.js";
+import {
+  advanceBundle,
+  validateBundle,
+  verifyBundle,
+} from "./model-repository.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--json]",
+  "       sah verify <design-bundle-directory> <target-directory> [--json]",
 ].join("\n");
 
 function invocationError(message: string): ValidationResult {
@@ -102,7 +109,51 @@ export function formatAdvanceHuman(advance: AdvanceResult): string {
   ].join("\n\n");
 }
 
-function exitCode(outcome: ValidationResult | AdvanceResult): 0 | 1 | 2 {
+function humanCheck(check: VerificationCheck): string {
+  return [
+    `[${check.status.toUpperCase()}] ${check.code} (${check.classification}) constraint=${check.constraintId}`,
+    `  ${check.message}`,
+    `  Slices: ${check.sliceRefs.join(", ")}`,
+    ...(check.blockerDecisionRefs === undefined ||
+    check.blockerDecisionRefs.length === 0
+      ? []
+      : [`  Blockers: ${check.blockerDecisionRefs.join(", ")}`]),
+    ...(check.observed === undefined ? [] : [`  Observed: ${check.observed}`]),
+    ...(check.expected === undefined ? [] : [`  Expected: ${check.expected}`]),
+    ...(check.repair === undefined ? [] : [`  Repair: ${check.repair}`]),
+  ].join("\n");
+}
+
+export function formatVerificationHuman(
+  verification: VerificationResult,
+): string {
+  const title =
+    verification.status === "passed"
+      ? "SAH verification passed"
+      : verification.status === "violations"
+        ? "SAH verification found violations"
+        : verification.status === "incomplete"
+          ? "SAH verification is incomplete"
+          : "SAH verification could not run";
+  const bundle =
+    verification.bundle === undefined
+      ? []
+      : [
+          `Bundle: ${verification.bundle.id} (${verification.bundle.completedStage}, ${verification.bundle.profile})`,
+        ];
+  return [
+    title,
+    ...bundle,
+    `Target: ${verification.targetDirectory}`,
+    ...verification.checks.map(humanCheck),
+    ...verification.diagnostics.map(humanDiagnostic),
+    `Summary: ${verification.summary.passed} passed, ${verification.summary.violations} violation(s), ${verification.summary.pending} pending, ${verification.summary.unsupported} unsupported, ${verification.summary.errors} error(s), ${verification.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
+function exitCode(
+  outcome: ValidationResult | AdvanceResult | VerificationResult,
+): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
     case "advanced":
@@ -110,6 +161,7 @@ function exitCode(outcome: ValidationResult | AdvanceResult): 0 | 1 | 2 {
     case "violations":
     case "blocked":
       return 1;
+    case "incomplete":
     case "operational-error":
       return 2;
   }
@@ -153,6 +205,17 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(advance, null, 2) : formatAdvanceHuman(advance)}\n`,
     );
     return exitCode(advance);
+  }
+
+  if (positional.length === 3 && positional[0] === "verify") {
+    const verification = await verifyBundle(
+      positional[1] ?? "",
+      positional[2] ?? "",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(verification, null, 2) : formatVerificationHuman(verification)}\n`,
+    );
+    return exitCode(verification);
   }
 
   const invalid = invocationError(

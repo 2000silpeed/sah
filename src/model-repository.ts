@@ -8,10 +8,18 @@ import type {
   SourceLocation,
   Stage,
   ValidationResult,
+  VerificationResult,
 } from "./contracts.js";
 import { stages } from "./contracts.js";
-import { advanceResult, hasErrors, result } from "./diagnostics.js";
+import {
+  advanceResult,
+  hasErrors,
+  result,
+  verificationResult,
+} from "./diagnostics.js";
 import { replaceManifestAtomically } from "./atomic-manifest.js";
+import { verifyConstraints } from "./constraint-verification.js";
+import { prepareFilesystemPresenceAdapter } from "./filesystem-presence-adapter.js";
 import {
   artifactRoles,
   type ArchitectureDecisionModel,
@@ -529,6 +537,114 @@ export async function validateBundle(
         preparation.prepared.manifest.lifecycle.completedStage,
       )
     : preparation.validation;
+}
+
+function failedValidationForVerification(
+  validation: ValidationResult,
+  targetDirectory: string,
+): VerificationResult {
+  return verificationResult(
+    validation.status === "violations" ? "violations" : "operational-error",
+    validation.bundleDirectory,
+    resolve(targetDirectory),
+    [],
+    validation.diagnostics,
+    validation.bundle,
+  );
+}
+
+export async function verifyBundle(
+  directory: string,
+  targetDirectory: string,
+): Promise<VerificationResult> {
+  const preparation = await prepareBundle(directory);
+  if (!preparation.ok)
+    return failedValidationForVerification(
+      preparation.validation,
+      targetDirectory,
+    );
+
+  const { prepared } = preparation;
+  const completedStage = prepared.manifest.lifecycle.completedStage;
+  const validation = evaluatePreparedBundle(prepared, completedStage);
+  if (validation.status !== "passed")
+    return failedValidationForVerification(validation, targetDirectory);
+
+  if (stages.indexOf(completedStage) < stages.indexOf("S12")) {
+    return verificationResult(
+      "operational-error",
+      prepared.bundleRoot,
+      resolve(targetDirectory),
+      [],
+      [
+        operationalDiagnostic({
+          code: "VERIFICATION_STAGE_NOT_READY",
+          capability: "Continuous constraint verification",
+          artifactPath: manifestName,
+          jsonPointer: "/lifecycle/completedStage",
+          reference: completedStage,
+          message: `Bundle ${prepared.manifest.bundleId} has not completed the S12 implementation handoff.`,
+          expected: "completedStage S12 or later before target verification",
+          repair:
+            "Complete and advance the canonical implementation handoff through S12.",
+        }),
+      ],
+      validation.bundle,
+    );
+  }
+
+  const target = await prepareFilesystemPresenceAdapter(targetDirectory);
+  if (!target.ok) {
+    return verificationResult(
+      "operational-error",
+      prepared.bundleRoot,
+      target.targetDirectory,
+      [],
+      [
+        operationalDiagnostic({
+          ...target.failure,
+          capability: "Filesystem artifact-presence adapter",
+          artifactPath: target.targetDirectory,
+        }),
+      ],
+      validation.bundle,
+    );
+  }
+
+  const models = toModels(prepared.artifacts);
+  const execution = await verifyConstraints(models, [target.adapter]);
+  const executionDiagnostics = execution.failures.map((failure) => {
+    const constraintIndex =
+      failure.constraintId === undefined
+        ? undefined
+        : models.architecture?.constraints.findIndex(
+            ({ id }) => id === failure.constraintId,
+          );
+    return operationalDiagnostic({
+      code: failure.code,
+      capability: failure.capability,
+      ...(prepared.paths.architecture === undefined
+        ? {}
+        : { artifactPath: prepared.paths.architecture }),
+      ...(constraintIndex === undefined || constraintIndex < 0
+        ? {}
+        : { jsonPointer: `/constraints/${constraintIndex}/observable` }),
+      ...(failure.constraintId === undefined
+        ? {}
+        : { reference: failure.constraintId }),
+      message: failure.message,
+      expected: failure.expected,
+      repair: failure.repair,
+    });
+  });
+  return verificationResult(
+    execution.status,
+    prepared.bundleRoot,
+    target.targetRoot,
+    execution.checks,
+    executionDiagnostics,
+    validation.bundle,
+  );
 }
 
 const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([

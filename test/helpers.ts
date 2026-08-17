@@ -5,6 +5,11 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const fixtureDirectory = join(repositoryRoot, "fixtures", "simple-crud");
+export const verificationTargetDirectory = join(
+  repositoryRoot,
+  "fixtures",
+  "s13-target",
+);
 export const cliPath = join(repositoryRoot, "dist", "cli.js");
 
 const temporaryDirectories: string[] = [];
@@ -15,6 +20,14 @@ export async function copyFixture(): Promise<string> {
   await cp(fixtureDirectory, bundle, { recursive: true });
   temporaryDirectories.push(root);
   return bundle;
+}
+
+export async function copyVerificationTarget(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-target-test-"));
+  const target = join(root, "target");
+  await cp(verificationTargetDirectory, target, { recursive: true });
+  temporaryDirectories.push(root);
+  return target;
 }
 
 export async function mutateJson<T>(

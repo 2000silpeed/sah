@@ -163,10 +163,22 @@ export type ArchitectureModel = {
   constraints: Array<{
     id: string;
     decisionRef: string;
+    statement: string;
     classification: ValidationClassification;
     scopeElementRefs: string[];
     invariantRefs: string[];
-    observable?: unknown;
+    observable?: {
+      factSource: string;
+      selector: string;
+      predicate: string;
+      expected: string;
+    };
+    enforcement: {
+      adapterCapability: string;
+      timing: string;
+      severity: "error" | "warning" | "advisory";
+      failureMessage: string;
+    };
   }>;
 };
 

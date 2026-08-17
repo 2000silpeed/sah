@@ -23,6 +23,10 @@ export type DiagnosticCategory = "validation" | "operational";
 export type DiagnosticSeverity = "error" | "warning";
 export type ValidationStatus = "passed" | "violations" | "operational-error";
 export type AdvanceStatus = "advanced" | "blocked" | "operational-error";
+export type VerificationCheckStatus =
+  "pass" | "violation" | "pending" | "unsupported";
+export type VerificationStatus =
+  "passed" | "violations" | "incomplete" | "operational-error";
 
 export type SourceLocation = {
   line: number;
@@ -79,4 +83,37 @@ export type AdvanceResult = {
   bundle?: AdvancedBundle;
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
+};
+
+export type VerificationCheck = {
+  code: string;
+  constraintId: string;
+  decisionRef: string;
+  classification: ValidationClassification;
+  capability: string;
+  scopeElementRefs: string[];
+  sliceRefs: string[];
+  blockerDecisionRefs?: string[];
+  status: VerificationCheckStatus;
+  message: string;
+  expected?: string;
+  observed?: string;
+  repair?: string;
+};
+
+export type VerificationSummary = ValidationSummary & {
+  passed: number;
+  violations: number;
+  pending: number;
+  unsupported: number;
+};
+
+export type VerificationResult = {
+  status: VerificationStatus;
+  bundleDirectory: string;
+  targetDirectory: string;
+  bundle?: ValidatedBundle;
+  checks: VerificationCheck[];
+  diagnostics: SahDiagnostic[];
+  summary: VerificationSummary;
 };

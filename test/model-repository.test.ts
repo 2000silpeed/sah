@@ -14,13 +14,13 @@ import {
 afterEach(cleanupFixtures);
 
 describe("validateBundle", () => {
-  it("passes the valid simple-crud S11 bundle", async () => {
+  it("passes the valid simple-crud S12 bundle", async () => {
     const validation = await validateBundle(fixtureDirectory);
 
     expect(validation.status).toBe("passed");
     expect(validation.bundle).toEqual({
       id: "equipment-register",
-      completedStage: "S11",
+      completedStage: "S12",
       profile: "short",
     });
     expect(validation.diagnostics).toEqual([]);
