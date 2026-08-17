@@ -111,3 +111,78 @@ Run 8 is complete. The next bounded slice should replace conservative unsupporte
 tsconfig path aliases and re-exports with compiler-program symbol resolution while preserving
 explicit mapping, complete-root enumeration, and honest incomplete results for unresolved
 dynamic forms. Do not add S13 lifecycle advancement in that slice.
+
+## Run 9 ExecPlan — 2026-08-17
+
+### Outcome
+
+The existing write-authority constraint resolves direct named calls through an explicitly
+configured TypeScript project, including `baseUrl`/`paths` imports and finite static named or
+star re-export chains. Resolved scoped writers pass, resolved outside writers violate, and
+unresolved or unsafe compiler state never passes.
+
+### Scope
+
+Included: a v0.2 source-mapping contract with explicit target-relative `tsconfigPath`, confined
+JSONC config loading, TypeScript Program/TypeChecker symbol identity, direct relative/path-alias
+named imports, static named/star re-exports, complete declared-root enumeration, focused
+library/CLI mutations, authority documentation, verification, and commits. Excluded:
+namespace/default imports, import assignments, dynamic loading/evaluation, JavaScript, project
+references/config inheritance, general source graphs or predicates, S13 advancement,
+exceptions, LLM review, services, and benchmark changes.
+
+### Constraints
+
+- Source roots remain the exhaustive scan boundary; tsconfig `files`/`include`/`exclude` cannot
+  silently remove declared source files.
+- The mapping names one confined regular tsconfig file; no ambient filename discovery.
+- Compiler reads may use TypeScript standard-library declarations, but target implementation
+  sources and symbol chains must remain confined and inside declared roots without symlinks.
+- Invalid/unreadable/escaping declared config is operational. Unsupported compiler features,
+  unresolved/ambiguous symbols, and analysis-undermining diagnostics are incomplete.
+- Preserve the exact observable tuple, mapping ownership, result precedence, filesystem
+  adapter, public library surface, CLI thinness, and no implementation-type leakage.
+- Treat mapping v0.2 as an explicit local contract migration; semantic IR and manifest schemas
+  do not change. Never push.
+
+### Milestones
+
+| Phase | Milestone                                              | Status      | Evidence |
+| ----- | ------------------------------------------------------ | ----------- | -------- |
+| 0     | Frame compiler/config boundary and migration          | in_progress | ADR-0012 |
+| 1     | Implement v0.2 mapping and confined Program creation  | pending     | —        |
+| 2     | Resolve aliases/re-exports by canonical symbol        | pending     | —        |
+| 3     | Add focused library/CLI fixtures and mutations        | pending     | —        |
+| 4     | Update authority docs, glossary, index, and commands  | pending     | —        |
+| 5     | Run full verification and adversarial diff review    | pending     | —        |
+
+### Decision log
+
+- 2026-08-17: Use TypeScript Program/TypeChecker symbol identity rather than manually
+  interpreting `paths` or extending the syntax scanner. See ADR-0012.
+- 2026-08-17: Require `tsconfigPath` in mapping v0.2. The explicit hard cut avoids ambient
+  discovery and two resolution modes while the package is still pre-1.0.
+- 2026-08-17: Ignore tsconfig source-selection fields and use all enumerated mapping roots as
+  Program roots. Compiler options influence resolution, not scan completeness.
+- 2026-08-17: Support only static named imports and named/star re-export chains. Preserve
+  conservative unsupported results for namespace/default and dynamic forms.
+
+### Discovery log
+
+- 2026-08-17: Run 8 ended clean at `d8724f6` with 172 tests. Its syntax scanner deliberately
+  rejects every non-relative same-named import and every re-export, even when TypeScript could
+  resolve the symbol exactly.
+- 2026-08-17: The mapping file already owns roots and target symbols, so tsconfig belongs beside
+  that adapter context rather than in `VerificationOptions`, semantic IR, or the manifest.
+
+### Verification log
+
+- 2026-08-17: Re-read `AGENTS.md`, Run 8 handoff, ADR-0011, mapping schema/fixture/tests,
+  TypeScript configuration, adapter request, and parser/resolution implementation. Initial
+  `git status --short --branch` reported only `## main`.
+
+### Handoff
+
+Run 9 is active. Complete ADR-0012 and planning commit, then migrate the mapping schema and
+replace name/specifier inference with confined Program symbol identity without broadening the
+observable predicate or lifecycle contract.

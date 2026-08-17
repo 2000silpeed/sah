@@ -57,6 +57,8 @@ completed execution history.
   verification with one confined filesystem fact adapter and an explicit target root.
 - [ADR-0011](adr/0011-use-explicit-typescript-source-mapping.md) — keeps source ownership in
   explicit target-local adapter configuration and selects bounded TypeScript compiler parsing.
+- [ADR-0012](adr/0012-resolve-typescript-symbols-from-explicit-project-config.md) — resolves
+  path aliases and static re-exports through an explicit confined TypeScript project.
 
 ## JSON Schema contracts
 
