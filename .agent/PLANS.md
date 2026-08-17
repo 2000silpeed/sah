@@ -75,7 +75,7 @@ determinism question.
 | Phase | Milestone | Status | Acceptance evidence |
 |---|---|---|---|
 | 0 | Initialize Git and define ExecPlans | complete | `.git/`; this planning contract |
-| 1 | Compare five prior-art categories | pending | `docs/prior-art.md`; cited sources |
+| 1 | Compare five prior-art categories | complete | `docs/prior-art.md`; 12 distinct cited sources |
 | 2 | Define iterative design reasoning | pending | step I/O, gates, and loop-backs documented |
 | 3 | Define traced IRs and schemas | pending | field traceability; schema compilation |
 | 4 | Decide SAH architecture and delivery | pending | architecture documents and accepted ADRs |
@@ -89,17 +89,26 @@ determinism question.
   normative product document; `AGENTS.md` and `docs/index.md` will route future readers.
 - 2026-08-17: Use one continuous bootstrap ExecPlan because all phases share a single
   acceptance boundary. Phase commits are recovery points, not separate plans.
+- 2026-08-17: Treat SAH's novelty as the traced method-selection-to-enforcement chain, not as
+  a new specification workflow, architecture notation, ADR format, validator, or agent loop.
 
 ### Discovery log
 
 - 2026-08-17: The directory contained only the source prompt and was not a Git repository,
   matching the brief. No pre-existing user work needs reconciliation.
+- 2026-08-17: GitHub Spec Kit is the closest overlap, but its published core does not make
+  methodology selection, responsibility/invariant ownership, or constraint compilation a
+  first-class contract. Reassess extension-over-product if that changes.
+- 2026-08-17: Current behavior of ts-arch, Deptrac, and NetArchTest was not verified within
+  the stopped-early research pass; adapters must not be designed from recall.
 
 ### Verification log
 
 - 2026-08-17: `git init` succeeded and the initial branch was renamed to `main`.
+- 2026-08-17: Prior-art research stopped after more than eight distinct sources covered all
+  five required categories; unverified details are labeled rather than inferred.
 
 ### Handoff
 
-Start Phase 1 with bounded primary-source research, then write the comparative prior-art
-verdict before proceeding to the reasoning model.
+Start Phase 2 by specifying the iterative reasoning contracts and characterization model;
+use the prior-art constraints as inputs rather than copying tool-specific structures.
