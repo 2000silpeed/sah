@@ -71,9 +71,10 @@ not silently rewritten. ADR-0009 owns this migration; ADR-0008 owns the earlier 
 candidate migration.
 
 The optional [TypeScript source mapping schema](../schemas/typescript-source-mapping.schema.json)
-is v0.1.0. It is explicit target-local adapter configuration, not an eighth semantic IR or a
-bundle-manifest artifact. `--mapping` never discovers a conventional filename; its value must
-be a confined target-relative regular JSON file.
+is v0.2.0 and requires a target-relative `tsconfigPath`. It is explicit target-local adapter
+configuration, not an eighth semantic IR or a bundle-manifest artifact. `--mapping` never
+discovers a conventional mapping or project filename; both files must be confined regular
+files. The v0.1→v0.2 migration is a pre-1.0 hard cut rather than an implicit fallback mode.
 
 ## Continuous verification
 
@@ -98,22 +99,27 @@ The TypeScript capability is `dependency-and-write analysis`, bound only to
 `factSource=source-graph`, `predicate=writers-belong-to-constraint-scope`, and `expected=true`.
 The observable selector resolves through the explicit mapping to one directly exported
 function or function-valued variable. The adapter enumerates every TypeScript file under all
-declared roots, resolves direct relative named imports (including import aliases), finds direct
-calls, maps writer paths to Architecture element IDs, and compares them with constraint scope.
-An unmapped or out-of-scope writer is a violation.
+declared roots and uses those files—not tsconfig selection globs—as TypeScript Program roots.
+TypeChecker symbol identity resolves direct relative or configured path-alias named imports,
+including import aliases, through finite static named/star re-export chains. Direct calls map
+writer paths to Architecture element IDs and compare them with constraint scope. An unmapped
+or out-of-scope writer is a violation.
 
-Malformed, schema-invalid, unsafe, dangling, or inaccessible mapping configuration is an
-operational error. Ambiguous ownership, missing selector/module/export coverage, JavaScript,
-source symlinks, syntax errors, path aliases, default/namespace imports, re-exports, dynamic
-loading/code evaluation, TypeScript import assignments, and indirect function aliasing are
-unsupported and produce `incomplete`, never pass. The adapter does not resolve tsconfig paths
-or perform whole-program type checking.
+Malformed, schema-invalid, unsafe, dangling, or inaccessible mapping/project configuration is
+an operational error. Ambiguous ownership or symbol resolution, missing selector/module/export
+coverage, compiler diagnostics, JavaScript, source symlinks, default/namespace imports,
+namespace re-exports, dynamic loading/code evaluation, TypeScript import assignments, indirect
+function aliasing, config inheritance, project references, compiler plugins, and `rootDirs`
+are unsupported and produce `incomplete`, never pass. The adapter reads only target-confined
+implementation files plus the TypeScript standard library; target implementation sources
+outside declared mapping roots cannot contribute a pass.
 
 The [filesystem target](../fixtures/s13-target/checks/equipment-operations.integration.txt)
 supports the first capability. The [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json)
-and its source tree exercise the simple-crud write-authority constraint without placing a
-sample solution under benchmark data. Omitting `--mapping` from that source-graph example
-intentionally returns `incomplete` and exit 2.
+and [explicit project configuration](../fixtures/s13-typescript-target/tsconfig.json) exercise
+the simple-crud write-authority constraint without placing a sample solution under benchmark
+data. Omitting `--mapping` from that source-graph example intentionally returns `incomplete`
+and exit 2.
 
 ## Stage advancement
 

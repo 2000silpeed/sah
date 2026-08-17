@@ -37,6 +37,8 @@ Target source mapping is also non-semantic metadata, but it is explicit adapter 
 rather than bundle lifecycle/storage metadata. It remains in the target checkout, outside the
 manifest and seven IRs, and may map paths only to already validated Architecture element IDs.
 Its schema owns serialized shape; ADR-0011 owns the separation and TypeScript boundary.
+ADR-0012 requires that mapping to name its confined TypeScript project configuration; neither
+project settings nor checkout paths become Architecture facts.
 
 Architecture IR v0.2 makes candidates an explicit set. Each candidate points to the topology
 it uses and states operational consequences; an assessment identifies the candidate it
@@ -122,7 +124,8 @@ Execution results are runtime evidence, not another canonical IR: they retain co
 decision, element, and slice IDs without being written back into Architecture or Handoff.
 ADR-0010 owns the first explicit-target filesystem capability and its no-schema-change choice.
 ADR-0011 owns the explicit target-local source mapping used by the bounded TypeScript adapter;
-neither execution result nor mapping becomes canonical design meaning.
+ADR-0012 owns compiler-project symbol resolution. Neither execution result, mapping, nor
+project configuration becomes canonical design meaning.
 
 ## Elements and relations
 

@@ -151,9 +151,16 @@ deterministic; an outside or unmapped writer violates. Configuration defects are
 while incomplete language/symbol resolution is unsupported. ADR-0011 owns the mapping and
 parser boundary; no general dependency graph or constraint compiler is implied.
 
+Run 9 preserves that exact predicate but replaces textual module inference with one confined
+TypeScript Program and TypeChecker. Mapping v0.2 explicitly names its project config; declared
+mapping roots remain exhaustive regardless of project globs. Canonical symbol identity supports
+configured path aliases and finite static named/star re-exports. Unsafe/invalid config is
+operational, while ambiguous resolution, compiler errors, unsupported project features, and
+source forms outside the proven boundary remain incomplete. ADR-0012 owns this expansion.
+
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
-`error`), and remediation/exception path. Runs 7–8 formalize the deterministic subset as public
+`error`), and remediation/exception path. Runs 7–9 formalize the deterministic subset as public
 verification checks with `pass`, `violation`, `pending`, or `unsupported`; operational errors
 remain diagnostics rather than fabricated checks.
 

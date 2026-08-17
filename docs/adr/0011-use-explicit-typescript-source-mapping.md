@@ -1,6 +1,6 @@
 # ADR-0011: Use explicit TypeScript source mapping
 
-Status: Accepted · Date: 2026-08-17 · Supersedes: —
+Status: Accepted in part · Date: 2026-08-17 · Superseded in part by: ADR-0012
 
 ## Context
 
@@ -63,5 +63,6 @@ violation, incomplete, and operational boundaries.
 
 The mapping schema is a machine contract but not an eighth semantic IR and is never declared in
 the design-bundle manifest. Verification results remain runtime evidence and S13 advancement
-remains unsupported. A later slice may add tsconfig-aware symbol resolution, but must preserve
-the same honest incomplete boundary or supersede this ADR.
+remains unsupported. ADR-0012 supersedes the syntax-resolution limit with explicit-project
+symbol identity while retaining this ADR's mapping ownership, exact predicate, and honest
+incomplete boundary.

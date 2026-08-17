@@ -81,7 +81,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Bundle manifest](../schemas/design-bundle-manifest.schema.json) — non-semantic lifecycle,
   profile, artifact path, and declared schema metadata for loading a design bundle.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
-  target-local source roots, Architecture element path prefixes, and write-target symbols.
+  target-local project config, exhaustive source roots, Architecture element path prefixes,
+  and write-target symbols.
 
 ## Runtime implementation and executable fixture
 
@@ -127,9 +128,11 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —
   gives filesystem-presence tests one inert target-local regular file outside benchmark data.
 - [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json),
+  [project configuration](../fixtures/s13-typescript-target/tsconfig.json),
   [write target](../fixtures/s13-typescript-target/src/equipment-store.ts), and
   [authorized caller](../fixtures/s13-typescript-target/src/equipment-operations/save-equipment.ts)
-  — exercise direct named-import write authority against the canonical simple-crud constraint.
+  — exercise project-resolved named-import write authority against the canonical simple-crud
+  constraint.
 
 ## Benchmark fixtures
 

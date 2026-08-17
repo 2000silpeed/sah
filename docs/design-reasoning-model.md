@@ -150,10 +150,11 @@ return to implementation; changed forces or repeated heuristic findings reopen S
 their source.
 
 The executable subset currently runs target-filesystem presence and one explicitly mapped
-TypeScript write-authority capability for constraints assigned by an S12 handoff. Pending
-contextual reviews and unsupported source forms/adapters keep verification incomplete, and the
-manifest cannot advance to S13 until the full completion gate and exception dispositions are
-implemented.
+TypeScript write-authority capability for constraints assigned by an S12 handoff. The latter
+uses an explicit project to resolve named path aliases and static named/star re-exports while
+keeping unresolved project/source forms incomplete. Pending contextual reviews and unsupported
+adapters keep verification incomplete, and the manifest cannot advance to S13 until the full
+completion gate and exception dispositions are implemented.
 
 ## Short path
 

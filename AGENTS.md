@@ -132,6 +132,8 @@ mutating `sah advance <design-bundle-directory> <target-stage> [--json]`, plus r
 a disposable copy. Public library entry points are `validateBundle`, `advanceBundle`, and
 `verifyBundle`; [validation CLI usage](docs/validation-cli.md) owns their result, transition,
 fact-capability, mapping, atomicity, and exit-code contracts.
+TypeScript mapping v0.2 names a confined project configuration explicitly; verification does
+not discover ambient `tsconfig.json` files or let project globs narrow declared source roots.
 
 ## Change workflow
 

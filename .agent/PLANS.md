@@ -153,7 +153,7 @@ exceptions, LLM review, services, and benchmark changes.
 | 1     | Implement v0.2 mapping and confined Program creation  | complete    | strict typecheck |
 | 2     | Resolve aliases/re-exports by canonical symbol        | complete    | focused symbol tests |
 | 3     | Add focused library/CLI fixtures and mutations        | complete    | 74 focused tests |
-| 4     | Update authority docs, glossary, index, and commands  | pending     | —        |
+| 4     | Update authority docs, glossary, index, and commands  | complete    | CLI/model docs, glossary, index, AGENTS |
 | 5     | Run full verification and adversarial diff review    | pending     | —        |
 
 ### Decision log
@@ -191,6 +191,9 @@ exceptions, LLM review, services, and benchmark changes.
   verification, and CLI tests passed. Mutations cover path aliases, named/star and ambiguous
   re-exports, invalid/unsafe/symlinked config, unsupported inheritance/project references,
   source-root completeness, and JSON exit 0.
+- 2026-08-17: Updated the CLI contract, component and IR boundaries, S13 reasoning/validation
+  scope, dogfood evidence, glossary, index, operating policy, and ADR-0011 supersession note.
+  Mapping v0.2 is documented as a hard cut; semantic IR and manifest schemas remain unchanged.
 
 ### Handoff
 

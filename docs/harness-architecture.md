@@ -77,9 +77,11 @@ canonical IR. S13 lifecycle advancement remains unsupported.
 TypeScript mapping is target-relative, schema-validated adapter context supplied explicitly by
 the caller. It relates complete declared source roots and path prefixes to Architecture element
 IDs, plus observable selectors to write symbols. It is neither inferred from directory names
-nor stored in semantic IR or the bundle manifest. The adapter scans all declared roots with the
-TypeScript parser and refuses unresolved source forms instead of manufacturing a complete
-graph. ADR-0011 owns this boundary.
+nor stored in semantic IR or the bundle manifest. Its explicit confined project configuration
+supplies compiler resolution options while the mapping roots remain exhaustive. One cached
+TypeScript Program/TypeChecker resolves canonical symbol identity; unsupported project or
+source forms remain incomplete instead of manufacturing a complete graph. ADR-0011 owns the
+mapping boundary and ADR-0012 owns project-based symbol resolution.
 
 ### Decision and View Adapters
 
@@ -149,9 +151,10 @@ exception authority.
 
 The current executable subset does not yet map diffs. It uses S12 slice assignment for
 applicability and can evaluate a declared target-relative regular-file presence fact or direct
-TypeScript calls to one explicitly mapped write symbol. Path aliases, re-exports, dynamic
-loading/code evaluation, import assignments, indirect symbol aliases, mixed JavaScript, and
-whole-program semantics remain explicit unsupported coverage.
+TypeScript calls to one explicitly mapped write symbol. Explicit-project path aliases and
+static named/star re-exports are resolved; namespace/default forms, dynamic loading/code
+evaluation, import assignments, indirect symbol aliases, mixed JavaScript, multi-project
+configuration, and general graph semantics remain explicit unsupported coverage.
 
 ### Benchmark run
 
