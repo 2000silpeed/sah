@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -117,6 +117,27 @@ async function setStage(bundle: string, completedStage: Stage): Promise<void> {
   );
 }
 
+async function prepareForS9(bundle: string): Promise<void> {
+  await setStage(bundle, "S8");
+  await mutateJson<{ candidates: Array<{ status: string }> }>(
+    bundle,
+    "architecture.json",
+    (model) => {
+      model.candidates.forEach((candidate) => {
+        candidate.status = "proposed";
+      });
+    },
+  );
+  await mutateJson<{
+    decisions: Array<{ status: string; selectedOptionRef: string | null }>;
+  }>(bundle, "architecture-decision.json", (model) => {
+    model.decisions.forEach((decision) => {
+      decision.status = "proposed";
+      decision.selectedOptionRef = null;
+    });
+  });
+}
+
 describe("sah advance CLI", () => {
   it("returns exit 0 and human-readable transition evidence", async () => {
     const bundle = await copyFixture();
@@ -189,11 +210,60 @@ describe("sah advance CLI", () => {
     );
   });
 
+  it("advances S8 to S9 through the production JSON CLI", async () => {
+    const bundle = await copyFixture();
+    await prepareForS9(bundle);
+
+    const execution = await runCli(["advance", bundle, "S9", "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      bundle: { previousStage: string; completedStage: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("advanced");
+    expect(output.bundle).toEqual(
+      expect.objectContaining({
+        previousStage: "S8",
+        completedStage: "S9",
+      }),
+    );
+  });
+
+  it("returns exit 1 for incomplete S9 coverage without changing the manifest", async () => {
+    const bundle = await copyFixture();
+    await prepareForS9(bundle);
+    await mutateJson<{ qualityAssessments: unknown[] }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        model.qualityAssessments = [];
+      },
+    );
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+
+    const execution = await runCli(["advance", bundle, "S9", "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      bundle: { completedStage: string };
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("blocked");
+    expect(output.bundle.completedStage).toBe("S8");
+    expect(output.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S9_MUST_ASSESSMENT_MISSING",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S8", "S9", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S11", "S12", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "returns exit 2 for the %s to %s transition",
     async (current, target, code) => {

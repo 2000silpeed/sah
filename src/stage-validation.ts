@@ -369,6 +369,129 @@ export function validateStageGates(
     }
   }
 
+  if (atLeast(completedStage, "S9")) {
+    if (
+      architecture !== undefined &&
+      models.systemCharacterization !== undefined
+    ) {
+      const mustScenarios =
+        models.systemCharacterization.qualityScenarios.filter(
+          ({ priority }) => priority === "must",
+        );
+      const firstAssessmentByPair = new Map<string, number>();
+
+      architecture.qualityAssessments.forEach((assessment, index) => {
+        const pairKey = `${assessment.candidateRef}:${assessment.scenarioRef}`;
+        const firstIndex = firstAssessmentByPair.get(pairKey);
+        if (firstIndex === undefined) {
+          firstAssessmentByPair.set(pairKey, index);
+        } else {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S9_ASSESSMENT_DUPLICATE",
+              capability: "Quality-scenario assessment coverage",
+              artifactPath: paths.architecture,
+              jsonPointer: `/qualityAssessments/${index}`,
+              reference: pairKey,
+              message: `Assessment ${pairKey} duplicates /qualityAssessments/${firstIndex}.`,
+              expected:
+                "exactly one assessment for each candidate and quality-scenario pair",
+              repair:
+                "Keep one canonical assessment for the candidate/scenario pair in S9.",
+              owningStage: "S9",
+            }),
+          );
+        }
+      });
+
+      architecture.candidates.forEach((candidate) => {
+        mustScenarios.forEach((scenario) => {
+          const pairKey = `${candidate.id}:${scenario.id}`;
+          if (!firstAssessmentByPair.has(pairKey)) {
+            diagnostics.push(
+              gateIssue({
+                code: "STAGE_S9_MUST_ASSESSMENT_MISSING",
+                capability: "Quality-scenario assessment coverage",
+                artifactPath: paths.architecture,
+                jsonPointer: "/qualityAssessments",
+                reference: pairKey,
+                message: `Candidate ${candidate.id} has no assessment for must scenario ${scenario.id}.`,
+                expected:
+                  "exactly one assessment for every candidate and must-priority quality scenario",
+                repair:
+                  "Evaluate this candidate/scenario pair in S9 and add the traced assessment.",
+                owningStage: "S9",
+              }),
+            );
+          }
+        });
+      });
+
+      const mustScenarioIds = new Set(mustScenarios.map(({ id }) => id));
+      architecture.qualityAssessments.forEach((assessment, index) => {
+        if (
+          mustScenarioIds.has(assessment.scenarioRef) &&
+          assessment.result !== "pass"
+        ) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S9_MUST_SCENARIO_REVIEW",
+              capability: "Quality-scenario satisfaction",
+              artifactPath: paths.architecture,
+              jsonPointer: `/qualityAssessments/${index}/result`,
+              reference: `${assessment.candidateRef}:${assessment.scenarioRef}`,
+              message: `Must-scenario assessment is ${assessment.result}; satisfaction or risk acceptance requires contextual review.`,
+              expected:
+                "review of the measured result, causal evidence, and authorized risk disposition",
+              repair:
+                "Review the assessment in S9; return to S8 for a failed candidate or record authorized risk in S10.",
+              owningStage: "S9",
+              severity: "warning",
+              classification: "assisted",
+            }),
+          );
+        }
+      });
+    }
+
+    if (!atLeast(completedStage, "S10")) {
+      decisionLog?.decisions.forEach((decision, index) => {
+        if (decision.status !== "proposed") {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S9_DECISION_STATUS_INVALID",
+              capability: "Stage-state completeness",
+              artifactPath: paths.architectureDecision,
+              jsonPointer: `/decisions/${index}/status`,
+              reference: decision.id,
+              message: `Decision ${decision.id} is ${decision.status} before S10 selection.`,
+              expected: "every S9 architecture decision to remain proposed",
+              repair:
+                "Return the decision to proposed and defer disposition to S10 authority.",
+              owningStage: "S9",
+            }),
+          );
+        }
+        if (decision.selectedOptionRef !== null) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S9_OPTION_SELECTED_EARLY",
+              capability: "Stage-state completeness",
+              artifactPath: paths.architectureDecision,
+              jsonPointer: `/decisions/${index}/selectedOptionRef`,
+              reference: decision.selectedOptionRef,
+              message: `Decision ${decision.id} selects an option before S10.`,
+              expected: "a null selectedOptionRef through S9",
+              repair:
+                "Clear the selected option in S9 and select it through S10 authority.",
+              owningStage: "S9",
+            }),
+          );
+        }
+      });
+    }
+  }
+
   if (atLeast(completedStage, "S10")) {
     if (architecture !== undefined) {
       const selectedCandidates = architecture.candidates.filter(

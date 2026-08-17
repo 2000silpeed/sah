@@ -42,7 +42,11 @@ export type SystemCharacterization = {
     evidenceRefs: string[];
     dimensions: Record<string, Rating>;
   }>;
-  qualityScenarios: Array<{ id: string; sourceEvidenceRefs: string[] }>;
+  qualityScenarios: Array<{
+    id: string;
+    sourceEvidenceRefs: string[];
+    priority: "must" | "should" | "could";
+  }>;
   hardConstraints: Array<{
     id: string;
     evidenceRefs: string[];
@@ -152,6 +156,7 @@ export type ArchitectureModel = {
   qualityAssessments: Array<{
     candidateRef: string;
     scenarioRef: string;
+    result: "pass" | "risk" | "fail" | "unknown";
     tradeoffRefs: string[];
   }>;
   constraints: Array<{

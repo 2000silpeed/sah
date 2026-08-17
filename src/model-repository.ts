@@ -531,6 +531,7 @@ const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([
   "S6",
   "S7",
   "S8",
+  "S9",
   "S10",
   "S11",
 ]);

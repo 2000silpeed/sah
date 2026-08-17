@@ -27,6 +27,27 @@ async function setStage(bundle: string, completedStage: Stage): Promise<void> {
   );
 }
 
+async function prepareForS9(bundle: string): Promise<void> {
+  await setStage(bundle, "S8");
+  await mutateJson<{ candidates: Array<{ status: string }> }>(
+    bundle,
+    "architecture.json",
+    (model) => {
+      model.candidates.forEach((candidate) => {
+        candidate.status = "proposed";
+      });
+    },
+  );
+  await mutateJson<{
+    decisions: Array<{ status: string; selectedOptionRef: string | null }>;
+  }>(bundle, "architecture-decision.json", (model) => {
+    model.decisions.forEach((decision) => {
+      decision.status = "proposed";
+      decision.selectedOptionRef = null;
+    });
+  });
+}
+
 describe("advanceBundle", () => {
   it("validates S11 before committing only completedStage", async () => {
     const bundle = await copyFixture();
@@ -178,6 +199,78 @@ describe("advanceBundle", () => {
     expect(await readFile(manifestPath)).toEqual(before);
   });
 
+  it("advances S8 to S9 after validating complete assessment coverage", async () => {
+    const bundle = await copyFixture();
+    await prepareForS9(bundle);
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const architecturePath = join(bundle, "architecture.json");
+    const decisionPath = join(bundle, "architecture-decision.json");
+    const before = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      lifecycle: { completedStage: Stage };
+    };
+    const architectureBefore = await readFile(architecturePath);
+    const decisionBefore = await readFile(decisionPath);
+
+    const advancement = await advanceBundle(bundle, "S9");
+
+    expect(advancement.status).toBe("advanced");
+    expect(advancement.bundle?.completedStage).toBe("S9");
+    expect(JSON.parse(await readFile(manifestPath, "utf8"))).toEqual({
+      ...before,
+      lifecycle: { ...before.lifecycle, completedStage: "S9" },
+    });
+    expect(await readFile(architecturePath)).toEqual(architectureBefore);
+    expect(await readFile(decisionPath)).toEqual(decisionBefore);
+  });
+
+  it("blocks S8 to S9 without must-scenario coverage", async () => {
+    const bundle = await copyFixture();
+    await prepareForS9(bundle);
+    await mutateJson<{ qualityAssessments: unknown[] }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        model.qualityAssessments = [];
+      },
+    );
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+
+    const advancement = await advanceBundle(bundle, "S9");
+
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.bundle?.completedStage).toBe("S8");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S9_MUST_ASSESSMENT_MISSING",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
+  it("advances S8 to S9 with an assisted non-pass review warning", async () => {
+    const bundle = await copyFixture();
+    await prepareForS9(bundle);
+    await mutateJson<{ qualityAssessments: Array<{ result: string }> }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        const assessment = model.qualityAssessments[0];
+        if (assessment !== undefined) assessment.result = "risk";
+      },
+    );
+
+    const advancement = await advanceBundle(bundle, "S9");
+
+    expect(advancement.status).toBe("advanced");
+    expect(advancement.summary).toEqual({ errors: 0, warnings: 1 });
+    expect(advancement.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "STAGE_S9_MUST_SCENARIO_REVIEW",
+        severity: "warning",
+        classification: "assisted",
+      }),
+    );
+  });
+
   it("allows assisted warnings without treating them as gate failures", async () => {
     const bundle = await copyFixture();
     await setStage(bundle, "S9");
@@ -208,7 +301,7 @@ describe("advanceBundle", () => {
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S8", "S9", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S11", "S12", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "rejects the %s to %s transition with %s",
     async (current, target, code) => {
