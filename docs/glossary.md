@@ -77,6 +77,7 @@ documents link or apply it.
 | Short path | 단축 경로 | A risk-qualified compression of artifacts that retains every mandatory design question. | design-reasoning-model.md |
 | Source of truth | 단일 진실원 | The one canonical representation authorized to resolve a fact; SAH uses structured JSON IR. | architecture-model.md |
 | Stage | 단계 | One S0–S13 reasoning operation with named inputs, outputs, gate, and loop-back. | design-reasoning-model.md |
+| Stage advancement | 단계 전진 | An exact-next lifecycle transition committed only after the target gate passes against one loaded bundle snapshot. | validation-cli.md |
 | Stage gate | 단계 통과 조건 | The evidence and semantic sufficiency required before downstream reasoning may rely on output. | design-reasoning-model.md |
 | Staleness | 효력 상실 상태 | Explicit invalidity of downstream facts after a referenced premise changes. | architecture-model.md |
 | State machine | 상태 기계 | A representation making allowed states, transitions, temporal rules, and concurrency explicit. | architecture-model.md |

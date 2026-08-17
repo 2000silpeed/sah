@@ -47,6 +47,13 @@ results into stable SAH diagnostics before reference and stage validators run. T
 validate` adapter only parses invocation, selects human or JSON presentation, and maps result
 status to exit 0, 1, or 2. [Validation CLI usage](validation-cli.md) owns the public contract.
 
+The next slice exposes `advanceBundle(directory, targetStage)`. The repository evaluates an
+exact-next supported target against the same loaded snapshot, then replaces only manifest
+lifecycle metadata through a flushed same-directory temporary file and rename. It refuses
+manifest symlinks and compares source bytes immediately before the commit point. This is
+atomic file replacement with optimistic conflict detection, not a lock or a multi-file/
+multi-process transaction. The CLI remains an invocation, presentation, and exit-code adapter.
+
 ### Decision and View Adapters
 
 Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They
@@ -95,7 +102,9 @@ does not become a shared utility imported by production components.
 The host adapter starts or resumes a bundle. The orchestrator reads the active stage, asks the
 Method Library for relevant questions, obtains LLM/human output, validates shape through the
 Model Repository, runs the semantic gate, and either advances or records the causal
-loop-back. Only a successful atomic update makes downstream artifacts current.
+loop-back. Only a successful atomic update makes downstream artifacts current. The current
+runtime can advance only targets with implemented S5, S6, S7, S10, or S11 gates; it reports
+other exact-next stages as unsupported rather than manufacturing a pass.
 
 ### Constraint compilation
 

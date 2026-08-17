@@ -329,9 +329,9 @@ and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is
 | Phase | Milestone | Status | Evidence |
 |---|---|---|---|
 | 0 | Frame transition and atomicity contract | complete | this plan; ADR-0007 |
-| 1 | Implement reusable advance operation | in_progress | target validation; atomic writer tests |
-| 2 | Add CLI, result formats, and exit tests | pending | production CLI exits 0/1/2 |
-| 3 | Document, verify, and review | pending | all checks and diff audit pass |
+| 1 | Implement reusable advance operation | complete | `82fb023`; atomic writer and tests |
+| 2 | Add CLI, result formats, and exit tests | complete | production CLI exits 0/1/2 |
+| 3 | Document, verify, and review | in_progress | authority updates; final audit pending |
 
 ### Decision log
 
@@ -347,14 +347,20 @@ and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is
   and S12 handoff facts are not executable, so a general S0–S13 advance would be dishonest.
 - 2026-08-17: Atomic rename prevents partial manifest contents but not full multi-process
   serializability; the pre-rename byte comparison narrows, but cannot eliminate, the final race.
+- 2026-08-17: A private loaded-bundle preparation lets validation evaluate current or proposed
+  lifecycle without adding a public override; the original validation API remains read-only.
+- 2026-08-17: Canonical artifact schema IDs are rejected by manifest `const` rules before
+  registry lookup; operational-category errors still defensively retain operational status.
 
 ### Verification log
 
 - 2026-08-17: Re-read root policy, completed plan, lifecycle/validation authority, ADR-0005/6,
   manifest schema, Model Repository, stage/schema validators, CLI, and affected tests.
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+- 2026-08-17: `82fb023` adds the library, CLI, atomic writer, and focused tests. After one
+  usage-format compatibility fix, format, lint, typecheck, and all 46 tests passed.
 
 ### Handoff
 
-Refactor validation around one privately loaded bundle so `advanceBundle` can evaluate the
-target stage without exposing a validation override or writing before the gate passes.
+Complete the production CLI/schema/link/declaration/diff audits, record exact results, and
+commit the documented, reviewed slice without pushing.

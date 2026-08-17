@@ -75,9 +75,11 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   — enforce strict checking and emit the distributable library/CLI.
 - [ESLint configuration](../eslint.config.js) — owns typed lint rules for runtime and tests.
 - [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
-  framework-neutral diagnostics, results, stages, and `validateBundle`.
+  framework-neutral diagnostics, results, stages, `validateBundle`, and `advanceBundle`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
-  validation sequencing, and operational/violation separation.
+  validation sequencing, stage transition, and operational/violation separation.
+- [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
+  mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Internal model view](../src/internal-model.ts) — gives strict private shapes to already
   schema-validated artifacts without becoming another serialized contract.
 - [Schema validation](../src/schema-validation.ts) — privately adapts Ajv Draft 2020-12 errors
@@ -88,9 +90,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   manifest's completed stage.
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
-- [Test helpers](../test/helpers.ts), [library tests](../test/model-repository.test.ts),
-  [CLI tests](../test/cli.test.ts), and [schema contract tests](../test/schema-contracts.test.ts)
-  — generate isolated mutations and verify every requested failure family without network use.
+- [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
+  [advance tests](../test/advance-bundle.test.ts), [CLI tests](../test/cli.test.ts), and
+  [schema contract tests](../test/schema-contracts.test.ts) — generate isolated mutations and
+  verify validation, atomic transition, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
   [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
   [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),

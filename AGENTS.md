@@ -120,9 +120,11 @@ npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
 ```
 
-The installed package exposes `sah validate <design-bundle-directory> [--json]`. The public
-library entry point is `validateBundle`; [validation CLI usage](docs/validation-cli.md) owns
-its result and exit-code contract.
+The installed package exposes `sah validate <design-bundle-directory> [--json]` and the
+mutating `sah advance <design-bundle-directory> <target-stage> [--json]`. Run `advance` only
+on the intended working bundle or a disposable copy. Public library entry points are
+`validateBundle` and `advanceBundle`; [validation CLI usage](docs/validation-cli.md) owns
+their result, transition, atomicity, and exit-code contracts.
 
 ## Change workflow
 

@@ -28,7 +28,9 @@ artifact; external storage will supply revision metadata rather than polluting s
 Bundle lifecycle and artifact locations are non-semantic metadata in `sah.bundle.json`, whose
 schema is separate from the six IRs. `lifecycle.completedStage` states which gate is claimed
 complete; validators must not infer it from optional fields or present files. ADR-0006 owns
-the representation decision and the manifest schema owns its serialized shape.
+the representation decision and the manifest schema owns its serialized shape. Advancement
+validates a proposed explicit stage, then atomically changes only this metadata field; it does
+not revise, infer, or normalize any semantic IR fact. ADR-0007 owns that transition decision.
 
 S5 may reserve a `logicalOwnerRef` before Architecture IR exists. S6 must materialize every
 such owner as an architecture element with matching authority. A full-bundle reference

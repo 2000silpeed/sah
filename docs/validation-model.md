@@ -109,6 +109,12 @@ are deterministic because the manifest supplies explicit lifecycle and artifact 
 Proposed-decision isolation produces an assisted warning: the current six IRs do not serialize
 S12 implementation slices, so the validator cannot prove isolation or blocker coverage.
 
+Run 3 reuses those same deterministic predicates to test a proposed exact-next lifecycle
+before committing it. Only target gates S5, S6, S7, S10, and S11 are executable. Missing gate
+implementations are operational `unsupported` outcomes, not validation passes. Deterministic
+errors block advancement; the assisted proposed-decision isolation finding remains a warning
+and cannot become a hard failure merely because the command can write lifecycle metadata.
+
 This slice validates constraint declarations but does not bind code-fact adapters or execute
 compiled project constraints. A structurally valid deterministic observable is therefore not
 a claim that target code passes it. [Validation CLI usage](validation-cli.md) owns result and
