@@ -41,7 +41,7 @@
         "subsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "strategy-conformance-judge"]}},
         "parentRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "view-adapter", "boundary-validator"]}},
         "logicalRole": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "human-reviewer"]}},
-        "representation": {"enum": ["undecided", "function", "immutable-data", "class", "aggregate", "module", "component", "service", "pipeline", "state-machine", "agent", "datastore", "queue", "external-system"], "x-sah-trace": {"writtenBy": ["S7"], "readBy": ["S8", "S9", "representation-order-validator", "view-adapter"]}},
+        "representation": {"oneOf": [{"enum": ["undecided", "function", "immutable-data", "class", "aggregate", "module", "component", "service", "pipeline", "state-machine", "agent", "datastore", "queue", "external-system"]}, {"type": "string", "pattern": "^x-[a-z0-9]+(?:-[a-z0-9]+)*$"}], "x-sah-trace": {"writtenBy": ["S7"], "readBy": ["S8", "S9", "representation-order-validator", "view-adapter"]}},
         "authority": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S11", "ownership-validator"]}},
         "responsibilityRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "responsibility-coverage-validator", "S7"]}},
         "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "invariant-coverage-validator", "S7", "S11"]}},

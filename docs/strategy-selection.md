@@ -7,6 +7,10 @@ confirm it.
 
 ## Strategy catalogue
 
+These are the initial registered strategies, not a closed enum. A new strategy ID is allowed
+only when the Method Library defines its forces, costs, disqualifiers, reasoning consumers,
+and benchmark distinction without smuggling in a representation.
+
 ### `transaction-script-modular`
 
 Organize simple use cases as explicit operations over plain data with direct transaction

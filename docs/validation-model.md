@@ -33,6 +33,7 @@ has no complete observable specification.
 | Characterization correctness | J | Judge ratings, omitted forces, and whether evidence deserves its weight. |
 | Subsystem merge/split suggestion | A | Compare ratings, ownership, and relation density; reviewer decides boundaries. |
 | Strategy trace and alternative presence | D | Require dimension/evidence links, costs, and at least one alternative. |
+| Strategy identifier registration | D | Every selected strategy ID resolves to a Method Library definition with required semantics. |
 | Strategy appropriateness | J | Compare forces, simpler options, failure modes, and ceremony. |
 | Responsibility statement representation leakage | A | Flag class/service/repository vocabulary; judge imposed constraints and intent. |
 | Responsibility semantic coverage | J | Judge whether required outcomes and quality responses are actually represented. |

@@ -15,7 +15,7 @@
   },
   "$defs": {
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
-    "strategy": {"enum": ["transaction-script-modular", "responsibility-centered-domain", "functional-dataflow", "state-machine-concurrent", "distributed-event-driven", "integration-adapter", "agentic-tool-loop"]},
+    "strategy": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
     "rationale": {
       "type": "object", "additionalProperties": false,
       "required": ["dimensionIds", "evidenceRefs", "text"],

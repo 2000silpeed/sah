@@ -81,7 +81,7 @@ determinism question.
 | 4 | Decide SAH architecture and delivery | complete | component contracts, validator catalogue, ADR-0001–0004 |
 | 5 | Specify eight benchmarks | complete | 8 directories × 3 files; distinct coverage vectors |
 | 6 | Dogfood two contrasting cases | complete | `docs/dogfood.md`; five model repairs; schemas revalidated |
-| 7 | Evaluate and verify the foundation | pending | rubric scores ≥4; definition-of-done evidence |
+| 7 | Evaluate and verify the foundation | complete | rubric 5/5/5/4/4; all 11 DoD checks pass |
 
 ### Decision log
 
@@ -115,6 +115,8 @@ determinism question.
   proportionality evidence show that a second candidate would be ceremony.
 - 2026-08-17: Unresolved policy blocks only dependent implementation slices when isolated
   behind an owned seam; non-isolatable authority still blocks architecture selection.
+- 2026-08-17: Strategy IDs are registry-extensible and representation supports namespaced
+  extensions; the initial closed enums failed methodology-neutrality self-review.
 
 ### Discovery log
 
@@ -143,6 +145,11 @@ determinism question.
   global-readiness defects. Expectations were not weakened.
 - 2026-08-17: Time-bounded invariants need structured `applicability`; otherwise source
   immutability and mandated privacy deletion look irreconcilable.
+- 2026-08-17: The initial filtered listing missed an earlier untracked bootstrap prompt and
+  `.DS_Store`. Phase 7 preserved the prompt as non-normative provenance and ignored, but did
+  not delete, Finder metadata. The earlier “only source prompt” observation was incomplete.
+- 2026-08-17: Benchmark discriminative power and ceremony score 4 rather than 5 because no
+  independent harness runs, judge calibration, or measured artifact burden exists yet.
 
 ### Verification log
 
@@ -163,8 +170,15 @@ determinism question.
   and no prohibited design-leading terms in stakeholder problem text.
 - 2026-08-17: After dogfood repairs, Draft 2020-12 schema checks, embedded examples, field
   trace audit, and whitespace validation passed again for all six schemas.
+- 2026-08-17: Final audit passed all six schemas/examples, 253 field traces, 14 stage
+  contracts, all methodology verdicts and D/A/J rows, 8×3 benchmark structure, line budgets,
+  whitespace, local links, and direct navigation for all 54 repository files.
+- 2026-08-17: Self-evaluation scores are methodology neutrality 5, determinism honesty 5,
+  traceability 5, benchmark discriminative power 4, and ceremony penalty 4. All 11
+  Definition-of-Done items pass with evidence in `docs/verification.md`.
 
 ### Handoff
 
-Start Phase 7 by adding repository navigation and permanent agent rules, completing the
-bilingual glossary, then run the rubric and full definition-of-done audit and fix every gap.
+Run 2 should implement one Model Repository/CLI vertical slice that loads a design bundle and
+runs schema, reference, stage, and field-trace checks against a simple-crud sample. Keep LLM
+reasoning prompts and hosted services out until this contract is executable and measured.

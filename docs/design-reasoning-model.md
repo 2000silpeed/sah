@@ -120,8 +120,8 @@ non-isolatable choice blocks selection; new evidence reopens the earliest affect
 **Consumes:** accepted decisions and selected architecture. **Produces:** Constraint entries
 in Architecture IR, each classified deterministic, assisted, or judgment; deterministic
 entries define observable inputs and violation messages. **Complete when:** every decision is
-classified as compilable or judgmental, every hard rule traces to a decision, and exceptions
-have authority and expiry. **Loop-back:** an unobservable “hard” claim returns to S10 for
+classified as deterministic, assisted, or judgment with an explicit enforcement binding,
+every hard rule traces to a decision, and exceptions have authority and expiry. **Loop-back:** an unobservable “hard” claim returns to S10 for
 rewording or is downgraded; a missing code fact becomes adapter backlog, not invented truth.
 
 ### S12 — Produce the implementation handoff
