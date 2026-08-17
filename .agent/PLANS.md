@@ -258,11 +258,11 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 | Phase | Milestone                                               | Status      | Evidence |
 | ----- | ------------------------------------------------------- | ----------- | -------- |
 | 0     | Frame explicit input, selection, and fallback contract | complete    | `0437633`, ADR-0013 |
-| 1     | Add public selection result and source mapping join    | complete    | strict typecheck |
-| 2     | Filter constraints through assigned S12 slices        | complete    | focused slice tests |
-| 3     | Add library/CLI selection and fallback mutations      | complete    | 118 focused tests |
-| 4     | Update authority docs, index, glossary, and commands  | complete    | CLI/model docs, glossary, index, AGENTS |
-| 5     | Run full verification and adversarial diff review     | pending     | —        |
+| 1     | Add public selection result and source mapping join    | complete    | `c83a520`, strict typecheck |
+| 2     | Filter constraints through assigned S12 slices        | complete    | `cb4b774`, focused slice tests |
+| 3     | Add library/CLI selection and fallback mutations      | complete    | `c83a520`, CLI/library tests |
+| 4     | Update authority docs, index, glossary, and commands  | complete    | `4d70c55`, link audit |
+| 5     | Run full verification and adversarial diff review     | complete    | 211 tests, direct exit 0/1/2 evidence |
 
 ### Decision log
 
@@ -284,9 +284,13 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 - 2026-08-17: The existing verification result had no global unsupported-selection envelope.
   Full fallback is both simpler and stronger: selection issues remain explicit metadata while
   ordinary check status and exit precedence continue to describe the complete execution.
-- 2026-08-17: Constraint filtering belongs after S12 assignments are built. Intersecting the
-  changed element set with assigned slice elements keeps blocked-only constraints visible as
-  pending and does not ask adapters to understand change selection.
+- 2026-08-17: Constraint filtering belongs at the S12 slice boundary before assignments are
+  aggregated. Intersecting changed elements there keeps blocked-only constraints pending and
+  prevents an unrelated ready slice for the same constraint from changing readiness.
+- 2026-08-17: Adversarial review exposed that assignment-level filtering could combine a
+  selected blocked slice with an unselected ready slice. The regression mutation now proves
+  readiness and blocker evidence come only from affected slices while adapters still inspect
+  their complete roots.
 
 ### Verification log
 
@@ -304,8 +308,23 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 - 2026-08-17: Updated the public CLI/library contract, runtime ownership and S13 descriptions,
   validation catalogue, dogfood evidence, glossary, index, and exact AGENTS commands. ADR-0013
   remains the sole authority for input alternatives and fallback costs; schemas are unchanged.
+- 2026-08-17: On Node 24.14.1 and npm 11.11.0, `npm install` audited 164 packages with zero
+  vulnerabilities. `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`,
+  `npm run build`, and `npm run verify:schemas` passed; the full suite was 9 files and 211/211
+  tests, with the schema-specific run at 4/4.
+- 2026-08-17: Direct production CLI runs returned exit 0 for uniquely mapped affected
+  verification, exit 1 with `CHANGE_PATH_UNMAPPED` plus `CONSTRAINT_VIOLATION` after safe full
+  fallback, and exit 2 with `VERIFICATION_CHANGE_MAPPING_REQUIRED`.
+- 2026-08-17: The final audits found 9 schemas, 9 valid embedded examples, 318 serialized
+  properties, zero trace/example diagnostics, 59 Markdown files, 133 valid local links, zero
+  broken links, and no product-document line-budget failure. Public declarations had no Ajv,
+  TypeScript compiler, or filesystem type leak; the 66-entry package included the source
+  adapter and mapping schema. `git diff --check` passed, and no benchmark, schema, or fixture
+  changed.
 
 ### Handoff
 
-Run 10 is active. Commit ADR-0013 and this plan, then add the framework-neutral selection
-contract before wiring mapping and S12 filtering.
+Run 10 is complete. The next bounded slice should persist a schema-validated full-verification
+record and use it to support atomic S12→S13 advancement. Changed-scoped or incomplete results
+must not satisfy that completion gate; do not add hosted coordination or a general evidence
+database.
