@@ -1,4 +1,4 @@
-import { symlink, writeFile } from "node:fs/promises";
+import { rm, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -45,6 +45,37 @@ describe("validateBundle", () => {
         artifactPath: "system-characterization.json",
         jsonPointer: "/modelId",
         classification: "deterministic",
+      }),
+    );
+  });
+
+  it("requires a root bundle manifest", async () => {
+    const bundle = await copyFixture();
+    await rm(join(bundle, "sah.bundle.json"));
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("operational-error");
+    expect(validation.diagnostics.map(({ code }) => code)).toContain(
+      "MANIFEST_NOT_FOUND",
+    );
+  });
+
+  it("fails a stage-required artifact declaration as a validation violation", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      artifacts: { architectureDecision?: unknown };
+    }>(bundle, "sah.bundle.json", (manifest) => {
+      delete manifest.artifacts.architectureDecision;
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("violations");
+    expect(validation.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "STAGE_ARTIFACT_REQUIRED",
+        jsonPointer: "/artifacts/architectureDecision",
       }),
     );
   });
@@ -130,6 +161,23 @@ describe("validateBundle", () => {
     expect(validation.status).toBe("violations");
     expect(validation.diagnostics.map(({ code }) => code)).toContain(
       "STAGE_S5_RESPONSIBILITY_OWNER_MISSING",
+    );
+  });
+
+  it("fails missing invariant ownership after S5", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      invariants: Array<{ owner?: unknown }>;
+    }>(bundle, "invariant.json", (model) => {
+      const invariant = model.invariants[0];
+      if (invariant !== undefined) delete invariant.owner;
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("violations");
+    expect(validation.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S5_INVARIANT_OWNER_MISSING",
     );
   });
 
@@ -223,6 +271,22 @@ describe("validateBundle", () => {
     );
   });
 
+  it("fails an architecture candidate that is not selected after S10", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      candidate: { status: string };
+    }>(bundle, "architecture.json", (model) => {
+      model.candidate.status = "proposed";
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("violations");
+    expect(validation.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S10_CANDIDATE_NOT_SELECTED",
+    );
+  });
+
   it("fails a selected option that belongs to another decision", async () => {
     const bundle = await copyFixture();
     await mutateJson<{
@@ -271,6 +335,46 @@ describe("validateBundle", () => {
     expect(validation.status).toBe("violations");
     expect(validation.diagnostics.map(({ code }) => code)).toContain(
       "DECISION_CONSTRAINT_BACKLINK_MISSING",
+    );
+  });
+
+  it("fails a constraint whose source decision is not accepted", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      decisions: Array<{ status: string; selectedOptionRef: string | null }>;
+    }>(bundle, "architecture-decision.json", (model) => {
+      const decision = model.decisions[0];
+      if (decision !== undefined) {
+        decision.status = "proposed";
+        decision.selectedOptionRef = null;
+      }
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("violations");
+    expect(validation.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S11_CONSTRAINT_DECISION_NOT_ACCEPTED",
+    );
+  });
+
+  it("fails a root reference that resolves to the wrong artifact role", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      systemRef: string;
+    }>(bundle, "architecture.json", (model) => {
+      model.systemRef = "equipment-register-strategy";
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("violations");
+    expect(validation.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "ROOT_MODEL_REFERENCE_MISMATCH",
+        artifactPath: "architecture.json",
+        jsonPointer: "/systemRef",
+      }),
     );
   });
 });

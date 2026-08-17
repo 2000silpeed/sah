@@ -222,7 +222,7 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
 | 0 | Frame run and decide implementation/bundle contracts | complete | this plan; ADR-0005/0006 |
 | 1 | Implement Model Repository validation pipeline | complete | strict typed library; focused unit tests |
 | 2 | Add CLI, fixtures, and integration tests | complete | human/JSON output and exit 0/1/2 tests |
-| 3 | Document, verify, and review the complete slice | in_progress | required commands pass; clean reviewed diff |
+| 3 | Document, verify, and review the complete slice | complete | required commands pass; clean reviewed diff |
 
 ### Decision log
 
@@ -251,6 +251,10 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
 - 2026-08-17: Initial formatting and lint attempts stopped because the test glob did not yet
   exist and typed lint rules reached the JavaScript config file. Tests now exist, lint targets
   only source/tests, and deliberate number/pointer interpolation is configured explicitly.
+- 2026-08-17: The unchanged user-supplied `sah-bootstrap-prompt-gpt5-sol.md` provenance input
+  is 407 lines. It is excluded from the 400-line product-document audit because repository
+  policy also requires provenance prompts to remain verbatim; every generated document and
+  schema remains within its budget.
 
 ### Verification log
 
@@ -266,8 +270,32 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
   passed; Vitest reported 3 files and 21 tests passed, including valid bundle and CLI 0/1/2.
 - 2026-08-17: `node dist/cli.js validate fixtures/simple-crud` passed with zero diagnostics;
   `npm exec -- sah validate fixtures/simple-crud --json` returned status `passed`.
+- 2026-08-17: The first expanded 27-test run failed one candidate-stage test: its generated
+  value `candidate` violated the schema before reaching the gate. This exposed the same stale
+  enum in the private TypeScript view; both now use schema-authoritative `proposed`.
+- 2026-08-17: Final `npm install` exited 0 with 164 packages audited and zero vulnerabilities;
+  `npm run format:check`, `npm run lint`, and strict `npm run typecheck` each exited 0.
+- 2026-08-17: Final `npm test` exited 0 with 3 files and 27 tests passed. Generated mutations
+  cover manifest/artifact loading, malformed JSON location, schema paths, symlink escape,
+  dangling/root/option references, S5 ownership, S6 materialization, S7 timing, S10 selection,
+  S11 observability/accepted decisions/backlinks, outputs, and CLI exits 0/1/2.
+- 2026-08-17: Final `npm run build` exited 0. Human and JSON executions of `npm exec -- sah
+  validate fixtures/simple-crud` exited 0 with zero errors and warnings.
+- 2026-08-17: `npm run verify:schemas` exited 0 with 4 tests: all seven Draft 2020-12 schemas
+  compiled, all embedded examples passed, every serialized property had non-empty writer and
+  reader traces, and the generated missing-trace mutation was detected.
+- 2026-08-17: Deterministic result: all applicable structural checks passed on simple-crud.
+  Assisted result: zero findings on that bundle; proposed decisions would emit a warning.
+  Judgment result: not run and unsupported in this slice. This fixture validation is not a
+  scored benchmark run, and no hidden expectations were read or modified during implementation.
+- 2026-08-17: Final repository audit passed `git diff --check`, all 50 tracked Markdown local
+  links, generated document/schema and AGENTS line budgets, benchmark non-modification, and
+  public declaration Ajv-leak inspection. The full diff review found correct exit separation,
+  guarded unresolved references and stage thresholds, realpath confinement, no CLI/Ajv types
+  in semantic contracts, and no speculative implementation interfaces.
 
 ### Handoff
 
-Run the complete verification loop, review the full diff and public declarations, repair every
-finding, update this log, and commit the verified documentation/handoff milestone.
+The next vertical slice should add an atomic `sah advance <bundle> <stage>` operation that
+validates the claimed gate before updating manifest lifecycle, without adding reasoning prompts
+or a hosted store.

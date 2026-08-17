@@ -106,7 +106,7 @@ export type ArchitectureModel = {
   invariantModelRef: string;
   candidate: {
     id: string;
-    status: "draft" | "candidate" | "selected" | "rejected";
+    status: "proposed" | "selected" | "rejected";
   };
   elements: Array<{
     id: string;
