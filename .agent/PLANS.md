@@ -206,13 +206,13 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 
 ### Milestones
 
-| Phase | Milestone                                                | Status      | Evidence               |
-| ----- | -------------------------------------------------------- | ----------- | ---------------------- |
-| 0     | Frame canonical S12 representation and predicates        | complete    | `e12b046`; ADR-0009    |
-| 1     | Add schema, manifest migration, types, and references    | complete    | v0.3/v0.1 schemas pass |
-| 2     | Implement S12 gates, advance, fixture, and focused tests | complete    | 110 tests pass         |
-| 3     | Update authority documentation                           | complete    | S12 contracts aligned  |
-| 4     | Run full verification and adversarial review             | in_progress | —                      |
+| Phase | Milestone                                                | Status   | Evidence               |
+| ----- | -------------------------------------------------------- | -------- | ---------------------- |
+| 0     | Frame canonical S12 representation and predicates        | complete | `e12b046`; ADR-0009    |
+| 1     | Add schema, manifest migration, types, and references    | complete | v0.3/v0.1 schemas pass |
+| 2     | Implement S12 gates, advance, fixture, and focused tests | complete | 112 tests pass         |
+| 3     | Update authority documentation                           | complete | S12 contracts aligned  |
+| 4     | Run full verification and adversarial review             | complete | full loop/audit pass   |
 
 ### Decision log
 
@@ -239,8 +239,10 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 - 2026-08-17: S10's assisted isolation warning must stop at S11. At S12 the handoff makes
   affected-slice blocker coverage observable, so missing coverage is a deterministic error.
 - 2026-08-17: The first full test run had only the two expected obsolete S12-unsupported
-  assertions fail; after replacing those contracts and adding focused mutations, 110 tests
+  assertions fail; after replacing those contracts and adding focused mutations, 112 tests
   pass across seven files.
+- 2026-08-17: Final review found the obsolete S11→S12 unsupported case needed a replacement,
+  not only removal. S12→S13 now proves exact-next unsupported behavior in library and CLI tests.
 
 ### Verification log
 
@@ -249,12 +251,29 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
 - 2026-08-17: Manifest v0.3, Implementation Handoff v0.1, all embedded examples, and every
   schema property trace pass Draft 2020-12 validation. Format, lint, strict typecheck, and
-  110/110 tests pass, including all handoff reference families and S11→S12 atomicity.
+  112/112 tests pass, including all handoff reference families, S11→S12 atomicity, and the
+  unsupported S12→S13 boundary.
 - 2026-08-17: Architecture, reasoning, validation, harness, CLI, dogfood, glossary, index,
   ADR-0003/0006/0007/0009, and `AGENTS.md` now agree on the seventh IR, manifest v0.3, S12
   deterministic boundary, exact commands, and S11→S12 support.
+- 2026-08-17: Final loop: `npm install` was current (164 packages, 0 vulnerabilities);
+  `format:check`, lint, strict typecheck, 112/112 tests, standalone production build, and the
+  4/4 schema/example/trace suite passed. All eight Draft 2020-12 schemas are registered.
+- 2026-08-17: Production CLI evidence: valid human and JSON validation returned exit 0;
+  complete S11→S12 returned exit 0 and stored S12; missing accepted-decision context returned
+  exit 1 with `STAGE_S12_ACCEPTED_DECISION_MISSING` and stored S11; malformed JSON returned
+  exit 2 with `JSON_MALFORMED` and line/column.
+- 2026-08-17: Baseline `66888bd` diff audit passed: `git diff --check`, 27-file local-link and
+  line-budget audits, no benchmark changes, no public Ajv/filesystem declarations, no network
+  or model calls, and no semantic dependence on CLI formatting. The first link-audit script
+  had an async construction error and was corrected; the first temporary CLI harness was
+  rejected for shell deletion and rerun with validated Node cleanup.
+- 2026-08-17: No benchmark judge exists or ran. Deterministic simple-crud fixture validation
+  passed; assisted and judgment benchmark scoring remain outside this slice and were not
+  claimed.
 
 ### Handoff
 
-Run 6 is active. Resume at Phase 4: run the complete verification and diff audit, record exact
-evidence, and close the plan without extending into S13 code-fact execution.
+Run 6 is complete. Next, implement one narrow S13 source-fact adapter and execute one accepted
+deterministic constraint end to end, while reporting missing mappings as `unsupported` rather
+than pass.
