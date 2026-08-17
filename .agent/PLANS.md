@@ -78,7 +78,7 @@ determinism question.
 | 1 | Compare five prior-art categories | complete | `docs/prior-art.md`; 12 distinct cited sources |
 | 2 | Define iterative design reasoning | complete | S0–S13 contracts and ten-question map documented |
 | 3 | Define traced IRs and schemas | complete | 6 Draft 2020-12 schemas, examples, and trace audit pass |
-| 4 | Decide SAH architecture and delivery | pending | architecture documents and accepted ADRs |
+| 4 | Decide SAH architecture and delivery | complete | component contracts, validator catalogue, ADR-0001–0004 |
 | 5 | Specify eight benchmarks | pending | 24 benchmark files; coverage comparison |
 | 6 | Dogfood two contrasting cases | pending | walkthroughs and recorded model repairs |
 | 7 | Evaluate and verify the foundation | pending | rubric scores ≥4; definition-of-done evidence |
@@ -99,6 +99,12 @@ determinism question.
   Stable IDs link artifacts; storage revision metadata remains outside semantic IR.
 - 2026-08-17: Make `x-sah-trace.writtenBy/readBy` the authoritative field trace table. A
   generated audit is safer than duplicating every JSON pointer in prose.
+- 2026-08-17: Deliver first as an agent-neutral skill plus local CLI over a reusable semantic
+  library. Do not require a service until collaboration or centralized policy is measured.
+- 2026-08-17: JSON IR is canonical; Markdown ADRs and diagrams are linked views, never a
+  second source reconstructed by parsing prose.
+- 2026-08-17: Classify enforcement as deterministic, assisted, or judgment according to
+  observability. Unsupported fact extraction is coverage failure, never pass.
 
 ### Discovery log
 
@@ -117,6 +123,8 @@ determinism question.
   verification will need separate reference, semantic-gate, and code-fact validators.
 - 2026-08-17: S5 ownership precedes architecture elements, so it reserves logical owner IDs;
   S6 must materialize every reserved owner or the bundle fails reference validation.
+- 2026-08-17: Evaluation must drive only public skill/CLI/library surfaces and cannot expose
+  benchmark expectations to product components during a run.
 
 ### Verification log
 
@@ -130,8 +138,10 @@ determinism question.
   through draft 2019-09.
 - 2026-08-17: An isolated `jsonschema` Draft202012Validator check passed all six schemas,
   all embedded examples, and the audit that every property has non-empty writer/readers.
+- 2026-08-17: Every v0.1 validator capability has an explicit D/A/J class; an automated table
+  check found no missing or invalid classification.
 
 ### Handoff
 
-Start Phase 4 by deciding delivery form and component boundaries, then define the validation
-catalogue and record consequential choices as ADRs.
+Start Phase 5 by defining one shared scoring contract and eight stakeholder-style benchmark
+fixtures whose characterization vectors expose strategy errors and over-engineering.

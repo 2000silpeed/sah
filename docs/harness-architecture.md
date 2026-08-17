@@ -1,0 +1,141 @@
+# Harness Architecture
+
+This document owns SAH's component boundaries, dependency rules, delivery topology, and
+failure behavior. The structured model and validator semantics are owned by their respective
+documents.
+
+## Delivery form
+
+SAH ships as a **hybrid local toolkit**:
+
+1. an agent-neutral skill/prompt package presents stages, gates, and review interactions to
+   a host coding agent;
+2. a local CLI drives artifact lifecycle, schema/reference checks, constraint compilation,
+   validator execution, and implementation handoff;
+3. a reusable library contains the semantic model and orchestration so the CLI is not the
+   only integration surface;
+4. target repositories keep JSON IR, rendered Markdown views, decisions, constraints, and
+   exceptions under source control.
+
+There is no required hosted service in the first delivery. A later collaboration service may
+store runs or coordinate reviews, but it must consume the same library APIs and repository
+artifacts. ADR-0001 records the choice and costs.
+
+## Logical components and ownership
+
+### Method Library
+
+Owns strategy definitions, characterization questions, method verdicts, and weighted
+heuristics. It returns candidates and warnings; it cannot select a strategy, mutate IR, or
+emit a hard constraint. New method packs depend only on public model identifiers.
+
+### Reasoning Orchestrator
+
+Owns S0–S13 state transitions, gate evaluation, loop-back/staleness propagation, LLM request
+contracts, retries, and human decision gates. It asks the Model Repository to persist facts;
+it does not embed a language validator or host-agent API.
+
+### Model Repository
+
+Owns schema validation, stable identities, cross-IR references, bundle status, atomic artifact
+updates, and change-impact traversal. JSON IR is canonical. It exposes typed semantic
+operations rather than filesystem conventions to other components.
+
+### Decision and View Adapters
+
+Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They
+never infer missing canonical facts from prose or diagram layout. Import creates proposed,
+incomplete facts that must pass normal gates.
+
+### Constraint Compiler and Validation Runtime
+
+The compiler converts accepted, observable decision claims into a language-neutral check
+plan. Fact adapters map source graphs, symbols, manifests, API schemas, tests, or telemetry to
+that plan. Validators produce deterministic results; assisted reviewers and judgment graders
+use separate result types. Unsupported extraction is `unsupported`, never `pass`.
+
+### Coding-Agent Integration
+
+Owns thin adapters for skills, commands, `AGENTS.md` fragments, context budgeting, progress
+messages, implementation handoff, and change-triggered verification. It translates host
+events into orchestrator operations but contains no design-method logic.
+
+### Evaluation and Benchmarks
+
+Owns benchmark fixtures, run isolation, scoring, judge calibration, regression comparison,
+and cost/latency recording. It invokes only public skill/CLI/library surfaces. Product
+components cannot read benchmark expectations during a run.
+
+## Dependency rule
+
+```text
+Host Agent → Coding-Agent Integration → Reasoning Orchestrator
+                                      ↘ Model Repository
+Method Library ───────────────────────→ Reasoning Orchestrator
+Reasoning Orchestrator ───────────────→ Model Repository
+Decision/View Adapters ───────────────→ Model Repository
+Constraint Compiler/Runtime ──────────→ Model Repository
+Evaluation/Benchmarks ────────────────→ public integration and validation surfaces only
+```
+
+The semantic model has no dependency on prompts, LLM vendors, CLIs, diagram tools, source
+languages, or benchmarks. The Method Library has no dependency on host agents. Evaluation
+does not become a shared utility imported by production components.
+
+## Principal interactions
+
+### Reasoning pass
+
+The host adapter starts or resumes a bundle. The orchestrator reads the active stage, asks the
+Method Library for relevant questions, obtains LLM/human output, validates shape through the
+Model Repository, runs the semantic gate, and either advances or records the causal
+loop-back. Only a successful atomic update makes downstream artifacts current.
+
+### Constraint compilation
+
+The compiler reads selected architecture and accepted decisions. It classifies each claim,
+requires an observable contract for deterministic claims, binds available fact adapters, and
+emits a check plan. A missing adapter creates explicit implementation backlog. It does not
+downgrade or discard a constraint silently.
+
+### Coding change
+
+The integration adapter maps changed paths/symbols to architecture elements. The runtime runs
+applicable deterministic checks, emits assisted findings, and schedules judgment reviews from
+decision triggers. Violations point to source decision, affected invariant, owner, and allowed
+exception authority.
+
+### Benchmark run
+
+The evaluator creates an isolated target repository with only `problem.md`, invokes SAH as a
+user would, freezes outputs and trajectory, then supplies outputs—not hidden expectations—to
+deterministic scorers and calibrated judges. A human arbitrates contested benchmark changes.
+
+## Failure behavior
+
+- Invalid LLM JSON is retried with schema errors; after a bounded retry, the stage remains
+  incomplete with the raw failure reference.
+- Contradictory IR is rejected atomically and routed to the earliest responsible stage.
+- Unavailable LLM judgment keeps a review pending; it cannot make an architecture accepted.
+- An unsupported code-fact adapter reports missing coverage and affected constraints.
+- A deterministic validator crash is an infrastructure error, not an architecture violation.
+- An expired exception fails its owning constraint until renewed by authorized review.
+- Partial view rendering never damages canonical IR.
+
+## Security and privacy boundary
+
+Local-first operation keeps proprietary requirements and code in the target repository by
+default. Host adapters must declare what context leaves the machine, which model/provider
+receives it, and which tools can mutate files or external state. Agentic subsystems additionally
+record tool permissions and human approval points in the target architecture.
+
+## Evolution seams
+
+Stable seams are: methodology provider, LLM reasoner, model store, view adapter, code-fact
+adapter, host-agent adapter, and benchmark judge. A seam earns an interface because multiple
+implementations or independent evolution are expected. Internal helpers do not receive
+interfaces merely to match the diagram.
+
+Service extraction becomes reasonable only when measured collaboration, centralized policy,
+or workload isolation cannot be met locally. Language-specific validators remain adapters;
+they never pull language types into canonical IR.
