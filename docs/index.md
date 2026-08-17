@@ -59,6 +59,8 @@ completed execution history.
   explicit target-local adapter configuration and selects bounded TypeScript compiler parsing.
 - [ADR-0012](adr/0012-resolve-typescript-symbols-from-explicit-project-config.md) — resolves
   path aliases and static re-exports through an explicit confined TypeScript project.
+- [ADR-0013](adr/0013-scope-verification-with-explicit-changed-paths.md) — selects S12
+  constraints from explicit changed paths and falls back safely when mapping is incomplete.
 
 ## JSON Schema contracts
 

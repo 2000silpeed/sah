@@ -221,3 +221,75 @@ Run 9 is complete. The next bounded slice should map an explicit changed-file se
 existing source mapping and execute only affected ready-slice constraints, while preserving
 full-root evidence for each selected deterministic check. Do not add a general dependency
 compiler or advance the manifest to S13 in that slice.
+
+## Run 10 ExecPlan — 2026-08-17
+
+### Outcome
+
+Callers may provide an explicit target-relative changed-file set. SAH maps complete changes to
+Architecture elements, selects constraints through their assigned S12 slices, and still runs
+each selected deterministic adapter against its complete declared evidence boundary. Mapping
+gaps expand to full verification rather than allowing a skipped constraint to pass.
+
+### Scope
+
+Included: repeatable CLI `--changed`, library `VerificationOptions.changedPaths`, target-local
+path validation, source-mapping element resolution, S12 slice intersection, deterministic
+selection metadata in human/JSON results, safe full fallback, focused mutations, authority
+documentation, verification, and milestone commits. Excluded: git discovery, change-set files,
+symbol/diff inference, transitive dependency compilation, persisted results, S13 advancement,
+new adapters or dependencies, semantic schema changes, LLM review, and benchmark changes.
+
+### Constraints
+
+- Changed paths are explicit selection hints, not target evidence and not canonical IR.
+- A complete changed path maps uniquely through a source-root-contained element prefix. Its
+  affected constraints are those assigned to an S12 slice containing that element.
+- Deleted paths remain selectable by lexical mapping; no existence check is required.
+- Any unmapped, outside-root, or ambiguous path selects full verification and reports a stable
+  selection issue. Unsafe/empty inputs and changed paths without a mapping are operational.
+- Selected adapters retain their current complete-root behavior. No changed path may narrow a
+  TypeScript Program or filesystem observable.
+- Preserve unscoped verification behavior, result/exit precedence, CLI thinness, canonical
+  schemas, mapping v0.2, and public implementation-type isolation. Never push.
+
+### Milestones
+
+| Phase | Milestone                                               | Status      | Evidence |
+| ----- | ------------------------------------------------------- | ----------- | -------- |
+| 0     | Frame explicit input, selection, and fallback contract | in_progress | ADR-0013 |
+| 1     | Add public selection result and source mapping join    | pending     | —        |
+| 2     | Filter constraints through assigned S12 slices        | pending     | —        |
+| 3     | Add library/CLI selection and fallback mutations      | pending     | —        |
+| 4     | Update authority docs, index, glossary, and commands  | pending     | —        |
+| 5     | Run full verification and adversarial diff review     | pending     | —        |
+
+### Decision log
+
+- 2026-08-17: Prefer repeatable CLI values and a library array over a change-set file or
+  ambient git discovery. See ADR-0013.
+- 2026-08-17: Use S12 slice element membership, not path convention or a new dependency graph,
+  to select constraints after path-to-element resolution.
+- 2026-08-17: Fall back to all constraints on any incomplete mapping. This costs work but
+  remains sound without adding a new global unsupported-result abstraction.
+
+### Discovery log
+
+- 2026-08-17: Run 9 ended clean at `e7c60d4` with 190 tests. The source adapter already owns
+  validated element prefixes, while constraint verification already materializes S12
+  assignments; the new slice can join those existing facts without schema migration.
+- 2026-08-17: Mapping prefixes are directory prefixes inside declared source roots. They can
+  select a deleted file lexically, but write-target modules outside an element prefix correctly
+  force full fallback rather than implied ownership.
+
+### Verification log
+
+- 2026-08-17: Re-read `AGENTS.md`, Run 9 handoff, public verification contracts, Model
+  Repository dispatch, constraint assignment, TypeScript mapping loader, CLI parsing/output,
+  focused tests, and affected authority documents. Initial status was clean `main` at
+  `e7c60d4`.
+
+### Handoff
+
+Run 10 is active. Commit ADR-0013 and this plan, then add the framework-neutral selection
+contract before wiring mapping and S12 filtering.
