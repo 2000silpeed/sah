@@ -30,8 +30,10 @@ Bundle lifecycle and artifact locations are non-semantic metadata in `sah.bundle
 schema is separate from the seven IRs. `lifecycle.completedStage` states which gate is claimed
 complete; validators must not infer it from optional fields or present files. ADR-0006 owns
 the representation decision and the manifest schema owns its serialized shape. Advancement
-validates a proposed explicit stage, then atomically changes only this metadata field; it does
-not revise, infer, or normalize any semantic IR fact. ADR-0007 owns that transition decision.
+validates a proposed explicit stage, then atomically changes lifecycle metadata; S13 also pins
+one verification-record path, schema ID, and byte digest in that replacement. It does not
+revise, infer, or normalize semantic IR facts. ADR-0007 owns the base transition and ADR-0014
+owns the S13 evidence extension.
 
 Target source mapping is also non-semantic metadata, but it is explicit adapter configuration
 rather than bundle lifecycle/storage metadata. It remains in the target checkout, outside the
@@ -127,7 +129,10 @@ ADR-0011 owns the explicit target-local source mapping used by the bounded TypeS
 ADR-0012 owns compiler-project symbol resolution. Neither execution result, mapping, nor
 project configuration becomes canonical design meaning.
 ADR-0013 likewise keeps requested changed paths, resolved elements, fallback issues, and check
-selection as runtime evidence; none are written into Architecture or Handoff IR.
+selection as runtime evidence; none are written into Architecture or Handoff IR. ADR-0014
+allows one full result to be stored under a separate schema and pinned by the manifest for
+lifecycle evidence. That descriptor grants no architecture meaning and is not a general
+evidence registry.
 
 ## Elements and relations
 

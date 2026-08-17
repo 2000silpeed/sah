@@ -30,6 +30,11 @@ export type BundleManifest = {
     profile: LifecycleProfile;
   };
   artifacts: Partial<Record<ArtifactRole, ArtifactDescriptor>>;
+  verificationRecord?: {
+    path: string;
+    schemaId: string;
+    sha256: string;
+  };
 };
 
 type Rating = { evidenceRefs: string[] };
@@ -238,4 +243,5 @@ export type LoadedArtifact = {
   path: string;
   schemaId: string;
   data: unknown;
+  source: Uint8Array;
 };

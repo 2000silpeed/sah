@@ -3,6 +3,7 @@ import { access, lstat, readFile, realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 import type {
+  AdvanceOptions,
   AdvanceResult,
   SahDiagnostic,
   SourceLocation,
@@ -12,7 +13,7 @@ import type {
   VerificationResult,
   VerificationSelection,
 } from "./contracts.js";
-import { stages } from "./contracts.js";
+import { stages, verificationRecordSchemaId } from "./contracts.js";
 import {
   advanceResult,
   hasErrors,
@@ -47,10 +48,17 @@ import {
   validateStageGates,
 } from "./stage-validation.js";
 import { prepareTypeScriptSourceAdapter } from "./typescript-source-adapter.js";
+import {
+  createVerificationRecord,
+  loadVerificationRecord,
+  publishVerificationRecord,
+  validateS13VerificationRecord,
+  type LoadedVerificationRecord,
+} from "./verification-record.js";
 
 const manifestName = "sah.bundle.json";
 const manifestSchemaId =
-  "https://sah.dev/schemas/design-bundle-manifest/v0.3.0";
+  "https://sah.dev/schemas/design-bundle-manifest/v0.4.0";
 
 type JsonReadResult =
   | { ok: true; data: unknown; source: Uint8Array }
@@ -257,6 +265,7 @@ async function loadArtifact(
           path: descriptor.path,
           schemaId: descriptor.schemaId,
           data: read.data,
+          source: read.source,
         },
       }
     : read;
@@ -302,6 +311,7 @@ type PreparedBundle = {
   registry: SchemaRegistry;
   paths: Partial<Record<ArtifactRole, string>>;
   artifacts: LoadedArtifact[];
+  verificationRecord?: LoadedVerificationRecord;
 };
 
 type PreparationResult =
@@ -398,7 +408,9 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
     if (descriptor !== undefined) paths[role] = descriptor.path;
   }
 
-  const normalizedPaths = new Map<string, ArtifactRole>();
+  const normalizedPaths = new Map<string, string>([
+    [manifestLexicalPath, "bundle manifest"],
+  ]);
   const pathDiagnostics: SahDiagnostic[] = [];
   for (const role of artifactRoles) {
     const descriptor = manifest.artifacts[role];
@@ -415,9 +427,29 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
           jsonPointer: `/artifacts/${role}/path`,
           reference: descriptor.path,
           message: `${role} and ${existing} declare the same artifact path.`,
-          expected: "one distinct JSON file per declared artifact role",
+          expected: "one distinct JSON file per declared bundle role",
           repair:
             "Declare the correct distinct artifact path for each IR role.",
+        }),
+      );
+    }
+  }
+  const recordDescriptor = manifest.verificationRecord;
+  if (recordDescriptor !== undefined) {
+    const normalized = resolve(bundleRoot, recordDescriptor.path);
+    const existing = normalizedPaths.get(normalized);
+    if (existing === undefined) {
+      normalizedPaths.set(normalized, "verification record");
+    } else {
+      pathDiagnostics.push(
+        operationalDiagnostic({
+          code: "VERIFICATION_RECORD_PATH_CONFLICT",
+          artifactPath: manifestName,
+          jsonPointer: "/verificationRecord/path",
+          reference: recordDescriptor.path,
+          message: `verificationRecord and ${existing} declare the same bundle path.`,
+          expected: "a distinct bundle-local verification record path",
+          repair: "Declare the verification record at its own JSON path.",
         }),
       );
     }
@@ -459,6 +491,27 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
   const artifacts = readResults.flatMap((read) =>
     read.ok ? [read.artifact] : [],
   );
+  let verificationRecord: LoadedVerificationRecord | undefined;
+  if (recordDescriptor !== undefined) {
+    const record = await loadVerificationRecord({
+      bundleRoot,
+      path: recordDescriptor.path,
+      registry: registryResult.registry,
+      expectedSha256: recordDescriptor.sha256,
+    });
+    if (!record.ok) {
+      return {
+        ok: false,
+        validation: result(
+          "operational-error",
+          bundleRoot,
+          record.diagnostics,
+          bundle,
+        ),
+      };
+    }
+    verificationRecord = record.record;
+  }
 
   return {
     ok: true,
@@ -470,6 +523,7 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
       registry: registryResult.registry,
       paths,
       artifacts,
+      ...(verificationRecord === undefined ? {} : { verificationRecord }),
     },
   };
 }
@@ -488,10 +542,15 @@ function evaluatePreparedBundle(
 ): ValidationResult {
   const bundle = bundleMetadata(prepared.manifest, completedStage);
 
-  const validationDiagnostics = requiredArtifactDiagnostics(
-    completedStage,
-    prepared.paths,
-  );
+  const validationDiagnostics = [
+    ...prepared.registry.validate(
+      manifestSchemaId,
+      prepared.manifest,
+      manifestName,
+      "operational",
+    ),
+    ...requiredArtifactDiagnostics(completedStage, prepared.paths),
+  ];
   for (const artifact of prepared.artifacts) {
     validationDiagnostics.push(
       ...prepared.registry.validate(
@@ -523,8 +582,26 @@ function evaluatePreparedBundle(
       prepared.paths,
     ),
   );
+  if (stages.indexOf(completedStage) >= stages.indexOf("S13")) {
+    validationDiagnostics.push(
+      ...validateS13VerificationRecord({
+        path:
+          prepared.manifest.verificationRecord?.path ??
+          prepared.verificationRecord?.path ??
+          manifestName,
+        record: prepared.verificationRecord?.data,
+        manifest: prepared.manifest,
+        artifacts: prepared.artifacts,
+        models,
+      }),
+    );
+  }
   return result(
-    hasErrors(validationDiagnostics) ? "violations" : "passed",
+    hasErrors(validationDiagnostics)
+      ? validationDiagnostics.some(({ category }) => category === "operational")
+        ? "operational-error"
+        : "violations"
+      : "passed",
     prepared.bundleRoot,
     validationDiagnostics,
     bundle,
@@ -557,6 +634,75 @@ function failedValidationForVerification(
   );
 }
 
+async function finishVerification(
+  prepared: PreparedBundle,
+  options: VerificationOptions,
+  verification: VerificationResult,
+): Promise<VerificationResult> {
+  const recordPath = options.verificationRecordPath;
+  if (recordPath === undefined) return verification;
+  if (verification.bundle === undefined) {
+    return verificationResult(
+      "operational-error",
+      verification.bundleDirectory,
+      verification.targetDirectory,
+      verification.checks,
+      [
+        ...verification.diagnostics,
+        operationalDiagnostic({
+          code: "VERIFICATION_RECORD_CONTEXT_MISSING",
+          capability: "Verification record storage",
+          artifactPath: recordPath,
+          message:
+            "A verification result without validated bundle metadata cannot be recorded.",
+          expected: "validated bundle identity, lifecycle stage, and profile",
+          repair: "Repair the bundle and rerun verification with --record.",
+        }),
+      ],
+      verification.bundle,
+      verification.selection,
+    );
+  }
+  const record = createVerificationRecord({
+    manifest: prepared.manifest,
+    artifacts: prepared.artifacts,
+    options,
+    result: { ...verification, bundle: verification.bundle },
+  });
+  const forbiddenPaths = new Set([
+    prepared.manifestLexicalPath,
+    ...Object.values(prepared.paths).map((path) =>
+      resolve(prepared.bundleRoot, path),
+    ),
+    ...(prepared.manifest.verificationRecord === undefined
+      ? []
+      : [
+          resolve(
+            prepared.bundleRoot,
+            prepared.manifest.verificationRecord.path,
+          ),
+        ]),
+  ]);
+  const publication = await publishVerificationRecord({
+    bundleRoot: prepared.bundleRoot,
+    path: recordPath,
+    forbiddenPaths,
+    registry: prepared.registry,
+    record,
+  });
+  return publication.ok
+    ? verification
+    : verificationResult(
+        "operational-error",
+        verification.bundleDirectory,
+        verification.targetDirectory,
+        verification.checks,
+        [...verification.diagnostics, ...publication.diagnostics],
+        verification.bundle,
+        verification.selection,
+      );
+}
+
 export async function verifyBundle(
   directory: string,
   targetDirectory: string,
@@ -573,30 +719,38 @@ export async function verifyBundle(
   const completedStage = prepared.manifest.lifecycle.completedStage;
   const validation = evaluatePreparedBundle(prepared, completedStage);
   if (validation.status !== "passed")
-    return failedValidationForVerification(validation, targetDirectory);
+    return finishVerification(
+      prepared,
+      options,
+      failedValidationForVerification(validation, targetDirectory),
+    );
 
   if (stages.indexOf(completedStage) < stages.indexOf("S12")) {
-    return verificationResult(
-      "operational-error",
-      prepared.bundleRoot,
-      targetDirectory.trim() === ""
-        ? targetDirectory
-        : resolve(targetDirectory),
-      [],
-      [
-        operationalDiagnostic({
-          code: "VERIFICATION_STAGE_NOT_READY",
-          capability: "Continuous constraint verification",
-          artifactPath: manifestName,
-          jsonPointer: "/lifecycle/completedStage",
-          reference: completedStage,
-          message: `Bundle ${prepared.manifest.bundleId} has not completed the S12 implementation handoff.`,
-          expected: "completedStage S12 or later before target verification",
-          repair:
-            "Complete and advance the canonical implementation handoff through S12.",
-        }),
-      ],
-      validation.bundle,
+    return finishVerification(
+      prepared,
+      options,
+      verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        targetDirectory.trim() === ""
+          ? targetDirectory
+          : resolve(targetDirectory),
+        [],
+        [
+          operationalDiagnostic({
+            code: "VERIFICATION_STAGE_NOT_READY",
+            capability: "Continuous constraint verification",
+            artifactPath: manifestName,
+            jsonPointer: "/lifecycle/completedStage",
+            reference: completedStage,
+            message: `Bundle ${prepared.manifest.bundleId} has not completed the S12 implementation handoff.`,
+            expected: "completedStage S12 or later before target verification",
+            repair:
+              "Complete and advance the canonical implementation handoff through S12.",
+          }),
+        ],
+        validation.bundle,
+      ),
     );
   }
 
@@ -604,44 +758,52 @@ export async function verifyBundle(
     options.changedPaths !== undefined &&
     options.sourceMappingPath === undefined
   ) {
-    return verificationResult(
-      "operational-error",
-      prepared.bundleRoot,
-      targetDirectory.trim() === ""
-        ? targetDirectory
-        : resolve(targetDirectory),
-      [],
-      [
-        operationalDiagnostic({
-          code: "VERIFICATION_CHANGE_MAPPING_REQUIRED",
-          capability: "Change-scoped verification",
-          message:
-            "Changed paths require an explicit source mapping for Architecture element resolution.",
-          expected:
-            "sourceMappingPath supplied whenever changedPaths is present",
-          repair:
-            "Supply the target-relative source mapping or omit changedPaths for full verification.",
-        }),
-      ],
-      validation.bundle,
+    return finishVerification(
+      prepared,
+      options,
+      verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        targetDirectory.trim() === ""
+          ? targetDirectory
+          : resolve(targetDirectory),
+        [],
+        [
+          operationalDiagnostic({
+            code: "VERIFICATION_CHANGE_MAPPING_REQUIRED",
+            capability: "Change-scoped verification",
+            message:
+              "Changed paths require an explicit source mapping for Architecture element resolution.",
+            expected:
+              "sourceMappingPath supplied whenever changedPaths is present",
+            repair:
+              "Supply the target-relative source mapping or omit changedPaths for full verification.",
+          }),
+        ],
+        validation.bundle,
+      ),
     );
   }
 
   const target = await prepareFilesystemPresenceAdapter(targetDirectory);
   if (!target.ok) {
-    return verificationResult(
-      "operational-error",
-      prepared.bundleRoot,
-      target.targetDirectory,
-      [],
-      [
-        operationalDiagnostic({
-          ...target.failure,
-          capability: "Filesystem artifact-presence adapter",
-          artifactPath: target.targetDirectory,
-        }),
-      ],
-      validation.bundle,
+    return finishVerification(
+      prepared,
+      options,
+      verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        target.targetDirectory,
+        [],
+        [
+          operationalDiagnostic({
+            ...target.failure,
+            capability: "Filesystem artifact-presence adapter",
+            artifactPath: target.targetDirectory,
+          }),
+        ],
+        validation.bundle,
+      ),
     );
   }
 
@@ -661,13 +823,17 @@ export async function verifyBundle(
         : { changedPaths: options.changedPaths }),
     });
     if (!sourceAdapter.ok) {
-      return verificationResult(
-        "operational-error",
-        prepared.bundleRoot,
-        target.targetRoot,
-        [],
-        sourceAdapter.diagnostics,
-        validation.bundle,
+      return finishVerification(
+        prepared,
+        options,
+        verificationResult(
+          "operational-error",
+          prepared.bundleRoot,
+          target.targetRoot,
+          [],
+          sourceAdapter.diagnostics,
+          validation.bundle,
+        ),
       );
     }
     adapters.push(sourceAdapter.adapter);
@@ -706,14 +872,18 @@ export async function verifyBundle(
       repair: failure.repair,
     });
   });
-  return verificationResult(
-    execution.status,
-    prepared.bundleRoot,
-    target.targetRoot,
-    execution.checks,
-    executionDiagnostics,
-    validation.bundle,
-    selection,
+  return finishVerification(
+    prepared,
+    options,
+    verificationResult(
+      execution.status,
+      prepared.bundleRoot,
+      target.targetRoot,
+      execution.checks,
+      executionDiagnostics,
+      validation.bundle,
+      selection,
+    ),
   );
 }
 
@@ -726,6 +896,7 @@ const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([
   "S10",
   "S11",
   "S12",
+  "S13",
 ]);
 
 function transitionDiagnostic(input: {
@@ -768,6 +939,7 @@ function failedPreparationForAdvance(
 export async function advanceBundle(
   directory: string,
   targetStage: Stage,
+  options: AdvanceOptions = {},
 ): Promise<AdvanceResult> {
   const requestedDirectory = resolve(directory);
   if (!(stages as readonly string[]).includes(targetStage)) {
@@ -823,6 +995,33 @@ export async function advanceBundle(
       repair:
         "Keep the manifest at its current stage until this target gate is supported.",
     });
+  } else if (
+    targetStage === "S13" &&
+    options.verificationRecordPath === undefined
+  ) {
+    invalidTransition = transitionDiagnostic({
+      code: "ADVANCE_VERIFICATION_RECORD_REQUIRED",
+      reference: targetStage,
+      message:
+        "S12 to S13 advancement requires an explicit verification record path.",
+      expected:
+        "verificationRecordPath naming one bundle-local full-verification record",
+      repair:
+        "Persist a full verification result and retry S13 advancement with its record path.",
+    });
+  } else if (
+    targetStage !== "S13" &&
+    options.verificationRecordPath !== undefined
+  ) {
+    invalidTransition = transitionDiagnostic({
+      code: "ADVANCE_VERIFICATION_RECORD_UNEXPECTED",
+      reference: targetStage,
+      message: `Verification evidence cannot be attached while advancing to ${targetStage}.`,
+      expected:
+        "verificationRecordPath only for the exact S12 to S13 transition",
+      repair:
+        "Remove the verification record option for this earlier transition.",
+    });
   }
   if (invalidTransition !== undefined) {
     return advanceResult(
@@ -875,7 +1074,105 @@ export async function advanceBundle(
     );
   }
 
-  const proposedValidation = evaluatePreparedBundle(prepared, targetStage);
+  let nextManifest: BundleManifest = {
+    ...prepared.manifest,
+    lifecycle: {
+      ...prepared.manifest.lifecycle,
+      completedStage: targetStage,
+    },
+  };
+  let proposedPrepared = { ...prepared, manifest: nextManifest };
+  let expectedCompanions:
+    | Array<{ path: string; artifactPath: string; source: Uint8Array }>
+    | undefined;
+  if (targetStage === "S13") {
+    const recordPath = options.verificationRecordPath;
+    if (recordPath === undefined) {
+      return advanceResult(
+        "operational-error",
+        prepared.bundleRoot,
+        [
+          transitionDiagnostic({
+            code: "ADVANCE_VERIFICATION_RECORD_REQUIRED",
+            reference: targetStage,
+            message:
+              "S12 to S13 advancement requires an explicit verification record path.",
+            expected:
+              "verificationRecordPath naming one bundle-local full-verification record",
+            repair:
+              "Persist a full verification result and retry S13 advancement with its record path.",
+          }),
+        ],
+        bundle,
+      );
+    }
+    const normalizedRecordPath = resolve(prepared.bundleRoot, recordPath);
+    const conflictingRole = artifactRoles.find(
+      (role) =>
+        prepared.paths[role] !== undefined &&
+        resolve(prepared.bundleRoot, prepared.paths[role]) ===
+          normalizedRecordPath,
+    );
+    if (
+      normalizedRecordPath === prepared.manifestLexicalPath ||
+      conflictingRole !== undefined
+    ) {
+      return advanceResult(
+        "operational-error",
+        prepared.bundleRoot,
+        [
+          operationalDiagnostic({
+            code: "VERIFICATION_RECORD_PATH_CONFLICT",
+            capability: "Verification record storage",
+            artifactPath: recordPath,
+            message: `Verification record path ${recordPath} conflicts with an authoritative bundle file.`,
+            expected:
+              "a path distinct from the manifest and every semantic artifact",
+            repair: "Choose a distinct bundle-relative record path.",
+          }),
+        ],
+        bundle,
+      );
+    }
+    const record = await loadVerificationRecord({
+      bundleRoot: prepared.bundleRoot,
+      path: recordPath,
+      registry: prepared.registry,
+    });
+    if (!record.ok) {
+      return advanceResult(
+        "operational-error",
+        prepared.bundleRoot,
+        record.diagnostics,
+        bundle,
+      );
+    }
+    nextManifest = {
+      ...nextManifest,
+      verificationRecord: {
+        path: recordPath,
+        schemaId: verificationRecordSchemaId,
+        sha256: record.record.sha256,
+      },
+    };
+    proposedPrepared = {
+      ...proposedPrepared,
+      manifest: nextManifest,
+      verificationRecord: record.record,
+    };
+    expectedCompanions = [
+      {
+        path: normalizedRecordPath,
+        artifactPath: recordPath,
+        source: record.record.source,
+      },
+    ];
+  }
+
+  const proposedValidation = evaluatePreparedBundle(
+    proposedPrepared,
+    targetStage,
+  );
   if (proposedValidation.status !== "passed") {
     return advanceResult(
       proposedValidation.status === "violations"
@@ -887,18 +1184,12 @@ export async function advanceBundle(
     );
   }
 
-  const nextManifest: BundleManifest = {
-    ...prepared.manifest,
-    lifecycle: {
-      ...prepared.manifest.lifecycle,
-      completedStage: targetStage,
-    },
-  };
   const replacement = await replaceManifestAtomically({
     manifestPath: prepared.manifestLexicalPath,
     expectedSource: prepared.manifestSource,
     manifest: nextManifest,
     mode: manifestStatus.mode,
+    ...(expectedCompanions === undefined ? {} : { expectedCompanions }),
   });
   if (!replacement.ok) {
     return advanceResult(

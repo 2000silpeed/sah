@@ -55,6 +55,6 @@ only with false-pass-focused mutations.
 
 ADR-0011 still owns explicit mapping, element prefixes, source-root enumeration, and the exact
 constraint predicate. This ADR replaces only its syntax-resolution boundary. Mapping remains
-target-local adapter metadata, not an eighth IR or manifest artifact. S13 lifecycle advancement,
-general dependency graphs, namespace/default calls, indirect aliases, and dynamic code remain
-out of scope.
+target-local adapter metadata, not an eighth IR or manifest artifact. General dependency graphs,
+namespace/default calls, indirect aliases, and dynamic code remain out of scope. ADR-0014 later
+adds S13 advancement from a full result record without changing this adapter boundary.

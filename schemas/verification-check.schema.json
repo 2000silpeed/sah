@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/verification-check/v0.1.0",
+  "title": "SAH Verification Check",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "code",
+    "constraintId",
+    "decisionRef",
+    "classification",
+    "capability",
+    "scopeElementRefs",
+    "invariantRefs",
+    "sliceRefs",
+    "status",
+    "message"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "constraintId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "decisionRef": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "classification": {
+      "enum": ["deterministic", "assisted", "judgment"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "scopeElementRefs": {
+      "$ref": "#/$defs/stringArray",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "invariantRefs": {
+      "$ref": "#/$defs/stringArray",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "sliceRefs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "blockerDecisionRefs": {
+      "$ref": "#/$defs/stringArray",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "status": {
+      "enum": ["pass", "violation", "pending", "unsupported"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "expected": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "observed": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "repair": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    }
+  },
+  "examples": [
+    {
+      "code": "CONSTRAINT_PASSED",
+      "constraintId": "equipment-owns-writes",
+      "decisionRef": "choose-equipment-module",
+      "classification": "deterministic",
+      "capability": "dependency-and-write analysis",
+      "scopeElementRefs": ["equipment-operations"],
+      "invariantRefs": ["asset-tag-unique"],
+      "sliceRefs": ["implement-equipment-operations"],
+      "status": "pass",
+      "message": "Constraint equipment-owns-writes observed its expected condition.",
+      "expected": "true",
+      "observed": "all direct writers belong to equipment-operations"
+    }
+  ]
+}

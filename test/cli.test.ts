@@ -339,11 +339,61 @@ describe("sah advance CLI", () => {
     expect(await readFile(manifestPath)).toEqual(before);
   });
 
+  it("records full verification and advances S12 to S13 through the production CLI", async () => {
+    const bundle = await copyFixture();
+    const recordPath = "verification-record.json";
+
+    const verification = await runCli([
+      "verify",
+      bundle,
+      typescriptTargetDirectory,
+      "--mapping",
+      "sah.source-map.json",
+      "--record",
+      recordPath,
+      "--json",
+    ]);
+    const verified = JSON.parse(verification.stdout) as { status: string };
+    const advancement = await runCli([
+      "advance",
+      bundle,
+      "S13",
+      "--verification-record",
+      recordPath,
+      "--json",
+    ]);
+    const advanced = JSON.parse(advancement.stdout) as {
+      status: string;
+      bundle: { previousStage: string; completedStage: string };
+    };
+    const manifest = JSON.parse(
+      await readFile(join(bundle, "sah.bundle.json"), "utf8"),
+    ) as {
+      lifecycle: { completedStage: string };
+      verificationRecord: { path: string; sha256: string };
+    };
+
+    expect(verification.code).toBe(0);
+    expect(verified.status).toBe("passed");
+    expect(advancement.code).toBe(0);
+    expect(advanced.status).toBe("advanced");
+    expect(advanced.bundle).toEqual(
+      expect.objectContaining({ previousStage: "S12", completedStage: "S13" }),
+    );
+    expect(manifest.lifecycle.completedStage).toBe("S13");
+    expect(manifest.verificationRecord).toEqual(
+      expect.objectContaining({
+        path: recordPath,
+        sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S12", "S13", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S12", "S13", "ADVANCE_VERIFICATION_RECORD_REQUIRED"],
   ] as const)(
     "returns exit 2 for the %s to %s transition",
     async (current, target, code) => {
@@ -605,6 +655,22 @@ describe("sah verify CLI", () => {
     expect(execution.stdout).toContain("CLI_INVALID_INVOCATION");
     expect(execution.stdout).toContain(
       "--changed requires one target-relative file path.",
+    );
+  });
+
+  it("returns exit 2 when --record has no value", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--record",
+      "--json",
+    ]);
+
+    expect(execution.code).toBe(2);
+    expect(execution.stdout).toContain("CLI_INVALID_INVOCATION");
+    expect(execution.stdout).toContain(
+      "--record requires one bundle-relative JSON path.",
     );
   });
 

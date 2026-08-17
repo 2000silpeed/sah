@@ -60,6 +60,8 @@ has no complete observable specification.
 | Implementation decision/blocker assignment                       |     D | Accepted decisions accompany affected slices; affecting proposed decisions block them.                                     |
 | Implementation dependency order                                  |     D | Slice references resolve with no self-dependency or cycle.                                                                 |
 | Implementation handoff adequacy                                  |     J | Judge slice cohesion, acceptance checks, migration, rollback, and executable usefulness.                                   |
+| Verification record integrity                                    |     D | Record schema, byte digest, bundle metadata, invocation scope, result summaries, and design fingerprint.                   |
+| S13 completion evidence                                          |     D | Full passed record with one current passing check per S12-assigned constraint; changed scope cannot qualify.               |
 | Source-to-element mapping syntax                                 |     D | Configured path/symbol selectors resolve uniquely or fail as unsupported.                                                  |
 | Source-to-element mapping inference                              |     A | Suggest mappings from paths/symbols/ownership; human confirms before hard checks.                                          |
 | Forbidden dependency/import direction                            |     D | Extracted source graph against an accepted allow/deny relation.                                                            |
@@ -165,6 +167,13 @@ full evidence boundary. Any outside-root, unmapped, or ambiguous path triggers t
 full verification, so mapping incompleteness cannot skip a violation. Invalid input is
 operational; fallback issues are runtime metadata rather than fabricated validation checks.
 ADR-0013 owns the explicit-input and safe-fallback contract.
+
+Run 11 adds a persistence and lifecycle gate, not a new fact capability. Opt-in verification
+publishes one schema-validated bundle-local record containing the complete public result and an
+exact design fingerprint. S12→S13 accepts only full, passed, internally consistent evidence
+covering every current S12 assignment; affected and full-fallback changed runs are both
+ineligible. The manifest atomically pins record path/schema/digest with S13, and later validation
+rejects changed record bytes or stale semantic artifacts. ADR-0014 owns this boundary.
 
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or

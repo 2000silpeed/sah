@@ -1,9 +1,13 @@
-import { symlink, writeFile } from "node:fs/promises";
+import { readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { Stage, ValidationClassification } from "../src/contracts.js";
+import type {
+  Stage,
+  ValidationClassification,
+  VerificationRecord,
+} from "../src/contracts.js";
 import { verifyBundle } from "../src/index.js";
 import {
   cleanupFixtures,
@@ -148,6 +152,61 @@ describe("verifyBundle", () => {
       }),
     ]);
     expect(verification.summary.passed).toBe(1);
+  });
+
+  it("persists the complete full-verification result as a schema-valid record", async () => {
+    const bundle = await copyFixture();
+    const recordPath = "verification-record.json";
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const manifestBefore = await readFile(manifestPath);
+    await setFilesystemConstraint(
+      bundle,
+      "checks/equipment-operations.integration.txt",
+    );
+
+    const verification = await verifyBundle(
+      bundle,
+      verificationTargetDirectory,
+      { verificationRecordPath: recordPath },
+    );
+    const record = JSON.parse(
+      await readFile(join(bundle, recordPath), "utf8"),
+    ) as VerificationRecord;
+
+    expect(verification.status).toBe("passed");
+    expect(record).toEqual({
+      $schema: "https://sah.dev/schemas/verification-record/v0.1.0",
+      recordVersion: "0.1.0",
+      bundleFingerprint: expect.stringMatching(/^sha256:[a-f0-9]{64}$/u),
+      invocation: { scope: "full" },
+      result: verification,
+    });
+    expect(await readFile(manifestPath)).toEqual(manifestBefore);
+  });
+
+  it("refuses to overwrite an authoritative bundle artifact with a record", async () => {
+    const bundle = await copyFixture();
+    await setFilesystemConstraint(
+      bundle,
+      "checks/equipment-operations.integration.txt",
+    );
+    const architectureBefore = await readFile(
+      join(bundle, "architecture.json"),
+    );
+
+    const verification = await verifyBundle(
+      bundle,
+      verificationTargetDirectory,
+      { verificationRecordPath: "architecture.json" },
+    );
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "VERIFICATION_RECORD_PATH_CONFLICT" }),
+    );
+    expect(await readFile(join(bundle, "architecture.json"))).toEqual(
+      architectureBefore,
+    );
   });
 
   it("returns a violation when the expected regular file is missing", async () => {

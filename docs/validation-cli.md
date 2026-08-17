@@ -26,8 +26,8 @@ An installed package exposes:
 
 ```text
 sah validate <design-bundle-directory> [--json]
-sah advance <design-bundle-directory> <target-stage> [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--json]
+sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
+sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -42,10 +42,13 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
+npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
+npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 ```
 
 `advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
-than the checked-in fixture. `verify` is read-only and requires an explicit target checkout.
+than the checked-in fixture. `verify` requires an explicit target checkout and is read-only
+unless `--record` requests atomic bundle-local result publication.
 Default output is human-readable. `--json` writes exactly one `ValidationResult`,
 `AdvanceResult`, or `VerificationResult` and no prose. Validation diagnostics preserve stable
 code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
@@ -59,6 +62,14 @@ paths and does not require a path to still exist, so deleted files remain select
 not inspect git state. Unsafe input, an empty library change set, or missing mapping is an
 operational failure.
 
+`--record` names a bundle-relative JSON path distinct from the manifest, semantic artifacts,
+and any already pinned record. After bundle preparation succeeds, it stores the complete
+`VerificationResult`, invocation scope, and design fingerprint even when the result is
+violations, incomplete, or operational error; the verification exit code remains governed by
+that result. A record publication failure is operational. Publishing a record does not advance
+lifecycle. `--verification-record` is valid only for S12→S13 advancement and selects the
+previously published evidence.
+
 | Exit | Meaning                                                                                                                      |
 | ---: | ---------------------------------------------------------------------------------------------------------------------------- |
 |    0 | Validation passed, advancement committed, or all selected verification checks passed.                                        |
@@ -70,17 +81,24 @@ artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR
 artifact paths use forward-slash relative paths, and physical targets—including symlinks—must
 remain inside the bundle.
 
-The current manifest schema is v0.3.0, Architecture IR is v0.2.0, and the other six semantic
-IR schemas are v0.1.0. The manifest migration is a deliberate hard cut: a v0.2 manifest lacks
-the canonical Implementation Handoff role and is an operational schema/declaration failure,
-not silently rewritten. ADR-0009 owns this migration; ADR-0008 owns the earlier Architecture
-candidate migration.
+The current manifest schema is v0.4.0, Architecture IR is v0.2.0, and the other six semantic
+IR schemas are v0.1.0. The manifest migration is a deliberate hard cut: v0.3 lacks the exact
+S13 verification-record descriptor and is an operational schema/declaration failure, not
+silently rewritten. ADR-0014 owns v0.4; ADR-0009 and ADR-0008 own the earlier handoff and
+Architecture candidate migrations.
 
 The optional [TypeScript source mapping schema](../schemas/typescript-source-mapping.schema.json)
 is v0.2.0 and requires a target-relative `tsconfigPath`. It is explicit target-local adapter
 configuration, not an eighth semantic IR or a bundle-manifest artifact. `--mapping` never
 discovers a conventional mapping or project filename; both files must be confined regular
 files. The v0.1→v0.2 migration is a pre-1.0 hard cut rather than an implicit fallback mode.
+
+The [verification record schema](../schemas/verification-record.schema.json) is v0.1.0 and
+references exact [result](../schemas/verification-result.schema.json),
+[check](../schemas/verification-check.schema.json), and
+[diagnostic](../schemas/verification-diagnostic.schema.json) contracts. These are runtime
+evidence schemas, not semantic IR. The manifest pins one record path, schema ID, and SHA-256
+digest only when that record authorizes completed S13.
 
 ## Continuous verification
 
@@ -100,6 +118,12 @@ boundary. If any path is outside declared roots, unmapped, or ambiguous, selecti
 requested paths, resolved elements, and stable per-path issues. Because fallback removes the
 selection uncertainty by running everything, its final status and exit code come from ordinary
 checks rather than from the fallback itself.
+
+Record eligibility uses invocation scope, not executed-check breadth. A run with no
+`changedPaths` is `full`. Any run supplied with changed paths is `changed`, including
+`full-fallback`, so neither affected nor fallback evidence can complete S13. A full record also
+binds exact semantic artifact bytes through a design fingerprint; source mapping and target
+paths remain recorded runtime context rather than Architecture meaning.
 
 The first available capability is `filesystem-artifact-presence`, bound only to
 `factSource=filesystem`, `predicate=regular-file-exists`, and `expected=true`. Its selector is
@@ -139,11 +163,11 @@ and exit 2.
 
 ## Stage advancement
 
-Advancement is forward-only and exactly one stage. The executable target gates are S5–S12, so
-successful transitions currently range from S4→S5 through S11→S12. An exact-next target
-without an implemented gate, such as S12→S13, returns `ADVANCE_STAGE_UNSUPPORTED` and exit 2.
-Equal/backward, skipped, and invalid targets are also operational failures. A warning alone
-does not block; any error-severity proposed-stage diagnostic returns `blocked` and exit 1.
+Advancement is forward-only and exactly one stage. The executable target gates are S5–S13, so
+successful transitions currently range from S4→S5 through S12→S13. S13 requires an explicit
+bundle-relative verification record; omitting it is operational and exit 2. Equal/backward,
+skipped, invalid, and otherwise unsupported targets are also operational failures. A warning
+alone does not block; any error-severity proposed-stage diagnostic returns `blocked` and exit 1.
 
 At S9, missing or duplicate candidate/must-scenario coverage and premature decision selection
 are errors. A `risk`, `fail`, or `unknown` must result is an assisted warning and can advance;
@@ -154,18 +178,31 @@ dependency-graph defects are errors. Blocked slices are valid when every blocker
 decision affecting that slice. The command validates declared checks and plans but does not
 execute them.
 
+At S13, the record must be schema-valid, `scope=full`, `status=passed`, free of selection
+metadata and non-pass checks, internally summary-consistent, produced from this bundle at S12,
+and fingerprinted against the current semantic artifacts. Every constraint assigned by the
+current handoff must have exactly one matching deterministic passing check. A valid changed,
+stale, violating, incomplete, or operational-error record is a gate defect: advancement is
+`blocked` and exit 1. Unsafe, missing, malformed, schema-invalid, digest-mismatched, or
+concurrently changed record input is operational and exit 2.
+
 The Model Repository loads one byte snapshot, evaluates schema, references, and applicable
-gates as if `targetStage` were completed, and writes only after that result passes. Success
-changes only `sah.bundle.json.lifecycle.completedStage`; semantic IR files are never written.
-`validateBundle` remains read-only and has no stage override.
+gates as if `targetStage` were completed, and writes only after that result passes. Through S12,
+success changes only `sah.bundle.json.lifecycle.completedStage`. S13 additionally writes one
+`verificationRecord` descriptor with path, schema ID, and exact byte digest in the same manifest
+replacement. Semantic IR files and target code are never written. `validateBundle` remains
+read-only and has no stage override; at stored S13 it revalidates the pinned record and design
+fingerprint.
 
 The commit path refuses a symlink manifest, creates an exclusive temporary file in the same
 directory, writes complete JSON with a trailing newline, preserves mode, flushes and closes,
-then compares current manifest bytes with the loaded snapshot. A mismatch returns
-`BUNDLE_CHANGED_DURING_ADVANCE`; otherwise rename is the commit point. Owned temporary files
-are removed after pre-commit failure. This prevents partial content and detects ordinary lost
-updates, but a writer can still race between the final comparison and rename; there is no
-claim of full multi-process serializability or cross-filesystem durability.
+then compares current manifest bytes with the loaded snapshot. S13 also compares the loaded
+record bytes immediately before commit. A mismatch returns `BUNDLE_CHANGED_DURING_ADVANCE` or
+`VERIFICATION_RECORD_CHANGED_DURING_ADVANCE`; otherwise rename is the commit point. Owned
+temporary files are removed after pre-commit failure. This prevents partial manifest content
+and detects ordinary lost updates, but a writer can still race between the final comparisons
+and rename; there is no claim of full multi-process serializability, target-code freezing, or
+cross-filesystem durability.
 
 ## Library
 
@@ -176,6 +213,7 @@ import {
   advanceBundle,
   validateBundle,
   verifyBundle,
+  type AdvanceOptions,
   type AdvanceResult,
   type ValidationResult,
   type VerificationOptions,
@@ -183,17 +221,20 @@ import {
 } from "software-architect-harness";
 
 const validation: ValidationResult = await validateBundle("design/equipment");
-const advancement: AdvanceResult = await advanceBundle(
-  "design/equipment",
-  "S12",
-);
 const verification: VerificationResult = await verifyBundle(
   "design/equipment",
   "target/equipment",
   {
     sourceMappingPath: "sah.source-map.json",
-    changedPaths: ["src/equipment-operations/save-equipment.ts"],
+    verificationRecordPath: "verification-record.json",
   } satisfies VerificationOptions,
+);
+const advancement: AdvanceResult = await advanceBundle(
+  "design/equipment",
+  "S13",
+  {
+    verificationRecordPath: "verification-record.json",
+  } satisfies AdvanceOptions,
 );
 ```
 
@@ -204,12 +245,14 @@ are returned rather than thrown. Verification `status` is `passed`, `violations`
 `incomplete`, or `operational-error`; each check is `pass`, `violation`, `pending`, or
 `unsupported`. Its summary counts all four check states plus operational diagnostics. Public
 declarations contain no Ajv or filesystem types. Change-scoped results add framework-neutral
-`VerificationSelection` metadata; ordinary full verification omits it.
+`VerificationSelection` metadata; ordinary full verification omits it. `VerificationRecord`
+is the schema-matched persisted envelope; callers still receive the ordinary result directly.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in
 bundle. `verifyBundle` executes only the two exact capabilities above. The optional
-`VerificationOptions` exposes `sourceMappingPath` and readonly `changedPaths`; public
+`VerificationOptions` exposes `sourceMappingPath`, readonly `changedPaths`, and an opt-in
+`verificationRecordPath`; `AdvanceOptions` exposes that path only as S13 evidence. Public
 declarations contain no Ajv, TypeScript compiler, filesystem, git, or CLI parser types. It does
-not run LLM review, infer ownership without configuration, compile general predicates, or mark
-lifecycle S13 complete.
+not run LLM review, infer ownership without configuration, compile general predicates, or
+accept non-full evidence as completed S13.

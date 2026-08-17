@@ -62,7 +62,7 @@ violation, incomplete, and operational boundaries.
 ## Consequences
 
 The mapping schema is a machine contract but not an eighth semantic IR and is never declared in
-the design-bundle manifest. Verification results remain runtime evidence and S13 advancement
-remains unsupported. ADR-0012 supersedes the syntax-resolution limit with explicit-project
-symbol identity while retaining this ADR's mapping ownership, exact predicate, and honest
-incomplete boundary.
+the design-bundle manifest. Verification results remain runtime evidence; ADR-0014 later allows
+one full result record to be pinned without making mapping semantic. ADR-0012 supersedes the
+syntax-resolution limit with explicit-project symbol identity while retaining this ADR's
+mapping ownership, exact predicate, and honest incomplete boundary.

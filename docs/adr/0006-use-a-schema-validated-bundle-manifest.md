@@ -47,3 +47,5 @@ model in memory, but CLI flags cannot silently override repository lifecycle sta
 
 ADR-0009 extends the artifact declarations with Implementation Handoff IR and migrates the
 manifest to v0.3.0 without changing this lifecycle/storage boundary.
+ADR-0014 extends the manifest to v0.4.0 with one non-semantic verification-record descriptor
+whose path, schema, and digest support S13 lifecycle evidence.

@@ -85,6 +85,10 @@ export type AdvanceResult = {
   summary: ValidationSummary;
 };
 
+export type AdvanceOptions = {
+  verificationRecordPath?: string;
+};
+
 export type VerificationCheck = {
   code: string;
   constraintId: string;
@@ -142,4 +146,20 @@ export type VerificationResult = {
 export type VerificationOptions = {
   sourceMappingPath?: string;
   changedPaths?: readonly string[];
+  verificationRecordPath?: string;
+};
+
+export const verificationRecordSchemaId =
+  "https://sah.dev/schemas/verification-record/v0.1.0" as const;
+
+export type VerificationRecord = {
+  $schema: typeof verificationRecordSchemaId;
+  recordVersion: "0.1.0";
+  bundleFingerprint: string;
+  invocation: {
+    scope: "full" | "changed";
+    sourceMappingPath?: string;
+    changedPaths?: string[];
+  };
+  result: VerificationResult & { bundle: ValidatedBundle };
 };

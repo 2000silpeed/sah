@@ -17,11 +17,39 @@ export type ConstraintVerification = {
   failures: VerificationExecutionFailure[];
 };
 
-type Assignment = {
+export type ConstraintAssignment = {
   sliceRefs: string[];
   readySliceRefs: string[];
   blockerDecisionRefs: string[];
 };
+
+export function collectConstraintAssignments(
+  models: LoadedModels,
+  affectedElementRefs?: ReadonlySet<string>,
+): Map<string, ConstraintAssignment> {
+  const assignments = new Map<string, ConstraintAssignment>();
+  for (const slice of models.implementationHandoff?.slices ?? []) {
+    if (
+      affectedElementRefs !== undefined &&
+      !slice.elementRefs.some((elementRef) =>
+        affectedElementRefs.has(elementRef),
+      )
+    )
+      continue;
+    for (const constraintRef of slice.constraintRefs) {
+      const assignment = assignments.get(constraintRef) ?? {
+        sliceRefs: [],
+        readySliceRefs: [],
+        blockerDecisionRefs: [],
+      };
+      assignment.sliceRefs.push(slice.id);
+      if (slice.status === "ready") assignment.readySliceRefs.push(slice.id);
+      else assignment.blockerDecisionRefs.push(...slice.blockedByDecisionRefs);
+      assignments.set(constraintRef, assignment);
+    }
+  }
+  return assignments;
+}
 
 function aggregateStatus(
   checks: VerificationCheck[],
@@ -64,27 +92,7 @@ export async function verifyConstraints(
     };
   }
 
-  const assignments = new Map<string, Assignment>();
-  for (const slice of handoff.slices) {
-    if (
-      affectedElementRefs !== undefined &&
-      !slice.elementRefs.some((elementRef) =>
-        affectedElementRefs.has(elementRef),
-      )
-    )
-      continue;
-    for (const constraintRef of slice.constraintRefs) {
-      const assignment = assignments.get(constraintRef) ?? {
-        sliceRefs: [],
-        readySliceRefs: [],
-        blockerDecisionRefs: [],
-      };
-      assignment.sliceRefs.push(slice.id);
-      if (slice.status === "ready") assignment.readySliceRefs.push(slice.id);
-      else assignment.blockerDecisionRefs.push(...slice.blockedByDecisionRefs);
-      assignments.set(constraintRef, assignment);
-    }
-  }
+  const assignments = collectConstraintAssignments(models, affectedElementRefs);
 
   const checks: VerificationCheck[] = [];
   const failures: VerificationExecutionFailure[] = [];

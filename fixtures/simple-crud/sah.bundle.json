@@ -1,6 +1,6 @@
 {
-  "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
-  "manifestVersion": "0.3.0",
+  "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.4.0",
+  "manifestVersion": "0.4.0",
   "bundleId": "equipment-register",
   "lifecycle": {
     "completedStage": "S12",

@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/verification-result/v0.1.0",
+  "title": "SAH Verification Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "bundleDirectory",
+    "targetDirectory",
+    "bundle",
+    "checks",
+    "diagnostics",
+    "summary"
+  ],
+  "properties": {
+    "status": {
+      "enum": ["passed", "violations", "incomplete", "operational-error"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "bundleDirectory": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "targetDirectory": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "bundle": {
+      "$ref": "#/$defs/bundle",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "selection": {
+      "$ref": "#/$defs/selection",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "https://sah.dev/schemas/verification-check/v0.1.0"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "https://sah.dev/schemas/verification-diagnostic/v0.1.0"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    }
+  },
+  "$defs": {
+    "stage": {
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "S9",
+        "S10",
+        "S11",
+        "S12",
+        "S13"
+      ]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "completedStage", "profile"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator"]
+          }
+        },
+        "completedStage": {
+          "$ref": "#/$defs/stage",
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator"]
+          }
+        },
+        "profile": {
+          "enum": ["full", "short"],
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator"]
+          }
+        }
+      }
+    },
+    "selectionIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "path", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "CHANGE_PATH_OUTSIDE_SOURCE_ROOTS",
+            "CHANGE_PATH_UNMAPPED",
+            "CHANGE_PATH_AMBIGUOUS"
+          ],
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "path": {
+          "type": "string",
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "elementRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "requestedPaths", "affectedElementRefs", "issues"],
+      "properties": {
+        "mode": {
+          "enum": ["affected", "full-fallback"],
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "requestedPaths": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "affectedElementRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/selectionIssue" },
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "errors",
+        "warnings",
+        "passed",
+        "violations",
+        "pending",
+        "unsupported"
+      ],
+      "properties": {
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "violations": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        },
+        "unsupported": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "status": "passed",
+      "bundleDirectory": "/workspace/design",
+      "targetDirectory": "/workspace/target",
+      "bundle": {
+        "id": "equipment-register",
+        "completedStage": "S12",
+        "profile": "short"
+      },
+      "checks": [],
+      "diagnostics": [],
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "passed": 0,
+        "violations": 0,
+        "pending": 0,
+        "unsupported": 0
+      }
+    }
+  ]
+}

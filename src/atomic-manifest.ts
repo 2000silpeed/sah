@@ -11,6 +11,7 @@ function failure(
   code: string,
   message: string,
   repair: string,
+  artifactPath = "sah.bundle.json",
 ): AtomicManifestResult {
   return {
     ok: false,
@@ -19,7 +20,7 @@ function failure(
       category: "operational",
       capability: "Atomic bundle lifecycle update",
       severity: "error",
-      artifactPath: "sah.bundle.json",
+      artifactPath,
       message,
       expected:
         "the manifest to remain unchanged until one atomic same-directory replacement commits",
@@ -33,6 +34,11 @@ export async function replaceManifestAtomically(input: {
   expectedSource: Uint8Array;
   manifest: unknown;
   mode: number;
+  expectedCompanions?: ReadonlyArray<{
+    path: string;
+    artifactPath: string;
+    source: Uint8Array;
+  }>;
 }): Promise<AtomicManifestResult> {
   const manifestDirectory = dirname(input.manifestPath);
   const temporaryPath = join(
@@ -53,6 +59,18 @@ export async function replaceManifestAtomically(input: {
     await handle.close();
     handle = undefined;
     await chmod(temporaryPath, input.mode & 0o7777);
+
+    for (const companion of input.expectedCompanions ?? []) {
+      const currentCompanion = await readFile(companion.path);
+      if (!currentCompanion.equals(Buffer.from(companion.source))) {
+        return failure(
+          "VERIFICATION_RECORD_CHANGED_DURING_ADVANCE",
+          `${companion.artifactPath} changed after its completion evidence was loaded; S13 was not committed.`,
+          "Review the changed record, create fresh full-verification evidence, and retry advancement.",
+          companion.artifactPath,
+        );
+      }
+    }
 
     const currentSource = await readFile(input.manifestPath);
     if (!currentSource.equals(Buffer.from(input.expectedSource))) {

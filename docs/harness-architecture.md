@@ -47,7 +47,7 @@ results into stable SAH diagnostics before reference and stage validators run. T
 validate` adapter only parses invocation, selects human or JSON presentation, and maps result
 status to exit 0, 1, or 2. [Validation CLI usage](validation-cli.md) owns the public contract.
 
-The next slice exposes `advanceBundle(directory, targetStage)`. The repository evaluates an
+The next slice exposes `advanceBundle(directory, targetStage, options?)`. The repository evaluates an
 exact-next supported target against the same loaded snapshot, then replaces only manifest
 lifecycle metadata through a flushed same-directory temporary file and rename. It refuses
 manifest symlinks and compares source bytes immediately before the commit point. This is
@@ -72,7 +72,11 @@ slices, dispatches declared adapter capabilities, and aggregates check states. P
 filesystem and TypeScript adapters implement only confined regular-file presence and one
 explicitly mapped write-authority predicate. The CLI owns invocation, presentation, and exit
 mapping; adapter outcomes, Ajv/compiler objects, and terminal formatting do not enter
-canonical IR. S13 lifecycle advancement remains unsupported.
+canonical IR. An opt-in full verification can publish one schema-validated bundle-local record.
+For S12→S13, the repository checks record scope/status, current S12 assignments, summary,
+design fingerprint, and exact record bytes. One manifest replacement pins its path/schema/digest
+and S13 stage; the record is runtime evidence and no semantic IR is changed. ADR-0014 owns this
+completion boundary.
 
 TypeScript mapping is target-relative, schema-validated adapter context supplied explicitly by
 the caller. It relates complete declared source roots and path prefixes to Architecture element
@@ -132,8 +136,9 @@ The host adapter starts or resumes a bundle. The orchestrator reads the active s
 Method Library for relevant questions, obtains LLM/human output, validates shape through the
 Model Repository, runs the semantic gate, and either advances or records the causal
 loop-back. Only a successful atomic update makes downstream artifacts current. The current
-runtime can advance targets with implemented S5–S12 gates; it reports other exact-next stages
-as unsupported rather than manufacturing a pass.
+runtime can advance targets with implemented S5–S13 gates. S13 additionally requires explicit
+eligible record evidence; other exact-next stages remain unsupported rather than manufacturing
+a pass.
 
 ### Constraint compilation
 

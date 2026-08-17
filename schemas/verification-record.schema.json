@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/verification-record/v0.1.0",
+  "title": "SAH Verification Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "recordVersion",
+    "bundleFingerprint",
+    "invocation",
+    "result"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/verification-record/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["schema-validator", "S13-stage-gate-validator"]
+      }
+    },
+    "recordVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["schema-validator", "S13-stage-gate-validator"]
+      }
+    },
+    "bundleFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator"]
+      }
+    },
+    "invocation": {
+      "$ref": "#/$defs/invocation",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "result": {
+      "$ref": "https://sah.dev/schemas/verification-result/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    }
+  },
+  "$defs": {
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope"],
+      "properties": {
+        "scope": {
+          "enum": ["full", "changed"],
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator"]
+          }
+        },
+        "sourceMappingPath": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "changedPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/verification-record/v0.1.0",
+      "recordVersion": "0.1.0",
+      "bundleFingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "invocation": {
+        "scope": "full",
+        "sourceMappingPath": "sah.source-map.json"
+      },
+      "result": {
+        "status": "passed",
+        "bundleDirectory": "/workspace/design",
+        "targetDirectory": "/workspace/target",
+        "bundle": {
+          "id": "equipment-register",
+          "completedStage": "S12",
+          "profile": "short"
+        },
+        "checks": [],
+        "diagnostics": [],
+        "summary": {
+          "errors": 0,
+          "warnings": 0,
+          "passed": 0,
+          "violations": 0,
+          "pending": 0,
+          "unsupported": 0
+        }
+      }
+    }
+  ]
+}

@@ -70,15 +70,15 @@ function secondCandidate(status: Candidate["status"] = "proposed"): Candidate {
 afterEach(cleanupFixtures);
 
 describe("S8 candidate-set validation", () => {
-  it("rejects a v0.2 bundle manifest through normal operational diagnostics", async () => {
+  it("rejects a v0.3 bundle manifest through normal operational diagnostics", async () => {
     const bundle = await copyFixture();
     await mutateJson<{
       $schema: string;
       manifestVersion: string;
     }>(bundle, "sah.bundle.json", (manifest) => {
       manifest.$schema =
-        "https://sah.dev/schemas/design-bundle-manifest/v0.2.0";
-      manifest.manifestVersion = "0.2.0";
+        "https://sah.dev/schemas/design-bundle-manifest/v0.3.0";
+      manifest.manifestVersion = "0.3.0";
     });
 
     const validation = await validateBundle(bundle);

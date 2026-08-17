@@ -55,4 +55,5 @@ violations or incomplete coverage.
 Selection metadata is runtime evidence, not semantic IR, bundle lifecycle, or source-mapping
 schema data. Existing verification without changed paths is unchanged. This decision does not
 authorize git adapters, transitive impact inference, a general constraint compiler, persisted
-results, or S13 lifecycle advancement.
+results, or S13 lifecycle advancement. ADR-0014 later permits persisted results but explicitly
+keeps both affected and full-fallback changed evidence ineligible for S13 completion.

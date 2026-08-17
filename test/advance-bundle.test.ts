@@ -5,6 +5,7 @@ import {
   readdir,
   rename,
   symlink,
+  writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -12,8 +13,14 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { replaceManifestAtomically } from "../src/atomic-manifest.js";
 import type { Stage } from "../src/contracts.js";
-import { advanceBundle, validateBundle } from "../src/index.js";
-import { cleanupFixtures, copyFixture, mutateJson } from "./helpers.js";
+import { advanceBundle, validateBundle, verifyBundle } from "../src/index.js";
+import {
+  cleanupFixtures,
+  copyFixture,
+  mutateJson,
+  typescriptTargetDirectory,
+  verificationTargetDirectory,
+} from "./helpers.js";
 
 afterEach(cleanupFixtures);
 
@@ -45,6 +52,33 @@ async function prepareForS9(bundle: string): Promise<void> {
       decision.status = "proposed";
       decision.selectedOptionRef = null;
     });
+  });
+}
+
+async function setFilesystemConstraint(
+  bundle: string,
+  selector: string,
+): Promise<void> {
+  await mutateJson<{
+    constraints: Array<{
+      observable: {
+        factSource: string;
+        selector: string;
+        predicate: string;
+        expected: string;
+      };
+      enforcement: { adapterCapability: string };
+    }>;
+  }>(bundle, "architecture.json", (architecture) => {
+    const constraint = architecture.constraints[0];
+    if (constraint === undefined) return;
+    constraint.observable = {
+      factSource: "filesystem",
+      selector,
+      predicate: "regular-file-exists",
+      expected: "true",
+    };
+    constraint.enforcement.adapterCapability = "filesystem-artifact-presence";
   });
 }
 
@@ -342,11 +376,213 @@ describe("advanceBundle", () => {
     expect(await readFile(manifestPath)).toEqual(before);
   });
 
+  it("atomically advances S12 to S13 from a pinned full-verification record", async () => {
+    const bundle = await copyFixture();
+    const recordPath = "verification-record.json";
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const architecturePath = join(bundle, "architecture.json");
+    const architectureBefore = await readFile(architecturePath);
+
+    const verification = await verifyBundle(bundle, typescriptTargetDirectory, {
+      sourceMappingPath: "sah.source-map.json",
+      verificationRecordPath: recordPath,
+    });
+    const recordBefore = await readFile(join(bundle, recordPath));
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(verification.status).toBe("passed");
+    expect(advancement.status).toBe("advanced");
+    expect(advancement.bundle?.completedStage).toBe("S13");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      lifecycle: { completedStage: Stage };
+      verificationRecord: { path: string; schemaId: string; sha256: string };
+    };
+    expect(manifest.lifecycle.completedStage).toBe("S13");
+    expect(manifest.verificationRecord).toEqual({
+      path: recordPath,
+      schemaId: "https://sah.dev/schemas/verification-record/v0.1.0",
+      sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+    expect(await readFile(join(bundle, recordPath))).toEqual(recordBefore);
+    expect(await readFile(architecturePath)).toEqual(architectureBefore);
+    expect((await validateBundle(bundle)).status).toBe("passed");
+  });
+
+  it.each([
+    ["affected", ["src/equipment-operations/save-equipment.ts"]],
+    ["full-fallback", ["src/equipment-store.ts"]],
+  ] as const)(
+    "blocks S13 for %s changed-scoped verification even when checks pass",
+    async (selectionMode, changedPaths) => {
+      const bundle = await copyFixture();
+      const manifestPath = join(bundle, "sah.bundle.json");
+      const before = await readFile(manifestPath);
+      const recordPath = `${selectionMode}-record.json`;
+
+      const verification = await verifyBundle(
+        bundle,
+        typescriptTargetDirectory,
+        {
+          sourceMappingPath: "sah.source-map.json",
+          changedPaths,
+          verificationRecordPath: recordPath,
+        },
+      );
+      const advancement = await advanceBundle(bundle, "S13", {
+        verificationRecordPath: recordPath,
+      });
+
+      expect(verification.status).toBe("passed");
+      expect(verification.selection?.mode).toBe(selectionMode);
+      expect(advancement.status).toBe("blocked");
+      expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+        "STAGE_S13_FULL_VERIFICATION_REQUIRED",
+      );
+      expect(await readFile(manifestPath)).toEqual(before);
+    },
+  );
+
+  it("blocks S13 for an incomplete full-verification record", async () => {
+    const bundle = await copyFixture();
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+    const recordPath = "incomplete-record.json";
+
+    const verification = await verifyBundle(
+      bundle,
+      verificationTargetDirectory,
+      { verificationRecordPath: recordPath },
+    );
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(verification.status).toBe("incomplete");
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S13_VERIFICATION_NOT_PASSED",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
+  it("blocks S13 for a violating full-verification record", async () => {
+    const bundle = await copyFixture();
+    await setFilesystemConstraint(bundle, "checks/missing.txt");
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+    const recordPath = "violations-record.json";
+
+    const verification = await verifyBundle(
+      bundle,
+      verificationTargetDirectory,
+      { verificationRecordPath: recordPath },
+    );
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(verification.status).toBe("violations");
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S13_VERIFICATION_NOT_PASSED",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
+  it("blocks S13 for a recorded operational-error result", async () => {
+    const bundle = await copyFixture();
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+    const recordPath = "operational-record.json";
+
+    const verification = await verifyBundle(
+      bundle,
+      join(verificationTargetDirectory, "missing"),
+      { verificationRecordPath: recordPath },
+    );
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(verification.status).toBe("operational-error");
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S13_VERIFICATION_NOT_PASSED",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
+  it("blocks S13 when the semantic design changed after recording", async () => {
+    const bundle = await copyFixture();
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const recordPath = "stale-record.json";
+    const verification = await verifyBundle(bundle, typescriptTargetDirectory, {
+      sourceMappingPath: "sah.source-map.json",
+      verificationRecordPath: recordPath,
+    });
+    await mutateJson<{ constraints: Array<{ statement: string }> }>(
+      bundle,
+      "architecture.json",
+      (architecture) => {
+        const constraint = architecture.constraints[0];
+        if (constraint !== undefined)
+          constraint.statement = "Equipment operations retain write authority";
+      },
+    );
+    const before = await readFile(manifestPath);
+
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(verification.status).toBe("passed");
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S13_VERIFICATION_RECORD_STALE",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
+  it("blocks a forged passed record that still contains an operational error", async () => {
+    const bundle = await copyFixture();
+    const recordPath = "inconsistent-record.json";
+    await verifyBundle(bundle, typescriptTargetDirectory, {
+      sourceMappingPath: "sah.source-map.json",
+      verificationRecordPath: recordPath,
+    });
+    await mutateJson<{
+      result: {
+        diagnostics: Array<Record<string, unknown>>;
+        summary: { errors: number };
+      };
+    }>(bundle, recordPath, (record) => {
+      record.result.diagnostics.push({
+        code: "FORGED_OPERATION_FAILURE",
+        category: "operational",
+        capability: "test mutation",
+        severity: "error",
+        message: "Injected operation failure",
+      });
+      record.result.summary.errors = 1;
+    });
+
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S13_VERIFICATION_STATUS_INCONSISTENT",
+    );
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S12", "S13", "ADVANCE_STAGE_UNSUPPORTED"],
+    ["S12", "S13", "ADVANCE_VERIFICATION_RECORD_REQUIRED"],
   ] as const)(
     "rejects the %s to %s transition with %s",
     async (current, target, code) => {
@@ -420,6 +656,64 @@ describe("advanceBundle", () => {
     expect(
       (await readdir(bundle)).filter((name) => name.endsWith(".tmp")),
     ).toEqual([]);
+  });
+
+  it("detects changed verification evidence before the manifest commit point", async () => {
+    const bundle = await copyFixture();
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const recordPath = join(bundle, "verification-record.json");
+    const manifestBefore = await readFile(manifestPath);
+    await writeFile(recordPath, '{"status":"passed"}\n');
+    const expectedRecord = await readFile(recordPath);
+    await writeFile(recordPath, '{"status":"violations"}\n');
+
+    const replacement = await replaceManifestAtomically({
+      manifestPath,
+      expectedSource: manifestBefore,
+      manifest: { lifecycle: { completedStage: "S13" } },
+      mode: (await lstat(manifestPath)).mode,
+      expectedCompanions: [
+        {
+          path: recordPath,
+          artifactPath: "verification-record.json",
+          source: expectedRecord,
+        },
+      ],
+    });
+
+    expect(replacement).toEqual(
+      expect.objectContaining({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: "VERIFICATION_RECORD_CHANGED_DURING_ADVANCE",
+        }),
+      }),
+    );
+    expect(await readFile(manifestPath)).toEqual(manifestBefore);
+    expect(
+      (await readdir(bundle)).filter((name) => name.endsWith(".tmp")),
+    ).toEqual([]);
+  });
+
+  it("rejects a pinned record whose bytes change after S13 advancement", async () => {
+    const bundle = await copyFixture();
+    const recordPath = "verification-record.json";
+    await verifyBundle(bundle, typescriptTargetDirectory, {
+      sourceMappingPath: "sah.source-map.json",
+      verificationRecordPath: recordPath,
+    });
+    const advancement = await advanceBundle(bundle, "S13", {
+      verificationRecordPath: recordPath,
+    });
+    await writeFile(join(bundle, recordPath), "{}\n");
+
+    const validation = await validateBundle(bundle);
+
+    expect(advancement.status).toBe("advanced");
+    expect(validation.status).toBe("operational-error");
+    expect(validation.diagnostics.map(({ code }) => code)).toContain(
+      "VERIFICATION_RECORD_DIGEST_MISMATCH",
+    );
   });
 
   it("keeps validateBundle read-only and governed by the stored stage", async () => {

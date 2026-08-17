@@ -1,6 +1,6 @@
 # ADR-0010: Start S13 with filesystem artifact presence
 
-Status: Accepted · Date: 2026-08-17 · Supersedes: —
+Status: Accepted; lifecycle completion extended by ADR-0014 · Date: 2026-08-17 · Supersedes: —
 
 ## Context
 
@@ -37,7 +37,8 @@ capabilities are unsupported; unsafe or unreadable execution roots are operation
 Expose the target directory as an explicit `verifyBundle` argument and CLI positional. Do not
 change the manifest or semantic schemas. Verify constraints assigned by the S12 handoff:
 ready-slice deterministic constraints may run; blocked-only or contextual constraints remain
-pending. Keep S13 lifecycle advancement unsupported.
+pending. This slice keeps S13 lifecycle advancement unsupported; ADR-0014 later adds the full
+record completion gate without changing this adapter contract.
 
 Each check is `pass`, `violation`, `pending`, or `unsupported`; the overall result is `passed`,
 `violations`, `incomplete`, or `operational-error`. A known violation takes precedence over

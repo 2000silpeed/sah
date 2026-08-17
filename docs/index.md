@@ -87,6 +87,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
+- [Verification record](../schemas/verification-record.schema.json), [result](../schemas/verification-result.schema.json),
+  [check](../schemas/verification-check.schema.json), and [diagnostic](../schemas/verification-diagnostic.schema.json)
+  — validate the complete runtime evidence envelope used by the S13 completion gate.
 
 ## Runtime implementation and executable fixture
 
@@ -102,6 +105,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   validation sequencing, stage transition, verification dispatch, and result separation.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
+- [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,
+  confined atomic publication, record loading, and deterministic S13 evidence checks.
 - [Internal model view](../src/internal-model.ts) — gives strict private shapes to already
   schema-validated artifacts without becoming another serialized contract.
 - [Schema validation](../src/schema-validation.ts) — privately adapts Ajv Draft 2020-12 errors

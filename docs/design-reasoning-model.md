@@ -155,8 +155,10 @@ uses an explicit project to resolve named path aliases and static named/star re-
 keeping unresolved project/source forms incomplete. Explicit changed paths may select assigned
 slice constraints, but mapping gaps expand to full verification and selected adapters retain
 complete evidence. Pending contextual reviews and unsupported adapters keep verification
-incomplete, and the manifest cannot advance to S13 until the full completion gate and exception
-dispositions are implemented.
+incomplete. The executable completion gate accepts only a schema-validated full-verification
+record whose checks all pass, S12 assignment traces are complete, and design fingerprint is
+current. Changed-scoped evidence—including full fallback—cannot complete S13. Assisted or
+judgment constraints therefore remain blockers until their disposition contract is implemented.
 
 ## Short path
 

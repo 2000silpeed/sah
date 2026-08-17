@@ -124,15 +124,17 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
+npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
+npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 ```
 
-The installed package exposes `sah validate <design-bundle-directory> [--json]` and the
-mutating `sah advance <design-bundle-directory> <target-stage> [--json]`, plus read-only
-`sah verify <design-bundle-directory> <target-directory> [--mapping
-<target-relative-mapping-file>] [--json]`. Run `advance` only on the intended working bundle or
-a disposable copy. Public library entry points are `validateBundle`, `advanceBundle`, and
-`verifyBundle`; [validation CLI usage](docs/validation-cli.md) owns their result, transition,
-fact-capability, mapping, atomicity, and exit-code contracts.
+The installed package exposes `sah validate`, mutating `sah advance`, and normally read-only
+`sah verify`; opt-in `verify --record <bundle-relative-record>` atomically publishes a result
+without changing lifecycle. S12→S13 `advance --verification-record <bundle-relative-record>`
+atomically pins eligible full evidence and the new stage. Run mutating forms only on the
+intended working bundle or a disposable copy. Public library entry points remain
+`validateBundle`, `advanceBundle`, and `verifyBundle`; [validation CLI usage](docs/validation-cli.md)
+owns their result, transition, record, mapping, atomicity, and exit-code contracts.
 TypeScript mapping v0.2 names a confined project configuration explicitly; verification does
 not discover ambient `tsconfig.json` files or let project globs narrow declared source roots.
 Repeat `--changed` only for explicit change-scoped verification; SAH never discovers git state,

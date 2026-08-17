@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
+  "$id": "https://sah.dev/schemas/design-bundle-manifest/v0.4.0",
   "title": "SAH Design Bundle Manifest",
   "type": "object",
   "additionalProperties": false,
@@ -13,14 +13,14 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
+      "const": "https://sah.dev/schemas/design-bundle-manifest/v0.4.0",
       "x-sah-trace": {
         "writtenBy": ["bundle-author"],
         "readBy": ["model-repository"]
       }
     },
     "manifestVersion": {
-      "const": "0.3.0",
+      "const": "0.4.0",
       "x-sah-trace": {
         "writtenBy": ["bundle-author"],
         "readBy": ["model-repository"]
@@ -45,6 +45,13 @@
       "x-sah-trace": {
         "writtenBy": ["bundle-author"],
         "readBy": ["model-repository", "reference-validator"]
+      }
+    },
+    "verificationRecord": {
+      "$ref": "#/$defs/verificationRecordDescriptor",
+      "x-sah-trace": {
+        "writtenBy": ["reasoning-orchestrator"],
+        "readBy": ["model-repository", "S13-stage-gate-validator"]
       }
     }
   },
@@ -116,6 +123,37 @@
           "x-sah-trace": {
             "writtenBy": ["bundle-author"],
             "readBy": ["schema-validator", "model-repository"]
+          }
+        }
+      }
+    },
+    "verificationRecordDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "schemaId", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.json$",
+          "x-sah-trace": {
+            "writtenBy": ["reasoning-orchestrator"],
+            "readBy": ["model-repository", "S13-stage-gate-validator"]
+          }
+        },
+        "schemaId": {
+          "const": "https://sah.dev/schemas/verification-record/v0.1.0",
+          "x-sah-trace": {
+            "writtenBy": ["reasoning-orchestrator"],
+            "readBy": ["schema-validator", "S13-stage-gate-validator"]
+          }
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["reasoning-orchestrator"],
+            "readBy": ["model-repository", "S13-stage-gate-validator"]
           }
         }
       }
@@ -249,11 +287,11 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
-      "manifestVersion": "0.3.0",
+      "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.4.0",
+      "manifestVersion": "0.4.0",
       "bundleId": "catalog-admin",
       "lifecycle": {
-        "completedStage": "S11",
+        "completedStage": "S13",
         "profile": "short"
       },
       "artifacts": {
@@ -285,6 +323,11 @@
           "path": "implementation-handoff.json",
           "schemaId": "https://sah.dev/schemas/implementation-handoff/v0.1.0"
         }
+      },
+      "verificationRecord": {
+        "path": "verification-record.json",
+        "schemaId": "https://sah.dev/schemas/verification-record/v0.1.0",
+        "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       }
     }
   ]

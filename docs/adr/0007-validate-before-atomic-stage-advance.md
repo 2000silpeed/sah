@@ -46,3 +46,6 @@ value except `completedStage`, plus the original file mode.
 `advanceBundle` owns the proposed lifecycle and returns blocked versus operational results.
 Reconsider when reasoning orchestration needs multi-file atomic updates or concurrent writers
 make the remaining race observable.
+
+ADR-0014 extends this decision for S13: the same manifest commit also pins one already-published
+verification record and compares its loaded bytes immediately before the rename.

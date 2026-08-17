@@ -1,5 +1,6 @@
 export type {
   AdvancedBundle,
+  AdvanceOptions,
   AdvanceResult,
   AdvanceStatus,
   DiagnosticCategory,
@@ -16,6 +17,7 @@ export type {
   VerificationCheck,
   VerificationCheckStatus,
   VerificationOptions,
+  VerificationRecord,
   VerificationResult,
   VerificationSelection,
   VerificationSelectionIssue,
@@ -23,6 +25,7 @@ export type {
   VerificationStatus,
   VerificationSummary,
 } from "./contracts.js";
+export { verificationRecordSchemaId } from "./contracts.js";
 export {
   advanceBundle,
   validateBundle,

@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/verification-diagnostic/v0.1.0",
+  "title": "SAH Verification Diagnostic",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "category", "capability", "severity", "message"],
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "category": {
+      "enum": ["validation", "operational"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "severity": {
+      "enum": ["error", "warning"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["S13-stage-gate-validator", "verification-reporter"]
+      }
+    },
+    "classification": {
+      "enum": ["deterministic", "assisted", "judgment"],
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "artifactPath": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "jsonPointer": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "sourceLocation": {
+      "$ref": "#/$defs/sourceLocation",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "reference": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "expected": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "repair": {
+      "type": "string",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    },
+    "owningStage": {
+      "$ref": "#/$defs/stage",
+      "x-sah-trace": {
+        "writtenBy": ["verification-runtime"],
+        "readBy": ["verification-reporter"]
+      }
+    }
+  },
+  "$defs": {
+    "stage": {
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "S9",
+        "S10",
+        "S11",
+        "S12",
+        "S13"
+      ]
+    },
+    "sourceLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column", "offset"],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["verification-runtime"],
+            "readBy": ["verification-reporter"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "code": "SOURCE_MAPPING_UNREADABLE",
+      "category": "operational",
+      "capability": "dependency-and-write analysis",
+      "severity": "error",
+      "artifactPath": "sah.source-map.json",
+      "message": "The source mapping could not be read.",
+      "expected": "a readable schema-valid source mapping",
+      "repair": "Restore the mapping and rerun verification."
+    }
+  ]
+}

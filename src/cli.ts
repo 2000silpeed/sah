@@ -22,8 +22,8 @@ import {
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
-  "       sah advance <design-bundle-directory> <target-stage> [--json]",
-  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--json]",
+  "       sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]",
+  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
 ].join("\n");
 
 type ParsedArguments = {
@@ -31,6 +31,8 @@ type ParsedArguments = {
   json: boolean;
   sourceMappingPath?: string;
   changedPaths?: string[];
+  recordPath?: string;
+  verificationRecordPath?: string;
   error?: string;
 };
 
@@ -38,6 +40,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   const positional: string[] = [];
   let json = false;
   let sourceMappingPath: string | undefined;
+  let recordPath: string | undefined;
+  let verificationRecordPath: string | undefined;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -80,6 +84,29 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       index += 1;
       continue;
     }
+    if (argument === "--record" || argument === "--verification-record") {
+      const current =
+        argument === "--record" ? recordPath : verificationRecordPath;
+      if (current !== undefined) {
+        return {
+          positional,
+          json,
+          error: `${argument} may be supplied only once.`,
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: `${argument} requires one bundle-relative JSON path.`,
+        };
+      }
+      if (argument === "--record") recordPath = value;
+      else verificationRecordPath = value;
+      index += 1;
+      continue;
+    }
     if (argument !== undefined) positional.push(argument);
   }
   return {
@@ -87,6 +114,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     json,
     ...(sourceMappingPath === undefined ? {} : { sourceMappingPath }),
     ...(changedPaths.length === 0 ? {} : { changedPaths }),
+    ...(recordPath === undefined ? {} : { recordPath }),
+    ...(verificationRecordPath === undefined ? {} : { verificationRecordPath }),
   };
 }
 
@@ -282,7 +311,9 @@ async function main(arguments_: string[]): Promise<number> {
     positional.length === 2 &&
     positional[0] === "validate" &&
     parsed.sourceMappingPath === undefined &&
-    parsed.changedPaths === undefined
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
   ) {
     const validation = await validateBundle(positional[1] ?? "");
     process.stdout.write(
@@ -295,7 +326,8 @@ async function main(arguments_: string[]): Promise<number> {
     positional.length === 3 &&
     positional[0] === "advance" &&
     parsed.sourceMappingPath === undefined &&
-    parsed.changedPaths === undefined
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined
   ) {
     if (!isStage(positional[2])) {
       const invalid = invocationError(
@@ -306,14 +338,22 @@ async function main(arguments_: string[]): Promise<number> {
       );
       return 2;
     }
-    const advance = await advanceBundle(positional[1] ?? "", positional[2]);
+    const advance = await advanceBundle(positional[1] ?? "", positional[2], {
+      ...(parsed.verificationRecordPath === undefined
+        ? {}
+        : { verificationRecordPath: parsed.verificationRecordPath }),
+    });
     process.stdout.write(
       `${json ? JSON.stringify(advance, null, 2) : formatAdvanceHuman(advance)}\n`,
     );
     return exitCode(advance);
   }
 
-  if (positional.length === 3 && positional[0] === "verify") {
+  if (
+    positional.length === 3 &&
+    positional[0] === "verify" &&
+    parsed.verificationRecordPath === undefined
+  ) {
     const options: VerificationOptions = {
       ...(parsed.sourceMappingPath === undefined
         ? {}
@@ -321,6 +361,9 @@ async function main(arguments_: string[]): Promise<number> {
       ...(parsed.changedPaths === undefined
         ? {}
         : { changedPaths: parsed.changedPaths }),
+      ...(parsed.recordPath === undefined
+        ? {}
+        : { verificationRecordPath: parsed.recordPath }),
     };
     const verification = await verifyBundle(
       positional[1] ?? "",

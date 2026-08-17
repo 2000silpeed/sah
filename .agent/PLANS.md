@@ -60,11 +60,11 @@ exercise traces `equipment-owns-writes` through decision `choose-equipment-modul
 | Phase | Milestone                                              | Status      | Evidence |
 | ----- | ------------------------------------------------------ | ----------- | -------- |
 | 0     | Frame evidence ownership and atomic completion contract | complete    | ADR-0014 |
-| 1     | Add record and manifest schemas plus persistence      | in_progress | pending |
-| 2     | Implement S13 record gate and atomic advance          | pending     | pending |
-| 3     | Add library/CLI and adversarial mutations             | pending     | pending |
-| 4     | Update authority documentation and operating commands | pending     | pending |
-| 5     | Run full verification, diff review, and commits       | pending     | pending |
+| 1     | Add record and manifest schemas plus persistence      | complete    | schema/trace tests |
+| 2     | Implement S13 record gate and atomic advance          | complete    | focused gate tests |
+| 3     | Add library/CLI and adversarial mutations             | complete    | 88 focused tests |
+| 4     | Update authority documentation and operating commands | complete    | authority docs and CLI usage |
+| 5     | Run full verification, diff review, and commits       | in_progress | pending |
 
 ### Decision log
 
@@ -85,12 +85,25 @@ exercise traces `equipment-owns-writes` through decision `choose-equipment-modul
 - 2026-08-18: Updating only `completedStage` would leave no durable evidence locator. Adding the
   record descriptor and stage in one manifest replacement preserves manifest authority without
   a multi-file transaction.
+- 2026-08-18: A monolithic result schema exceeded the repository line budget. Split the exact
+  public envelope into record, result, check, and diagnostic schemas; the record remains the
+  sole lifecycle evidence artifact and the split introduces no storage abstraction.
+- 2026-08-18: Typed lint rejected both a control-character regex and string spreading in the
+  path guard. An indexed UTF-16 code-unit scan now expresses the ASCII control predicate
+  without suppressing either rule.
 
 ### Verification log
 
 - 2026-08-18: Re-read `AGENTS.md`, `docs/index.md`, the Run 10 handoff, lifecycle/verification
   authorities, schemas, repository/adapter/atomic seams, fixtures, and focused tests. Initial
   status was clean `main` at `56c4cab`.
+- 2026-08-18: The first record-schema run exposed one trace omission and two strict-Ajv
+  composition errors; all were repaired before runtime work, and 13 schemas/examples now
+  compile with complete traces.
+- 2026-08-18: After repairing two lint findings, formatting, lint, strict typecheck, and 106/106
+  focused schema, manifest-migration, verification, advancement, and CLI tests passed. Mutations
+  cover full success, both changed modes, incomplete, violation, operational-error, stale
+  design, inconsistent status, byte tampering, and atomic pre-commit evidence conflict.
 
 ### Handoff
 
