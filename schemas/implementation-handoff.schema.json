@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/implementation-handoff/v0.1.0",
+  "title": "SAH Implementation Handoff IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "modelId",
+    "architectureRef",
+    "decisionLogRef",
+    "slices"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["S12"],
+        "readBy": ["schema-validator", "S13"]
+      }
+    },
+    "modelId": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["S12"],
+        "readBy": ["reference-validator", "S13"]
+      }
+    },
+    "architectureRef": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["S12"],
+        "readBy": ["reference-validator", "coding-agent"]
+      }
+    },
+    "decisionLogRef": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["S12"],
+        "readBy": ["reference-validator", "coding-agent"]
+      }
+    },
+    "slices": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/slice" },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["S12"],
+        "readBy": ["stage-gate-validator", "coding-agent", "S13"]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "acceptanceCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check", "expected"],
+      "properties": {
+        "check": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        },
+        "expected": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        }
+      }
+    },
+    "slice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "outcome",
+        "status",
+        "elementRefs",
+        "constraintRefs",
+        "decisionRefs",
+        "blockedByDecisionRefs",
+        "dependsOnSliceRefs",
+        "acceptanceChecks",
+        "migration",
+        "rollback"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["reference-validator", "coding-agent", "S13"]
+          }
+        },
+        "outcome": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        },
+        "status": {
+          "enum": ["ready", "blocked"],
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["stage-gate-validator", "coding-agent", "S13"]
+          }
+        },
+        "elementRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": [
+              "reference-validator",
+              "stage-gate-validator",
+              "coding-agent"
+            ]
+          }
+        },
+        "constraintRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": [
+              "reference-validator",
+              "stage-gate-validator",
+              "coding-agent",
+              "S13"
+            ]
+          }
+        },
+        "decisionRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": [
+              "reference-validator",
+              "stage-gate-validator",
+              "coding-agent"
+            ]
+          }
+        },
+        "blockedByDecisionRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": [
+              "reference-validator",
+              "stage-gate-validator",
+              "coding-agent"
+            ]
+          }
+        },
+        "dependsOnSliceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": [
+              "reference-validator",
+              "stage-gate-validator",
+              "coding-agent"
+            ]
+          }
+        },
+        "acceptanceChecks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/acceptanceCheck" },
+          "minItems": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        },
+        "migration": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        },
+        "rollback": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S12"],
+            "readBy": ["coding-agent", "S13"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": "0.1.0",
+      "modelId": "catalog-admin-handoff",
+      "architectureRef": "catalog-admin-architecture",
+      "decisionLogRef": "catalog-admin-decisions",
+      "slices": [
+        {
+          "id": "implement-catalog-operations",
+          "outcome": "Catalog writes and reads use the selected operations boundary",
+          "status": "ready",
+          "elementRefs": ["catalog-operations"],
+          "constraintRefs": ["catalog-owns-writes"],
+          "decisionRefs": ["choose-modular-operations"],
+          "blockedByDecisionRefs": [],
+          "dependsOnSliceRefs": [],
+          "acceptanceChecks": [
+            {
+              "check": "Run catalog operation integration tests",
+              "expected": "Valid writes persist and invalid writes leave no partial state"
+            }
+          ],
+          "migration": "No data migration is required",
+          "rollback": "Revert the operations module change"
+        }
+      ]
+    }
+  ]
+}

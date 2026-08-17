@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/design-bundle-manifest/v0.2.0",
+  "$id": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
   "title": "SAH Design Bundle Manifest",
   "type": "object",
   "additionalProperties": false,
@@ -13,14 +13,14 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/design-bundle-manifest/v0.2.0",
+      "const": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
       "x-sah-trace": {
         "writtenBy": ["bundle-author"],
         "readBy": ["model-repository"]
       }
     },
     "manifestVersion": {
-      "const": "0.2.0",
+      "const": "0.3.0",
       "x-sah-trace": {
         "writtenBy": ["bundle-author"],
         "readBy": ["model-repository"]
@@ -110,7 +110,8 @@
             "https://sah.dev/schemas/responsibility/v0.1.0",
             "https://sah.dev/schemas/invariant/v0.1.0",
             "https://sah.dev/schemas/architecture/v0.2.0",
-            "https://sah.dev/schemas/architecture-decision/v0.1.0"
+            "https://sah.dev/schemas/architecture-decision/v0.1.0",
+            "https://sah.dev/schemas/implementation-handoff/v0.1.0"
           ],
           "x-sah-trace": {
             "writtenBy": ["bundle-author"],
@@ -225,14 +226,31 @@
             "writtenBy": ["bundle-author"],
             "readBy": ["model-repository", "reference-validator"]
           }
+        },
+        "implementationHandoff": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/implementation-handoff/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
         }
       }
     }
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.2.0",
-      "manifestVersion": "0.2.0",
+      "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
+      "manifestVersion": "0.3.0",
       "bundleId": "catalog-admin",
       "lifecycle": {
         "completedStage": "S11",
@@ -262,6 +280,10 @@
         "architectureDecision": {
           "path": "architecture-decision.json",
           "schemaId": "https://sah.dev/schemas/architecture-decision/v0.1.0"
+        },
+        "implementationHandoff": {
+          "path": "implementation-handoff.json",
+          "schemaId": "https://sah.dev/schemas/implementation-handoff/v0.1.0"
         }
       }
     }

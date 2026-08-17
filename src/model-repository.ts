@@ -20,6 +20,7 @@ import {
   type BundleManifest,
   type DesignStrategy,
   type InvariantModel,
+  type ImplementationHandoffModel,
   type LoadedArtifact,
   type LoadedModels,
   type ResponsibilityModel,
@@ -37,7 +38,7 @@ import {
 
 const manifestName = "sah.bundle.json";
 const manifestSchemaId =
-  "https://sah.dev/schemas/design-bundle-manifest/v0.2.0";
+  "https://sah.dev/schemas/design-bundle-manifest/v0.3.0";
 
 type JsonReadResult =
   | { ok: true; data: unknown; source: Uint8Array }
@@ -271,6 +272,10 @@ function toModels(artifacts: LoadedArtifact[]): LoadedModels {
       case "architectureDecision":
         models.architectureDecision =
           artifact.data as ArchitectureDecisionModel;
+        break;
+      case "implementationHandoff":
+        models.implementationHandoff =
+          artifact.data as ImplementationHandoffModel;
         break;
     }
   }
@@ -534,6 +539,7 @@ const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([
   "S9",
   "S10",
   "S11",
+  "S12",
 ]);
 
 function transitionDiagnostic(input: {

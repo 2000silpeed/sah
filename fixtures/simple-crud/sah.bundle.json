@@ -1,6 +1,6 @@
 {
-  "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.2.0",
-  "manifestVersion": "0.2.0",
+  "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.3.0",
+  "manifestVersion": "0.3.0",
   "bundleId": "equipment-register",
   "lifecycle": {
     "completedStage": "S11",
@@ -30,6 +30,10 @@
     "architectureDecision": {
       "path": "architecture-decision.json",
       "schemaId": "https://sah.dev/schemas/architecture-decision/v0.1.0"
+    },
+    "implementationHandoff": {
+      "path": "implementation-handoff.json",
+      "schemaId": "https://sah.dev/schemas/implementation-handoff/v0.1.0"
     }
   }
 }

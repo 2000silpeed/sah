@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-handoff",
+  "architectureRef": "equipment-register-architecture",
+  "decisionLogRef": "equipment-register-decisions",
+  "slices": [
+    {
+      "id": "implement-equipment-operations",
+      "outcome": "Equipment writes, queries, exports, and audit coordination use the selected module boundary",
+      "status": "ready",
+      "elementRefs": ["equipment-operations"],
+      "constraintRefs": ["equipment-owns-writes"],
+      "decisionRefs": ["choose-equipment-module"],
+      "blockedByDecisionRefs": [],
+      "dependsOnSliceRefs": [],
+      "acceptanceChecks": [
+        {
+          "check": "Run equipment operation integration tests",
+          "expected": "Valid changes commit with audit entries and invalid changes leave no partial state"
+        }
+      ],
+      "migration": "No data migration is required for the new module boundary",
+      "rollback": "Revert the module wiring while preserving the existing equipment records"
+    }
+  ]
+}

@@ -206,13 +206,13 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 
 ### Milestones
 
-| Phase | Milestone                                                | Status      | Evidence         |
-| ----- | -------------------------------------------------------- | ----------- | ---------------- |
-| 0     | Frame canonical S12 representation and predicates        | in_progress | ADR-0009 drafted |
-| 1     | Add schema, manifest migration, types, and references    | pending     | —                |
-| 2     | Implement S12 gates, advance, fixture, and focused tests | pending     | —                |
-| 3     | Update authority documentation                           | pending     | —                |
-| 4     | Run full verification and adversarial review             | pending     | —                |
+| Phase | Milestone                                                | Status      | Evidence               |
+| ----- | -------------------------------------------------------- | ----------- | ---------------------- |
+| 0     | Frame canonical S12 representation and predicates        | complete    | `e12b046`; ADR-0009    |
+| 1     | Add schema, manifest migration, types, and references    | complete    | v0.3/v0.1 schemas pass |
+| 2     | Implement S12 gates, advance, fixture, and focused tests | complete    | 110 tests pass         |
+| 3     | Update authority documentation                           | in_progress | —                      |
+| 4     | Run full verification and adversarial review             | pending     | —                      |
 
 ### Decision log
 
@@ -236,14 +236,22 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 - 2026-08-17: Architecture and Decision IR already serialize selected-element, constraint,
   accepted-decision, and proposed-decision applicability inputs. Only slice ownership,
   dependency, verification, migration, rollback, and blocker assignment are absent.
+- 2026-08-17: S10's assisted isolation warning must stop at S11. At S12 the handoff makes
+  affected-slice blocker coverage observable, so missing coverage is a deterministic error.
+- 2026-08-17: The first full test run had only the two expected obsolete S12-unsupported
+  assertions fail; after replacing those contracts and adding focused mutations, 110 tests
+  pass across seven files.
 
 ### Verification log
 
 - 2026-08-17: Re-read `AGENTS.md`, Run 5 handoff, index, S12 reasoning authority, IR ownership,
   validation classifications, ADR-0003/0006/0007, schemas, fixture, runtime seams, and tests.
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+- 2026-08-17: Manifest v0.3, Implementation Handoff v0.1, all embedded examples, and every
+  schema property trace pass Draft 2020-12 validation. Format, lint, strict typecheck, and
+  110/110 tests pass, including all handoff reference families and S11→S12 atomicity.
 
 ### Handoff
 
-Run 6 is active. Resume at Phase 0, commit the representation plan, then implement the v0.3
-manifest migration and S12 slice contract without extending into S13 code-fact execution.
+Run 6 is active. Resume at Phase 3: update affected authority documents and public commands,
+then run the complete verification loop without extending into S13 code-fact execution.

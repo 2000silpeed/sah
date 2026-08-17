@@ -183,6 +183,14 @@ function collectIds(models: LoadedModels): IdOccurrence[] {
       );
     });
   }
+
+  const handoff = models.implementationHandoff;
+  if (handoff !== undefined) {
+    add("implementationHandoff", handoff.modelId, "/modelId");
+    handoff.slices.forEach(({ id }, index) =>
+      add("implementationHandoff", id, `/slices/${index}/id`),
+    );
+  }
   return ids;
 }
 
@@ -221,6 +229,7 @@ export function validateReferences(
   const invariants = models.invariant;
   const architecture = models.architecture;
   const decisionLog = models.architectureDecision;
+  const handoff = models.implementationHandoff;
 
   const occurrences = collectIds(models);
   const firstById = new Map<string, IdOccurrence>();
@@ -289,6 +298,7 @@ export function validateReferences(
       alternatives.map(({ strategy: alternative }) => alternative),
     ) ?? [],
   );
+  const sliceIds = new Set(handoff?.slices.map(({ id }) => id) ?? []);
 
   if (system !== undefined) {
     system.subsystems.forEach((subsystem, subsystemIndex) => {
@@ -1035,6 +1045,83 @@ export function validateReferences(
         constraintIds,
         "constraint",
         "S11",
+      );
+    });
+  }
+
+  if (handoff !== undefined) {
+    if (architecture !== undefined) {
+      checkRootReference(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        "/architectureRef",
+        handoff.architectureRef,
+        architecture.modelId,
+        "S12",
+      );
+    }
+    if (decisionLog !== undefined) {
+      checkRootReference(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        "/decisionLogRef",
+        handoff.decisionLogRef,
+        decisionLog.logId,
+        "S12",
+      );
+    }
+    handoff.slices.forEach((slice, sliceIndex) => {
+      checkReferences(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        `/slices/${sliceIndex}/elementRefs`,
+        slice.elementRefs,
+        elementIds,
+        "architecture element",
+        "S12",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        `/slices/${sliceIndex}/constraintRefs`,
+        slice.constraintRefs,
+        constraintIds,
+        "constraint",
+        "S12",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        `/slices/${sliceIndex}/decisionRefs`,
+        slice.decisionRefs,
+        decisionIds,
+        "decision",
+        "S12",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        `/slices/${sliceIndex}/blockedByDecisionRefs`,
+        slice.blockedByDecisionRefs,
+        decisionIds,
+        "decision",
+        "S12",
+      );
+      checkReferences(
+        diagnostics,
+        paths,
+        "implementationHandoff",
+        `/slices/${sliceIndex}/dependsOnSliceRefs`,
+        slice.dependsOnSliceRefs,
+        sliceIds,
+        "implementation slice",
+        "S12",
       );
     });
   }

@@ -20,6 +20,7 @@ const stageRequiredArtifacts: Array<{
   { stage: "S4", role: "invariant", producer: "S4" },
   { stage: "S6", role: "architecture", producer: "S6" },
   { stage: "S9", role: "architectureDecision", producer: "S9" },
+  { stage: "S12", role: "implementationHandoff", producer: "S12" },
 ];
 
 function atLeast(actual: Stage, threshold: Stage): boolean {
@@ -92,6 +93,7 @@ export function validateStageGates(
   const invariants = models.invariant;
   const architecture = models.architecture;
   const decisionLog = models.architectureDecision;
+  const handoff = models.implementationHandoff;
   const strategy = models.designStrategy;
 
   if (atLeast(completedStage, "S5")) {
@@ -569,7 +571,10 @@ export function validateStageGates(
             }),
           );
         }
-      } else if (decision.status === "proposed") {
+      } else if (
+        decision.status === "proposed" &&
+        !atLeast(completedStage, "S12")
+      ) {
         diagnostics.push(
           gateIssue({
             code: "STAGE_S10_PROPOSED_DECISION_REVIEW",
@@ -663,6 +668,320 @@ export function validateStageGates(
             repair:
               "Compile an enforcement entry in S11, even when it is assisted or judgment-only.",
             owningStage: "S11",
+          }),
+        );
+      }
+    });
+  }
+
+  if (
+    atLeast(completedStage, "S12") &&
+    architecture !== undefined &&
+    decisionLog !== undefined &&
+    handoff !== undefined
+  ) {
+    const selectedCandidate = architecture.candidates.find(
+      ({ status }) => status === "selected",
+    );
+    const decisionsById = new Map(
+      decisionLog.decisions.map((decision) => [decision.id, decision]),
+    );
+    const constraintsById = new Map(
+      architecture.constraints.map((constraint) => [constraint.id, constraint]),
+    );
+
+    if (selectedCandidate !== undefined) {
+      const selectedElementIds = new Set(selectedCandidate.elementRefs);
+      const coveredElementIds = new Set(
+        handoff.slices.flatMap(({ elementRefs }) =>
+          elementRefs.filter((elementRef) =>
+            selectedElementIds.has(elementRef),
+          ),
+        ),
+      );
+
+      selectedCandidate.elementRefs.forEach((elementRef) => {
+        if (!coveredElementIds.has(elementRef)) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_SELECTED_ELEMENT_NOT_COVERED",
+              capability: "Implementation slice coverage",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: "/slices",
+              reference: elementRef,
+              message: `Selected architecture element ${elementRef} is not assigned to an implementation slice.`,
+              expected:
+                "every element in the selected candidate to be covered by at least one slice",
+              repair:
+                "Assign the element to an S12 slice with its constraints, decisions, and verification.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+
+      handoff.slices.forEach((slice, sliceIndex) => {
+        slice.elementRefs.forEach((elementRef, elementIndex) => {
+          if (!selectedElementIds.has(elementRef)) {
+            diagnostics.push(
+              gateIssue({
+                code: "STAGE_S12_ELEMENT_NOT_SELECTED",
+                capability: "Implementation slice coverage",
+                artifactPath: paths.implementationHandoff,
+                jsonPointer: `/slices/${sliceIndex}/elementRefs/${elementIndex}`,
+                reference: elementRef,
+                message: `Slice ${slice.id} assigns element ${elementRef}, which is outside the selected candidate.`,
+                expected: "slice elements to belong to the selected candidate",
+                repair:
+                  "Remove the element from the slice or return to S8–S10 to select architecture containing it.",
+                owningStage: "S12",
+              }),
+            );
+          }
+        });
+      });
+
+      architecture.constraints.forEach((constraint) => {
+        const selectedScope = constraint.scopeElementRefs.filter((elementRef) =>
+          selectedElementIds.has(elementRef),
+        );
+        if (selectedScope.length === 0) return;
+        const covered = handoff.slices.some(
+          (slice) =>
+            slice.constraintRefs.includes(constraint.id) &&
+            slice.elementRefs.some((elementRef) =>
+              constraint.scopeElementRefs.includes(elementRef),
+            ),
+        );
+        if (!covered) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_CONSTRAINT_NOT_COVERED",
+              capability: "Implementation constraint assignment",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: "/slices",
+              reference: constraint.id,
+              message: `Applicable constraint ${constraint.id} is not assigned to a slice covering its selected scope.`,
+              expected:
+                "every constraint scoped to a selected element to be assigned to a covering slice",
+              repair:
+                "Add the constraint to a slice that implements one of its scoped selected elements.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+    }
+
+    handoff.slices.forEach((slice, sliceIndex) => {
+      const sliceElements = new Set(slice.elementRefs);
+
+      slice.constraintRefs.forEach((constraintRef, constraintIndex) => {
+        const constraint = constraintsById.get(constraintRef);
+        if (
+          constraint !== undefined &&
+          !constraint.scopeElementRefs.some((elementRef) =>
+            sliceElements.has(elementRef),
+          )
+        ) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_CONSTRAINT_SCOPE_MISMATCH",
+              capability: "Implementation constraint assignment",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/constraintRefs/${constraintIndex}`,
+              reference: constraintRef,
+              message: `Constraint ${constraintRef} does not apply to an element in slice ${slice.id}.`,
+              expected:
+                "an assigned constraint to share at least one scoped element with its slice",
+              repair:
+                "Move the constraint to a covering slice or add its selected scoped element to this slice.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+
+      slice.decisionRefs.forEach((decisionRef, decisionIndex) => {
+        const decision = decisionsById.get(decisionRef);
+        if (decision !== undefined && decision.status !== "accepted") {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_DECISION_NOT_ACCEPTED",
+              capability: "Implementation decision assignment",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/decisionRefs/${decisionIndex}`,
+              reference: decisionRef,
+              message: `Slice ${slice.id} treats ${decision.status} decision ${decisionRef} as accepted context.`,
+              expected: "decisionRefs to contain accepted decisions only",
+              repair:
+                "Move proposed uncertainty to blockedByDecisionRefs or remove a rejected decision.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+
+      slice.blockedByDecisionRefs.forEach((decisionRef, decisionIndex) => {
+        const decision = decisionsById.get(decisionRef);
+        if (decision !== undefined && decision.status !== "proposed") {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_BLOCKER_NOT_PROPOSED",
+              capability: "Proposed decision blocker coverage",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/blockedByDecisionRefs/${decisionIndex}`,
+              reference: decisionRef,
+              message: `Slice ${slice.id} uses ${decision.status} decision ${decisionRef} as a blocker.`,
+              expected:
+                "blockedByDecisionRefs to contain proposed decisions only",
+              repair:
+                "Remove the resolved decision or return it to proposed through S10 authority.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+
+      if (slice.status === "ready" && slice.blockedByDecisionRefs.length > 0) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S12_READY_HAS_BLOCKERS",
+            capability: "Implementation slice readiness",
+            artifactPath: paths.implementationHandoff,
+            jsonPointer: `/slices/${sliceIndex}/status`,
+            reference: slice.id,
+            message: `Ready slice ${slice.id} still names proposed-decision blockers.`,
+            expected: "a ready slice to have no decision blockers",
+            repair:
+              "Mark the slice blocked or resolve and remove every blocker.",
+            owningStage: "S12",
+          }),
+        );
+      }
+      if (
+        slice.status === "blocked" &&
+        slice.blockedByDecisionRefs.length === 0
+      ) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S12_BLOCKED_WITHOUT_BLOCKER",
+            capability: "Implementation slice readiness",
+            artifactPath: paths.implementationHandoff,
+            jsonPointer: `/slices/${sliceIndex}/blockedByDecisionRefs`,
+            reference: slice.id,
+            message: `Blocked slice ${slice.id} names no proposed decision blocker.`,
+            expected: "a blocked slice to name at least one proposed decision",
+            repair:
+              "Add the applicable proposed decision or mark the unblocked slice ready.",
+            owningStage: "S12",
+          }),
+        );
+      }
+
+      decisionLog.decisions.forEach((decision) => {
+        const affectsSlice = decision.affectedElementRefs.some((elementRef) =>
+          sliceElements.has(elementRef),
+        );
+        if (!affectsSlice) return;
+        if (
+          decision.status === "accepted" &&
+          !slice.decisionRefs.includes(decision.id)
+        ) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_ACCEPTED_DECISION_MISSING",
+              capability: "Implementation decision assignment",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/decisionRefs`,
+              reference: decision.id,
+              message: `Slice ${slice.id} omits accepted decision ${decision.id}, which affects its elements.`,
+              expected:
+                "every accepted decision affecting a slice element to be assigned to that slice",
+              repair: "Add the accepted decision to the slice context.",
+              owningStage: "S12",
+            }),
+          );
+        }
+        if (
+          decision.status === "proposed" &&
+          !slice.blockedByDecisionRefs.includes(decision.id)
+        ) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_PROPOSED_BLOCKER_MISSING",
+              capability: "Proposed decision blocker coverage",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/blockedByDecisionRefs`,
+              reference: decision.id,
+              message: `Slice ${slice.id} omits proposed decision ${decision.id}, which affects its elements.`,
+              expected:
+                "every proposed decision affecting a slice element to block that slice",
+              repair:
+                "Add the proposed decision as a blocker and mark the slice blocked.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+
+      slice.dependsOnSliceRefs.forEach((dependencyRef, dependencyIndex) => {
+        if (dependencyRef === slice.id) {
+          diagnostics.push(
+            gateIssue({
+              code: "STAGE_S12_DEPENDENCY_SELF_REFERENCE",
+              capability: "Implementation slice dependency order",
+              artifactPath: paths.implementationHandoff,
+              jsonPointer: `/slices/${sliceIndex}/dependsOnSliceRefs/${dependencyIndex}`,
+              reference: dependencyRef,
+              message: `Slice ${slice.id} depends on itself.`,
+              expected: "slice dependencies to reference another slice",
+              repair: "Remove the self-dependency.",
+              owningStage: "S12",
+            }),
+          );
+        }
+      });
+    });
+
+    const slicesById = new Map(
+      handoff.slices.map((slice) => [slice.id, slice]),
+    );
+    const visitState = new Map<string, "visiting" | "visited">();
+    const stack: string[] = [];
+    const cyclicSliceIds = new Set<string>();
+    const visit = (sliceId: string): void => {
+      if (visitState.get(sliceId) === "visited") return;
+      visitState.set(sliceId, "visiting");
+      stack.push(sliceId);
+      const slice = slicesById.get(sliceId);
+      slice?.dependsOnSliceRefs.forEach((dependencyRef) => {
+        if (dependencyRef === sliceId || !slicesById.has(dependencyRef)) return;
+        if (visitState.get(dependencyRef) === "visiting") {
+          const cycleStart = stack.indexOf(dependencyRef);
+          stack.slice(cycleStart).forEach((id) => cyclicSliceIds.add(id));
+        } else {
+          visit(dependencyRef);
+        }
+      });
+      stack.pop();
+      visitState.set(sliceId, "visited");
+    };
+    handoff.slices.forEach(({ id }) => visit(id));
+    handoff.slices.forEach((slice, sliceIndex) => {
+      if (cyclicSliceIds.has(slice.id)) {
+        diagnostics.push(
+          gateIssue({
+            code: "STAGE_S12_DEPENDENCY_CYCLE",
+            capability: "Implementation slice dependency order",
+            artifactPath: paths.implementationHandoff,
+            jsonPointer: `/slices/${sliceIndex}/dependsOnSliceRefs`,
+            reference: slice.id,
+            message: `Slice ${slice.id} participates in a dependency cycle.`,
+            expected: "an acyclic slice dependency graph",
+            repair:
+              "Remove or reverse a dependency to restore an executable order.",
+            owningStage: "S12",
           }),
         );
       }

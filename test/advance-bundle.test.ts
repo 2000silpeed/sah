@@ -297,11 +297,55 @@ describe("advanceBundle", () => {
     );
   });
 
+  it("advances S11 to S12 after validating the handoff and changes only the manifest", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S11");
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const handoffPath = join(bundle, "implementation-handoff.json");
+    const before = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      lifecycle: { completedStage: Stage };
+    };
+    const handoffBefore = await readFile(handoffPath);
+
+    const advancement = await advanceBundle(bundle, "S12");
+
+    expect(advancement.status).toBe("advanced");
+    expect(advancement.bundle?.completedStage).toBe("S12");
+    expect(JSON.parse(await readFile(manifestPath, "utf8"))).toEqual({
+      ...before,
+      lifecycle: { ...before.lifecycle, completedStage: "S12" },
+    });
+    expect(await readFile(handoffPath)).toEqual(handoffBefore);
+  });
+
+  it("blocks S11 to S12 without complete constraint coverage", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S11");
+    await mutateJson<{ slices: Array<{ constraintRefs: string[] }> }>(
+      bundle,
+      "implementation-handoff.json",
+      (handoff) => {
+        const slice = handoff.slices[0];
+        if (slice !== undefined) slice.constraintRefs = [];
+      },
+    );
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+
+    const advancement = await advanceBundle(bundle, "S12");
+
+    expect(advancement.status).toBe("blocked");
+    expect(advancement.bundle?.completedStage).toBe("S11");
+    expect(advancement.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S12_CONSTRAINT_NOT_COVERED",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S11", "S12", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "rejects the %s to %s transition with %s",
     async (current, target, code) => {

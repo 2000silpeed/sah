@@ -259,11 +259,60 @@ describe("sah advance CLI", () => {
     expect(await readFile(manifestPath)).toEqual(before);
   });
 
+  it("advances S11 to S12 through the production JSON CLI", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S11");
+
+    const execution = await runCli(["advance", bundle, "S12", "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      bundle: { previousStage: string; completedStage: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("advanced");
+    expect(output.bundle).toEqual(
+      expect.objectContaining({
+        previousStage: "S11",
+        completedStage: "S12",
+      }),
+    );
+  });
+
+  it("returns exit 1 for incomplete S12 handoff without changing the manifest", async () => {
+    const bundle = await copyFixture();
+    await setStage(bundle, "S11");
+    await mutateJson<{ slices: Array<{ decisionRefs: string[] }> }>(
+      bundle,
+      "implementation-handoff.json",
+      (handoff) => {
+        const slice = handoff.slices[0];
+        if (slice !== undefined) slice.decisionRefs = [];
+      },
+    );
+    const manifestPath = join(bundle, "sah.bundle.json");
+    const before = await readFile(manifestPath);
+
+    const execution = await runCli(["advance", bundle, "S12", "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      bundle: { completedStage: string };
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("blocked");
+    expect(output.bundle.completedStage).toBe("S11");
+    expect(output.diagnostics.map(({ code }) => code)).toContain(
+      "STAGE_S12_ACCEPTED_DECISION_MISSING",
+    );
+    expect(await readFile(manifestPath)).toEqual(before);
+  });
+
   it.each([
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
-    ["S11", "S12", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "returns exit 2 for the %s to %s transition",
     async (current, target, code) => {

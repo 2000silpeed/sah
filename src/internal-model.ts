@@ -11,6 +11,7 @@ export const artifactRoles = [
   "invariant",
   "architecture",
   "architectureDecision",
+  "implementationHandoff",
 ] as const;
 
 export type ArtifactRole = (typeof artifactRoles)[number];
@@ -188,6 +189,28 @@ export type ArchitectureDecisionModel = {
   }>;
 };
 
+export type ImplementationHandoffModel = {
+  modelId: string;
+  architectureRef: string;
+  decisionLogRef: string;
+  slices: Array<{
+    id: string;
+    outcome: string;
+    status: "ready" | "blocked";
+    elementRefs: string[];
+    constraintRefs: string[];
+    decisionRefs: string[];
+    blockedByDecisionRefs: string[];
+    dependsOnSliceRefs: string[];
+    acceptanceChecks: Array<{
+      check: string;
+      expected: string;
+    }>;
+    migration: string;
+    rollback: string;
+  }>;
+};
+
 export type LoadedModels = {
   systemCharacterization?: SystemCharacterization;
   designStrategy?: DesignStrategy;
@@ -195,6 +218,7 @@ export type LoadedModels = {
   invariant?: InvariantModel;
   architecture?: ArchitectureModel;
   architectureDecision?: ArchitectureDecisionModel;
+  implementationHandoff?: ImplementationHandoffModel;
 };
 
 export type LoadedArtifact = {

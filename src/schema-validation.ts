@@ -19,6 +19,7 @@ const schemaFiles = [
   "invariant.schema.json",
   "architecture.schema.json",
   "architecture-decision.schema.json",
+  "implementation-handoff.schema.json",
 ] as const;
 
 const schemaDirectory = fileURLToPath(new URL("../schemas/", import.meta.url));
