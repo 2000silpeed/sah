@@ -152,9 +152,9 @@ exceptions, LLM review, services, and benchmark changes.
 | 0     | Frame compiler/config boundary and migration          | complete    | `e8c1ead`, ADR-0012 |
 | 1     | Implement v0.2 mapping and confined Program creation  | complete    | strict typecheck |
 | 2     | Resolve aliases/re-exports by canonical symbol        | complete    | focused symbol tests |
-| 3     | Add focused library/CLI fixtures and mutations        | complete    | 74 focused tests |
+| 3     | Add focused library/CLI fixtures and mutations        | complete    | 76 focused tests |
 | 4     | Update authority docs, glossary, index, and commands  | complete    | CLI/model docs, glossary, index, AGENTS |
-| 5     | Run full verification and adversarial diff review    | pending     | —        |
+| 5     | Run full verification and adversarial diff review    | complete    | 190 tests, CLI 0/1/2, clean audits |
 
 ### Decision log
 
@@ -199,10 +199,25 @@ exceptions, LLM review, services, and benchmark changes.
   scope, dogfood evidence, glossary, index, operating policy, and ADR-0011 supersession note.
   Mapping v0.2 is documented as a hard cut; semantic IR and manifest schemas remain unchanged.
 - 2026-08-17: Post-documentation adversarial review passed 76/76 focused tests after tightening
-  declared compiler-path confinement. The full verification loop must be rerun from this fix.
+  declared compiler-path confinement.
+- 2026-08-17: Final Node v24.14.1/npm 11.11.0 loop: `npm install` reported 164 packages and
+  zero vulnerabilities; format check, lint, strict typecheck, 190/190 tests across nine files,
+  production build, and `npm run verify:schemas` (4/4) passed.
+- 2026-08-17: Built CLI evidence after the final fix: canonical TypeScript verification passed
+  in human and JSON modes/exit 0; an injected alias-based unmapped writer returned
+  `CONSTRAINT_VIOLATION`/exit 1; a missing declared tsconfig returned
+  `SOURCE_TSCONFIG_UNREADABLE`/exit 2.
+- 2026-08-17: Nine Draft 2020-12 schemas and nine embedded examples validated; all 318
+  serialized properties passed writer/reader trace audit. Public declarations had zero Ajv,
+  TypeScript, or filesystem implementation leaks.
+- 2026-08-17: All 55 Markdown files had 128 resolving local links; 30 policy/product documents
+  met line budgets; package dry-run contained 66 entries including the adapter and mapping
+  schema. Benchmark and canonical simple-crud fixture diffs were empty, only the non-semantic
+  mapping schema changed, and `git diff --check` passed.
 
 ### Handoff
 
-Run 9 is active. Complete ADR-0012 and planning commit, then migrate the mapping schema and
-replace name/specifier inference with confined Program symbol identity without broadening the
-observable predicate or lifecycle contract.
+Run 9 is complete. The next bounded slice should map an explicit changed-file set through the
+existing source mapping and execute only affected ready-slice constraints, while preserving
+full-root evidence for each selected deterministic check. Do not add a general dependency
+compiler or advance the manifest to S13 in that slice.
