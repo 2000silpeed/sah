@@ -91,3 +91,67 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 
 Run 4 is complete. Next, implement the S9 quality-assessment coverage gate and exact S8→S9
 advance while keeping scenario satisfaction and trade-off quality assisted/judgment.
+
+## Run 5 ExecPlan — 2026-08-17
+
+### Outcome
+
+The Model Repository deterministically proves complete, non-duplicated must-scenario coverage
+for every architecture candidate at S9, and `sah advance <bundle> S9` commits an exact S8→S9
+transition only after that gate passes.
+
+### Scope
+
+Included: S9 assessment coverage/status checks, an assisted non-pass review finding, S9 advance
+support, focused library and production CLI tests, authority docs, verification, and commits.
+Excluded: schema migration, scenario-satisfaction proof, candidate/trade-off judgment, S10
+selection changes, LLMs, fact adapters, renderers, services, and benchmark scoring. Benchmark
+inputs and expectations remain untouched.
+
+### Constraints
+
+- Coverage is the Cartesian product of `must` quality scenarios and candidates, exactly once.
+- Missing/duplicate pairs and pre-S10 candidate/decision status are deterministic errors.
+- A non-pass must assessment is an assisted warning; it does not block advancement by itself.
+- Reuse canonical IDs and the current v0.2 Architecture shape; add no parallel representation.
+- Success changes only manifest `completedStage`; preserve atomicity and public API boundaries.
+- Public types expose no Ajv/fs types; tests use no network/model; never push.
+
+### Milestones
+
+| Phase | Milestone | Status | Evidence |
+|---|---|---|---|
+| 0 | Frame S9 observable predicate and plan | in_progress | authority/runtime inspection complete |
+| 1 | Implement S9 gate, advance, and focused tests | pending | — |
+| 2 | Update affected authority documentation | pending | — |
+| 3 | Run full verification and adversarial review | pending | — |
+
+### Decision log
+
+- 2026-08-17: Treat duplicate candidate/scenario pairs as violations, not redundant coverage;
+  two canonical results for one pair are ambiguous even when their values match.
+- 2026-08-17: Warn on `risk`, `fail`, or `unknown` must results as assisted review evidence.
+  The enum is observable, but whether the measure is met or risk is acceptable is contextual.
+- 2026-08-17: Require S9 decision records to remain `proposed`; S10 owns disposition. Do not
+  attempt to validate the contextual quality of options or risk acceptance in this slice.
+
+### Discovery log
+
+- 2026-08-17: Run 4 ended clean at `739cddb` with 67 tests and named S9 coverage as handoff.
+- 2026-08-17: Architecture v0.2 already carries assessment `candidateRef` and `result`; System
+  Characterization carries scenario `priority`; Decision IR carries `status`. No schema or new
+  ADR is needed for the fixed S9 predicates.
+- 2026-08-17: The current fixture has one candidate, one must scenario, and one assessment, so
+  it already contains the valid Cartesian baseline; advancement fixtures must only restore S9
+  statuses to `proposed` before evaluating the target gate.
+
+### Verification log
+
+- 2026-08-17: Re-read `AGENTS.md`, the Run 4 handoff, index, S9 reasoning/validation authority,
+  current schemas, fixture, internal model, stage validator, advance implementation, and tests.
+- 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+
+### Handoff
+
+Implement the fixed S9 predicate without schema churn, then update docs and run the complete
+source/CLI/schema/diff verification loop.
