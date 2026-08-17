@@ -45,6 +45,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   strict local TypeScript/Node/Ajv runtime and protects its adapter boundary.
 - [ADR-0006](adr/0006-use-a-schema-validated-bundle-manifest.md) — stores explicit lifecycle
   and artifact locations in a non-semantic, schema-validated bundle manifest.
+- [ADR-0007](adr/0007-validate-before-atomic-stage-advance.md) — validates a supported target
+  gate before atomically replacing lifecycle metadata.
 
 ## JSON Schema contracts
 

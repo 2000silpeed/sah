@@ -299,3 +299,62 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
 The next vertical slice should add an atomic `sah advance <bundle> <stage>` operation that
 validates the claimed gate before updating manifest lifecycle, without adding reasoning prompts
 or a hosted store.
+
+## Run 3 ExecPlan — 2026-08-17
+
+### Outcome
+
+`sah advance <design-bundle-directory> <target-stage>` and `advanceBundle` move a manifest
+exactly one supported stage only after target-stage validation, with atomic replacement and
+actionable results for success, validation blockage, and operational failure.
+
+### Scope
+
+Included: transition eligibility, proposed-lifecycle validation without an early write,
+same-directory atomic manifest replacement, optimistic source-byte comparison, public library
+types, CLI human/JSON output, tests, documentation, and verification. Excluded: semantic IR
+mutation, missing stage-gate implementation, S12 handoffs, locks/services, prompts, adapters,
+and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is the decision.
+
+### Constraints
+
+- Model Repository owns transition, validation, and persistence; CLI only adapts invocation.
+- Only one-step targets S5, S6, S7, S10, and S11 may advance; all others are unsupported.
+- Validation blockage or operational failure leaves manifest bytes unchanged.
+- Success changes only `lifecycle.completedStage`; public types expose no Ajv/fs objects.
+- Preserve benchmarks and unrelated work, keep documents within budget, commit, never push.
+
+### Milestones
+
+| Phase | Milestone | Status | Evidence |
+|---|---|---|---|
+| 0 | Frame transition and atomicity contract | complete | this plan; ADR-0007 |
+| 1 | Implement reusable advance operation | in_progress | target validation; atomic writer tests |
+| 2 | Add CLI, result formats, and exit tests | pending | production CLI exits 0/1/2 |
+| 3 | Document, verify, and review | pending | all checks and diff audit pass |
+
+### Decision log
+
+- 2026-08-17: Evaluate a proposed stage entirely in memory, then use a flushed same-directory
+  temporary file, source-byte comparison, and rename as commit point. See ADR-0007.
+- 2026-08-17: Require an exact next stage and whitelist only implemented deterministic target
+  gates. Unsupported gates are exit 2, never inferred pass; gate violations are exit 1.
+
+### Discovery log
+
+- 2026-08-17: Worktree is clean at `9a1d045`; Run 2 has 27 passing tests and no mutation API.
+- 2026-08-17: Current explicit target gates are S5/S6/S7/S10/S11. S8 candidate-count shape
+  and S12 handoff facts are not executable, so a general S0–S13 advance would be dishonest.
+- 2026-08-17: Atomic rename prevents partial manifest contents but not full multi-process
+  serializability; the pre-rename byte comparison narrows, but cannot eliminate, the final race.
+
+### Verification log
+
+- 2026-08-17: Re-read root policy, completed plan, lifecycle/validation authority, ADR-0005/6,
+  manifest schema, Model Repository, stage/schema validators, CLI, and affected tests.
+- 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+
+### Handoff
+
+Refactor validation around one privately loaded bundle so `advanceBundle` can evaluate the
+target stage without exposing a validation override or writing before the gate passes.
