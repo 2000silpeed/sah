@@ -79,7 +79,7 @@ stronger conditions:
   in the log; proposed decisions may
   remain only behind an owned seam and block every dependent S12 slice;
 - after S11, each accepted decision is classified into deterministic, assisted, or judgment
-  enforcement, even when it generates no hard rule.
+  enforcement, even when it generates no hard rule;
 - after S12, every selected element and applicable constraint is assigned to an acyclic slice;
   accepted decisions accompany affected slices, and proposed decisions block each affected
   slice explicitly.

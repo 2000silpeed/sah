@@ -346,6 +346,7 @@ describe("advanceBundle", () => {
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
+    ["S12", "S13", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "rejects the %s to %s transition with %s",
     async (current, target, code) => {

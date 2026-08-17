@@ -313,6 +313,7 @@ describe("sah advance CLI", () => {
     ["S10", "S10", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S10", "S9", "ADVANCE_STAGE_NOT_FORWARD"],
     ["S7", "S10", "ADVANCE_STAGE_SKIPPED"],
+    ["S12", "S13", "ADVANCE_STAGE_UNSUPPORTED"],
   ] as const)(
     "returns exit 2 for the %s to %s transition",
     async (current, target, code) => {
