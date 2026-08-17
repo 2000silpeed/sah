@@ -272,6 +272,81 @@ describe("TypeScript source verification", () => {
     );
   });
 
+  it("derives readiness only from slices affected by the changed element", async () => {
+    const bundle = await copyFixture();
+    const target = await copyTypeScriptTarget();
+    const secondConstraintId = "equipment-other-write-authority";
+    await addSecondReadyConstraint(bundle, target);
+    await blockCanonicalSlice(bundle);
+    await mutateJson<{
+      constraints: Array<{ id: string }>;
+    }>(bundle, "architecture.json", (architecture) => {
+      architecture.constraints = architecture.constraints.filter(
+        ({ id }) => id !== secondConstraintId,
+      );
+    });
+    await mutateJson<{
+      decisions: Array<{
+        id: string;
+        affectedElementRefs: string[];
+        constraintRefs: string[];
+      }>;
+    }>(bundle, "architecture-decision.json", (decisions) => {
+      const accepted = decisions.decisions[0];
+      if (accepted !== undefined)
+        accepted.constraintRefs = accepted.constraintRefs.filter(
+          (constraintRef) => constraintRef !== secondConstraintId,
+        );
+      const blocker = decisions.decisions.find(
+        ({ id }) => id === "choose-equipment-export-boundary",
+      );
+      if (blocker !== undefined)
+        blocker.affectedElementRefs = ["equipment-other"];
+    });
+    await mutateJson<{
+      slices: Array<{
+        id: string;
+        status: "ready" | "blocked";
+        elementRefs: string[];
+        constraintRefs: string[];
+        blockedByDecisionRefs: string[];
+      }>;
+    }>(bundle, "implementation-handoff.json", (handoff) => {
+      const blocked = handoff.slices.find(
+        ({ id }) => id === "implement-equipment-operations",
+      );
+      const ready = handoff.slices.find(
+        ({ id }) => id === "implement-equipment-other",
+      );
+      blocked?.elementRefs.push("equipment-other");
+      if (ready === undefined) return;
+      ready.status = "ready";
+      ready.elementRefs = ["equipment-operations"];
+      ready.constraintRefs = ["equipment-owns-writes"];
+      ready.blockedByDecisionRefs = [];
+    });
+
+    const verification = await verifyBundle(bundle, target, {
+      sourceMappingPath,
+      changedPaths: ["src/other/deleted.ts"],
+    });
+
+    expect(verification.status).toBe("incomplete");
+    expect(verification.selection).toEqual(
+      expect.objectContaining({
+        mode: "affected",
+        affectedElementRefs: ["equipment-other"],
+      }),
+    );
+    expect(verification.checks).toEqual([
+      expect.objectContaining({
+        code: "CONSTRAINT_SLICE_BLOCKED",
+        status: "pending",
+        sliceRefs: ["implement-equipment-operations"],
+      }),
+    ]);
+  });
+
   it("falls back to full verification and detects an unmapped changed writer", async () => {
     const target = await copyTypeScriptTarget();
     const changedPath = "src/rogue-writer.ts";

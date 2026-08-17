@@ -21,7 +21,6 @@ type Assignment = {
   sliceRefs: string[];
   readySliceRefs: string[];
   blockerDecisionRefs: string[];
-  elementRefs: string[];
 };
 
 function aggregateStatus(
@@ -67,15 +66,20 @@ export async function verifyConstraints(
 
   const assignments = new Map<string, Assignment>();
   for (const slice of handoff.slices) {
+    if (
+      affectedElementRefs !== undefined &&
+      !slice.elementRefs.some((elementRef) =>
+        affectedElementRefs.has(elementRef),
+      )
+    )
+      continue;
     for (const constraintRef of slice.constraintRefs) {
       const assignment = assignments.get(constraintRef) ?? {
         sliceRefs: [],
         readySliceRefs: [],
         blockerDecisionRefs: [],
-        elementRefs: [],
       };
       assignment.sliceRefs.push(slice.id);
-      assignment.elementRefs.push(...slice.elementRefs);
       if (slice.status === "ready") assignment.readySliceRefs.push(slice.id);
       else assignment.blockerDecisionRefs.push(...slice.blockedByDecisionRefs);
       assignments.set(constraintRef, assignment);
@@ -87,13 +91,6 @@ export async function verifyConstraints(
   for (const constraint of architecture.constraints) {
     const assignment = assignments.get(constraint.id);
     if (assignment === undefined) continue;
-    if (
-      affectedElementRefs !== undefined &&
-      !assignment.elementRefs.some((elementRef) =>
-        affectedElementRefs.has(elementRef),
-      )
-    )
-      continue;
     const common = {
       constraintId: constraint.id,
       decisionRef: constraint.decisionRef,
