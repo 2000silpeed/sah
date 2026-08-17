@@ -64,7 +64,7 @@ describe("schema contracts", () => {
     ]);
   });
 
-  it("keeps Ajv-specific types out of the public declaration surface", async () => {
+  it("keeps adapter implementation types out of public declarations", async () => {
     const distribution = resolve("dist");
     const publicDeclarations = await Promise.all(
       ["index.d.ts", "contracts.d.ts", "model-repository.d.ts"].map((file) =>
@@ -73,7 +73,7 @@ describe("schema contracts", () => {
     );
 
     expect(publicDeclarations.join("\n")).not.toMatch(
-      /\bAjv\b|ErrorObject|ValidateFunction|node:fs|FileHandle|\bStats\b/u,
+      /\bAjv\b|ErrorObject|ValidateFunction|node:fs|FileHandle|\bStats\b|from "typescript"/u,
     );
   });
 });

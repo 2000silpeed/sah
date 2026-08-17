@@ -199,6 +199,11 @@ describe("TypeScript source verification", () => {
       "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
     ],
     [
+      "TypeScript import assignment",
+      'import store = require("./equipment-store.js");\nstore.writeEquipmentRecord();\n',
+      "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
+    ],
+    [
       "path alias",
       'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
       "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
@@ -224,9 +229,19 @@ describe("TypeScript source verification", () => {
       "SOURCE_GRAPH_REEXPORT_UNSUPPORTED",
     ],
     [
+      "namespace re-export",
+      'export * as store from "./equipment-store.js";\n',
+      "SOURCE_GRAPH_REEXPORT_UNSUPPORTED",
+    ],
+    [
       "dynamic import",
       'void import("@equipment/store");\n',
       "SOURCE_GRAPH_DYNAMIC_IMPORT_UNSUPPORTED",
+    ],
+    [
+      "dynamic code evaluation",
+      'import { writeEquipmentRecord } from "./equipment-store.js";\neval("writeEquipmentRecord()");\n',
+      "SOURCE_GRAPH_DYNAMIC_CODE_UNSUPPORTED",
     ],
   ])("keeps %s source form unsupported", async (_name, source, code) => {
     const target = await copyTypeScriptTarget();

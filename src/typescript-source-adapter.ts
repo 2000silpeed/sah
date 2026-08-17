@@ -728,6 +728,19 @@ function targetImportDetails(
   | { ok: false; outcome: Exclude<FactAdapterOutcome, { kind: "observed" }> } {
   const localNames = new Set<string>();
   for (const statement of document.sourceFile.statements) {
+    if (ts.isImportEqualsDeclaration(statement)) {
+      return {
+        ok: false,
+        outcome: unsupported({
+          code: "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
+          message: `TypeScript import assignment occurs in ${document.relativePath}.`,
+          expected: "ECMAScript direct relative named imports",
+          observed: document.relativePath,
+          repair:
+            "Replace the import assignment or provide an import-assignment-aware resolver.",
+        }),
+      };
+    }
     if (ts.isImportDeclaration(statement)) {
       const specifier = moduleText(statement.moduleSpecifier);
       if (specifier === undefined) continue;
@@ -807,6 +820,7 @@ function targetImportDetails(
       );
       const exportsTarget =
         statement.exportClause === undefined ||
+        ts.isNamespaceExport(statement.exportClause) ||
         (ts.isNamedExports(statement.exportClause) &&
           statement.exportClause.elements.some(
             (element) =>
@@ -885,6 +899,22 @@ function writerPaths(
         const isRequire =
           ts.isIdentifier(node.expression) &&
           node.expression.text === "require";
+        const isDynamicCode =
+          (ts.isIdentifier(node.expression) &&
+            ["eval", "Function"].includes(node.expression.text)) ||
+          (ts.isPropertyAccessExpression(node.expression) &&
+            node.expression.name.text === "eval");
+        if (isDynamicCode) {
+          failure = unsupported({
+            code: "SOURCE_GRAPH_DYNAMIC_CODE_UNSUPPORTED",
+            message: `Dynamic code evaluation occurs in ${document.relativePath}.`,
+            expected: "statically parseable calls and module loading",
+            observed: document.relativePath,
+            repair:
+              "Remove dynamic code evaluation or provide a sandbox-aware source adapter.",
+          });
+          return;
+        }
         if (isDynamicImport || isRequire) {
           failure = unsupported({
             code: "SOURCE_GRAPH_DYNAMIC_IMPORT_UNSUPPORTED",
@@ -904,6 +934,21 @@ function writerPaths(
         ) {
           writers.add(document.relativePath);
         }
+      }
+      if (
+        ts.isNewExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "Function"
+      ) {
+        failure = unsupported({
+          code: "SOURCE_GRAPH_DYNAMIC_CODE_UNSUPPORTED",
+          message: `Dynamic code construction occurs in ${document.relativePath}.`,
+          expected: "statically parseable calls and module loading",
+          observed: document.relativePath,
+          repair:
+            "Remove dynamic code construction or provide a sandbox-aware source adapter.",
+        });
+        return;
       }
       if (
         ts.isIdentifier(node) &&
