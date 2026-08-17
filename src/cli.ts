@@ -9,6 +9,7 @@ import {
   type Stage,
   type ValidationResult,
   type VerificationCheck,
+  type VerificationOptions,
   type VerificationResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
@@ -21,8 +22,56 @@ import {
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--json]",
-  "       sah verify <design-bundle-directory> <target-directory> [--json]",
+  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--json]",
 ].join("\n");
+
+type ParsedArguments = {
+  positional: string[];
+  json: boolean;
+  sourceMappingPath?: string;
+  error?: string;
+};
+
+function parseArguments(arguments_: string[]): ParsedArguments {
+  const positional: string[] = [];
+  let json = false;
+  let sourceMappingPath: string | undefined;
+  for (let index = 0; index < arguments_.length; index += 1) {
+    const argument = arguments_[index];
+    if (argument === "--json") {
+      if (json)
+        return { positional, json, error: "--json may be supplied only once." };
+      json = true;
+      continue;
+    }
+    if (argument === "--mapping") {
+      if (sourceMappingPath !== undefined) {
+        return {
+          positional,
+          json,
+          error: "--mapping may be supplied only once.",
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--mapping requires one target-relative path.",
+        };
+      }
+      sourceMappingPath = value;
+      index += 1;
+      continue;
+    }
+    if (argument !== undefined) positional.push(argument);
+  }
+  return {
+    positional,
+    json,
+    ...(sourceMappingPath === undefined ? {} : { sourceMappingPath }),
+  };
+}
 
 function invocationError(message: string): ValidationResult {
   const diagnostic: SahDiagnostic = {
@@ -176,8 +225,15 @@ function isStage(value: string | undefined): value is Stage {
 }
 
 async function main(arguments_: string[]): Promise<number> {
-  const json = arguments_.includes("--json");
-  const positional = arguments_.filter((argument) => argument !== "--json");
+  const parsed = parseArguments(arguments_);
+  const { json, positional } = parsed;
+  if (parsed.error !== undefined) {
+    const invalid = invocationError(parsed.error);
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
   if (
     positional.length === 1 &&
     ["--help", "-h"].includes(positional[0] ?? "")
@@ -186,7 +242,11 @@ async function main(arguments_: string[]): Promise<number> {
     return 0;
   }
 
-  if (positional.length === 2 && positional[0] === "validate") {
+  if (
+    positional.length === 2 &&
+    positional[0] === "validate" &&
+    parsed.sourceMappingPath === undefined
+  ) {
     const validation = await validateBundle(positional[1] ?? "");
     process.stdout.write(
       `${json ? JSON.stringify(validation, null, 2) : formatValidationHuman(validation)}\n`,
@@ -194,7 +254,11 @@ async function main(arguments_: string[]): Promise<number> {
     return exitCode(validation);
   }
 
-  if (positional.length === 3 && positional[0] === "advance") {
+  if (
+    positional.length === 3 &&
+    positional[0] === "advance" &&
+    parsed.sourceMappingPath === undefined
+  ) {
     if (!isStage(positional[2])) {
       const invalid = invocationError(
         `${String(positional[2])} is not a valid lifecycle target stage.`,
@@ -212,9 +276,14 @@ async function main(arguments_: string[]): Promise<number> {
   }
 
   if (positional.length === 3 && positional[0] === "verify") {
+    const options: VerificationOptions =
+      parsed.sourceMappingPath === undefined
+        ? {}
+        : { sourceMappingPath: parsed.sourceMappingPath };
     const verification = await verifyBundle(
       positional[1] ?? "",
       positional[2] ?? "",
+      options,
     );
     process.stdout.write(
       `${json ? JSON.stringify(verification, null, 2) : formatVerificationHuman(verification)}\n`,

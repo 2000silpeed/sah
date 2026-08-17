@@ -8,6 +8,7 @@ import type {
   SourceLocation,
   Stage,
   ValidationResult,
+  VerificationOptions,
   VerificationResult,
 } from "./contracts.js";
 import { stages } from "./contracts.js";
@@ -18,6 +19,7 @@ import {
   verificationResult,
 } from "./diagnostics.js";
 import { replaceManifestAtomically } from "./atomic-manifest.js";
+import type { CodeFactAdapter } from "./code-fact-adapter.js";
 import { verifyConstraints } from "./constraint-verification.js";
 import { prepareFilesystemPresenceAdapter } from "./filesystem-presence-adapter.js";
 import {
@@ -43,6 +45,7 @@ import {
   requiredArtifactDiagnostics,
   validateStageGates,
 } from "./stage-validation.js";
+import { prepareTypeScriptSourceAdapter } from "./typescript-source-adapter.js";
 
 const manifestName = "sah.bundle.json";
 const manifestSchemaId =
@@ -556,6 +559,7 @@ function failedValidationForVerification(
 export async function verifyBundle(
   directory: string,
   targetDirectory: string,
+  options: VerificationOptions = {},
 ): Promise<VerificationResult> {
   const preparation = await prepareBundle(directory);
   if (!preparation.ok)
@@ -614,7 +618,29 @@ export async function verifyBundle(
   }
 
   const models = toModels(prepared.artifacts);
-  const execution = await verifyConstraints(models, [target.adapter]);
+  const adapters: CodeFactAdapter[] = [target.adapter];
+  if (options.sourceMappingPath !== undefined) {
+    const sourceAdapter = await prepareTypeScriptSourceAdapter({
+      targetRoot: target.targetRoot,
+      mappingPath: options.sourceMappingPath,
+      registry: prepared.registry,
+      architectureElementRefs: new Set(
+        models.architecture?.elements.map(({ id }) => id) ?? [],
+      ),
+    });
+    if (!sourceAdapter.ok) {
+      return verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        target.targetRoot,
+        [],
+        sourceAdapter.diagnostics,
+        validation.bundle,
+      );
+    }
+    adapters.push(sourceAdapter.adapter);
+  }
+  const execution = await verifyConstraints(models, adapters);
   const executionDiagnostics = execution.failures.map((failure) => {
     const constraintIndex =
       failure.constraintId === undefined

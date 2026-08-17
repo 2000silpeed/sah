@@ -9,8 +9,10 @@ import {
   cleanupFixtures,
   cliPath,
   copyFixture,
+  copyTypeScriptTarget,
   fixtureDirectory,
   mutateJson,
+  typescriptTargetDirectory,
   verificationTargetDirectory,
 } from "./helpers.js";
 
@@ -380,6 +382,92 @@ describe("sah advance CLI", () => {
 });
 
 describe("sah verify CLI", () => {
+  it("returns exit 0 for canonical TypeScript authority verification", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "sah.source-map.json",
+    ]);
+
+    expect(execution.code).toBe(0);
+    expect(execution.stderr).toBe("");
+    expect(execution.stdout).toContain("SAH verification passed");
+    expect(execution.stdout).toContain(
+      "all writers are in constraint scope: src/equipment-operations/save-equipment.ts (equipment-operations)",
+    );
+  });
+
+  it("returns exit 1 JSON for an out-of-scope TypeScript writer", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "rogue-writer.ts"),
+      'import { writeEquipmentRecord } from "./equipment-store.js";\nwriteEquipmentRecord();\n',
+    );
+
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      target,
+      "--mapping",
+      "sah.source-map.json",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      checks: Array<{ code: string; status: string; observed?: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("violations");
+    expect(output.checks).toContainEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_VIOLATION",
+        status: "violation",
+        observed:
+          "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
+      }),
+    );
+  });
+
+  it("returns exit 2 for missing explicit mapping configuration", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "missing.json",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("operational-error");
+    expect(output.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "SOURCE_MAPPING_UNREADABLE" }),
+    );
+  });
+
+  it("returns exit 2 when --mapping has no value", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "--json",
+    ]);
+
+    expect(execution.code).toBe(2);
+    expect(execution.stdout).toContain("CLI_INVALID_INVOCATION");
+    expect(execution.stdout).toContain(
+      "--mapping requires one target-relative path.",
+    );
+  });
+
   it("returns exit 0 with human-readable pass evidence", async () => {
     const bundle = await copyFixture();
     await setFilesystemConstraint(

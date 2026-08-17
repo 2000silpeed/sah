@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/typescript-source-mapping/v0.1.0",
+  "title": "SAH TypeScript Source Mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "language",
+    "sourceRoots",
+    "elements",
+    "writeTargets"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/typescript-source-mapping/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": ["source-mapping-loader"]
+      }
+    },
+    "schemaVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": ["source-mapping-loader"]
+      }
+    },
+    "language": {
+      "const": "typescript",
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": ["typescript-source-adapter"]
+      }
+    },
+    "sourceRoots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relativePath" },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": ["typescript-source-adapter"]
+      }
+    },
+    "elements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/elementMapping" },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": [
+          "source-mapping-reference-validator",
+          "typescript-source-adapter"
+        ]
+      }
+    },
+    "writeTargets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/writeTarget" },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["mapping-author"],
+        "readBy": ["typescript-source-adapter"]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\/$)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "pathPrefix": {
+      "type": "string",
+      "minLength": 2,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001F\\u007F]+/$"
+    },
+    "typescriptModulePath": {
+      "type": "string",
+      "minLength": 4,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001F\\u007F]+\\.(?:ts|tsx|mts|cts)$"
+    },
+    "elementMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["elementRef", "pathPrefixes"],
+      "properties": {
+        "elementRef": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["mapping-author"],
+            "readBy": [
+              "source-mapping-reference-validator",
+              "typescript-source-adapter"
+            ]
+          }
+        },
+        "pathPrefixes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pathPrefix" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["mapping-author"],
+            "readBy": ["typescript-source-adapter"]
+          }
+        }
+      }
+    },
+    "writeTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selector", "modulePath", "exportName"],
+      "properties": {
+        "selector": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["mapping-author"],
+            "readBy": ["typescript-source-adapter"]
+          }
+        },
+        "modulePath": {
+          "$ref": "#/$defs/typescriptModulePath",
+          "x-sah-trace": {
+            "writtenBy": ["mapping-author"],
+            "readBy": ["typescript-source-adapter"]
+          }
+        },
+        "exportName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+          "x-sah-trace": {
+            "writtenBy": ["mapping-author"],
+            "readBy": ["typescript-source-adapter"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/typescript-source-mapping/v0.1.0",
+      "schemaVersion": "0.1.0",
+      "language": "typescript",
+      "sourceRoots": ["src"],
+      "elements": [
+        {
+          "elementRef": "catalog-operations",
+          "pathPrefixes": ["src/catalog-operations/"]
+        }
+      ],
+      "writeTargets": [
+        {
+          "selector": "catalog-records",
+          "modulePath": "src/catalog-store.ts",
+          "exportName": "writeCatalogRecord"
+        }
+      ]
+    }
+  ]
+}

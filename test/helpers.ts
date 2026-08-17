@@ -10,6 +10,11 @@ export const verificationTargetDirectory = join(
   "fixtures",
   "s13-target",
 );
+export const typescriptTargetDirectory = join(
+  repositoryRoot,
+  "fixtures",
+  "s13-typescript-target",
+);
 export const cliPath = join(repositoryRoot, "dist", "cli.js");
 
 const temporaryDirectories: string[] = [];
@@ -26,6 +31,14 @@ export async function copyVerificationTarget(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "sah-target-test-"));
   const target = join(root, "target");
   await cp(verificationTargetDirectory, target, { recursive: true });
+  temporaryDirectories.push(root);
+  return target;
+}
+
+export async function copyTypeScriptTarget(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-typescript-target-test-"));
+  const target = join(root, "target");
+  await cp(typescriptTargetDirectory, target, { recursive: true });
   temporaryDirectories.push(root);
   return target;
 }

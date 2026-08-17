@@ -20,6 +20,7 @@ const schemaFiles = [
   "architecture.schema.json",
   "architecture-decision.schema.json",
   "implementation-handoff.schema.json",
+  "typescript-source-mapping.schema.json",
 ] as const;
 
 const schemaDirectory = fileURLToPath(new URL("../schemas/", import.meta.url));

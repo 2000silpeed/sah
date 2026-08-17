@@ -118,3 +118,7 @@ export type VerificationResult = {
   diagnostics: SahDiagnostic[];
   summary: VerificationSummary;
 };
+
+export type VerificationOptions = {
+  sourceMappingPath?: string;
+};

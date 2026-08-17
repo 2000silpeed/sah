@@ -15,6 +15,7 @@ export type {
   ValidationSummary,
   VerificationCheck,
   VerificationCheckStatus,
+  VerificationOptions,
   VerificationResult,
   VerificationStatus,
   VerificationSummary,

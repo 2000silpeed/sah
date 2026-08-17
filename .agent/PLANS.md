@@ -48,11 +48,11 @@ and S13 lifecycle advancement. Benchmark inputs and expectations remain unchange
 
 | Phase | Milestone                                               | Status      | Evidence |
 | ----- | ------------------------------------------------------- | ----------- | -------- |
-| 0     | Frame mapping/parser ownership and exact predicate      | in_progress | ADR-0011 |
-| 1     | Add schema, loader, adapter request, and public options | pending     | —        |
-| 2     | Add TypeScript target fixture and focused library tests | pending     | —        |
-| 3     | Add CLI mapping flow and production exit evidence       | pending     | —        |
-| 4     | Update authority documentation and operating commands   | pending     | —        |
+| 0     | Frame mapping/parser ownership and exact predicate      | complete    | `18f6e14`, ADR-0011 |
+| 1     | Add schema, loader, adapter request, and public options | complete    | strict typecheck |
+| 2     | Add TypeScript target fixture and focused library tests | complete    | 27 focused tests |
+| 3     | Add CLI mapping flow and production exit evidence       | complete    | 24 CLI tests |
+| 4     | Update authority documentation and operating commands   | in_progress | —        |
 | 5     | Run full verification and adversarial diff review       | pending     | —        |
 
 ### Decision log
@@ -76,14 +76,20 @@ and S13 lifecycle advancement. Benchmark inputs and expectations remain unchange
   serialized IR.
 - 2026-08-17: `.agent/PLANS.md` was 394 lines before Run 8. Runs 4–7 were archived verbatim to
   preserve history and keep the active plan within the 400-line product-document budget.
+- 2026-08-17: Adversarial review found that post-enumeration symlink replacement and unresolved
+  alias/re-export/dynamic forms could otherwise evade complete analysis. Source reads now
+  reconfirm confinement, and every such form produces unsupported coverage.
 
 ### Verification log
 
 - 2026-08-17: Re-read `AGENTS.md`, Run 7 handoff, schema registry, Architecture observable,
   adapter/repository/CLI seams, fixture, tests, package configuration, and ADR-0010.
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+- 2026-08-17: `npm run format`, `npm run lint`, and `npm run typecheck` passed. Focused
+  TypeScript/library and CLI integration execution passed 51/51 tests.
 
 ### Handoff
 
-Run 8 is active. Complete ADR-0011 and the planning milestone, then implement the exact mapping
-schema and parser boundary without expanding to a general source graph or S13 advancement.
+Run 8 implementation and focused tests are complete. Update the authority documentation, run
+the full verification loop and production CLI evidence, review the complete diff, then close
+the plan and commit without pushing.

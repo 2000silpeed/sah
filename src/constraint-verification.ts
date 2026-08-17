@@ -153,7 +153,10 @@ export async function verifyConstraints(
       continue;
     }
 
-    const outcome = await adapter.observe(constraint.observable);
+    const outcome = await adapter.observe({
+      observable: constraint.observable,
+      scopeElementRefs: constraint.scopeElementRefs,
+    });
     if (outcome.kind === "operational-error") {
       failures.push({
         code: outcome.code,

@@ -31,7 +31,12 @@ export type FactAdapterFailure = {
 export type FactAdapterOutcome =
   FactObservation | UnsupportedFactBinding | FactAdapterFailure;
 
+export type FactAdapterRequest = {
+  observable: ObservableContract;
+  scopeElementRefs: readonly string[];
+};
+
 export type CodeFactAdapter = {
   readonly capability: string;
-  observe(observable: ObservableContract): Promise<FactAdapterOutcome>;
+  observe(request: FactAdapterRequest): Promise<FactAdapterOutcome>;
 };

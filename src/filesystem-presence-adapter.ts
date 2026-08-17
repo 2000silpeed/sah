@@ -6,6 +6,7 @@ import type {
   CodeFactAdapter,
   FactAdapterFailure,
   FactAdapterOutcome,
+  FactAdapterRequest,
   ObservableContract,
 } from "./code-fact-adapter.js";
 
@@ -99,7 +100,9 @@ class FilesystemPresenceAdapter implements CodeFactAdapter {
 
   constructor(private readonly targetRoot: string) {}
 
-  async observe(observable: ObservableContract): Promise<FactAdapterOutcome> {
+  async observe({
+    observable,
+  }: FactAdapterRequest): Promise<FactAdapterOutcome> {
     const unsupported = unsupportedSelector(observable);
     if (unsupported !== undefined) return unsupported;
 

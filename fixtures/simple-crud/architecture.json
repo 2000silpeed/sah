@@ -74,8 +74,8 @@
       "invariantRefs": ["asset-tag-unique"],
       "observable": {
         "factSource": "source-graph",
-        "selector": "writes to equipment records",
-        "predicate": "origin is equipment-operations",
+        "selector": "equipment-records",
+        "predicate": "writers-belong-to-constraint-scope",
         "expected": "true"
       },
       "enforcement": {

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://sah.dev/schemas/typescript-source-mapping/v0.1.0",
+  "schemaVersion": "0.1.0",
+  "language": "typescript",
+  "sourceRoots": ["src"],
+  "elements": [
+    {
+      "elementRef": "equipment-operations",
+      "pathPrefixes": ["src/equipment-operations/"]
+    }
+  ],
+  "writeTargets": [
+    {
+      "selector": "equipment-records",
+      "modulePath": "src/equipment-store.ts",
+      "exportName": "writeEquipmentRecord"
+    }
+  ]
+}
