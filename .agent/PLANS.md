@@ -1,379 +1,73 @@
 # SAH ExecPlans
 
-This file defines the planning contract for repository work and contains the current
-bootstrap plan. An ExecPlan is a durable handoff: a capable agent must be able to resume it
-from the repository alone.
+An ExecPlan is a durable handoff: another agent must be able to resume from repository facts
+alone. Completed history is preserved in [Runs 1–3](plans/run-1-3.md).
 
-## Required plan structure
+## Planning contract
 
-Every plan records:
+Every active plan records outcome, included/excluded scope, constraints, milestones, decisions,
+discoveries, exact verification, and handoff. Use `pending`, `in_progress`, `blocked`,
+`complete`, or `superseded`; normally exactly one milestone is `in_progress`. Update after
+progress, failure, discovery, decision, and verification. Preserve history, and supersede when
+the outcome changes or more than half of remaining work must be reframed.
 
-1. **Outcome** — the externally observable condition that ends the plan.
-2. **Scope** — included work, excluded work, and any explicitly allowed spike.
-3. **Constraints** — safety, quality, compatibility, and evidence requirements.
-4. **Milestones** — ordered, independently verifiable bodies of work.
-5. **Decision log** — consequential choices, alternatives, costs, and ADR links.
-6. **Discovery log** — facts learned during execution that change risk or approach.
-7. **Verification log** — commands or reviews run, their results, and unresolved failures.
-8. **Handoff** — the next concrete action when the plan is not complete.
-
-Plans refer to authoritative documents instead of copying their content.
-
-## Status vocabulary
-
-- `pending`: not started and not currently actionable ahead of earlier milestones.
-- `in_progress`: active work; exactly one milestone should normally have this status.
-- `blocked`: progress needs one of the three user decisions allowed by the source brief.
-- `complete`: acceptance evidence exists and no scoped work remains for the milestone.
-- `superseded`: a newer plan or ADR deliberately replaces this work; link the replacement.
-
-Do not use percentages. A milestone remains `in_progress` until its acceptance condition is
-met. A failed check is evidence, not completion.
-
-## Update and supersession rules
-
-Update the active plan when work advances, a check fails or passes, a relevant fact is
-discovered, or a decision changes downstream work. Append dated entries; preserve earlier
-facts even if later corrected. Amend milestone scope when a discovery is compatible with
-the outcome and constraints, recording the reason in the discovery log.
-
-Supersede rather than edit history when the outcome changes, an architectural decision
-invalidates the milestone sequence, or more than half the remaining work must be reframed.
-The replacement plan must name the superseded plan and carry forward unresolved evidence.
-Only the user may authorize a scope change that crosses the source brief's ask conditions.
-
-## Bootstrap ExecPlan — 2026-08-17
+## Run 4 ExecPlan — 2026-08-17
 
 ### Outcome
 
-Leave a validated, navigable intellectual and architectural foundation from which another
-agent can implement the Software Architect Harness without needing unstated decisions.
+Architecture IR canonically represents a candidate set, deterministic S8 candidate-count or
+single-candidate evidence rules are executable, and `sah advance <bundle> S8` commits an exact
+S7→S8 transition only after those rules pass.
 
 ### Scope
 
-Included: vision, principles, prior-art verdicts, methodology selection, reasoning model,
-IRs and JSON Schemas, harness architecture, ADRs, benchmark specifications, two dogfood
-walkthroughs, and verification evidence.
-
-Excluded: engine, CLI, validator, service, and production-prompt implementation. At most one
-non-production spike of 150 lines is allowed if argument cannot settle a schema or
-determinism question.
+Included: coordinated Architecture/manifest schema migration, candidate topology and evidence
+references, S8 and revised S10 gates, reference checks, S8 advance support, migrated fixture,
+tests, docs, verification, and commits. Excluded: S9 quality coverage gate, contextual candidate
+coherence/material-difference judgments, reasoning prompts, renderers, code adapters, services,
+and benchmark scoring. No benchmark IR, expectations, or stakeholder input changes.
 
 ### Constraints
 
-- Repository artifacts are English except Korean glossary equivalents.
-- Each document is at most 400 lines; `AGENTS.md` is at most 200 lines.
-- Responsibilities and invariants precede representation choices.
-- Methods are selected per subsystem; no methodology is the default winner.
-- Every artifact and field has a downstream reader.
-- Prior-art claims use real URLs or are marked `recalled, unverified`.
-- All JSON Schemas target draft 2020-12 and pass a real validator.
-- No remote push is permitted in this run.
-
-### Milestones
-
-| Phase | Milestone | Status | Acceptance evidence |
-|---|---|---|---|
-| 0 | Initialize Git and define ExecPlans | complete | `.git/`; this planning contract |
-| 1 | Compare five prior-art categories | complete | `docs/prior-art.md`; 12 distinct cited sources |
-| 2 | Define iterative design reasoning | complete | S0–S13 contracts and ten-question map documented |
-| 3 | Define traced IRs and schemas | complete | 6 Draft 2020-12 schemas, examples, and trace audit pass |
-| 4 | Decide SAH architecture and delivery | complete | component contracts, validator catalogue, ADR-0001–0004 |
-| 5 | Specify eight benchmarks | complete | 8 directories × 3 files; distinct coverage vectors |
-| 6 | Dogfood two contrasting cases | complete | `docs/dogfood.md`; five model repairs; schemas revalidated |
-| 7 | Evaluate and verify the foundation | complete | rubric 5/5/5/4/4; all 11 DoD checks pass |
-
-### Decision log
-
-- 2026-08-17: Preserve the source prompt at repository root as provenance. It is not a
-  normative product document; `AGENTS.md` and `docs/index.md` will route future readers.
-- 2026-08-17: Use one continuous bootstrap ExecPlan because all phases share a single
-  acceptance boundary. Phase commits are recovery points, not separate plans.
-- 2026-08-17: Treat SAH's novelty as the traced method-selection-to-enforcement chain, not as
-  a new specification workflow, architecture notation, ADR format, validator, or agent loop.
-- 2026-08-17: Use mandatory reasoning questions with risk-scaled evidence, not optional
-  stages. The short path compresses artifacts but cannot silently omit ownership or risk.
-- 2026-08-17: Strategy selection is provisional until responsibility and invariant analysis
-  confirm it; representation remains forbidden until ownership and boundary design.
-- 2026-08-17: Use six canonical IRs without a common serialized base or methodology IR.
-  Stable IDs link artifacts; storage revision metadata remains outside semantic IR.
-- 2026-08-17: Make `x-sah-trace.writtenBy/readBy` the authoritative field trace table. A
-  generated audit is safer than duplicating every JSON pointer in prose.
-- 2026-08-17: Deliver first as an agent-neutral skill plus local CLI over a reusable semantic
-  library. Do not require a service until collaboration or centralized policy is measured.
-- 2026-08-17: JSON IR is canonical; Markdown ADRs and diagrams are linked views, never a
-  second source reconstructed by parsing prose.
-- 2026-08-17: Classify enforcement as deterministic, assisted, or judgment according to
-  observability. Unsupported fact extraction is coverage failure, never pass.
-- 2026-08-17: Score benchmarks on a 100-point common rubric with a fatal-failure cap of 49
-  and an explicit over-engineering penalty up to 20 points.
-- 2026-08-17: Use two independent LLM judges for contextual categories and human arbitration
-  for disagreement/fixture changes; deterministic checks own structural evidence only.
-- 2026-08-17: S2 records representation-free composition seams; only S6 may decide owned
-  interaction mechanisms, consistency, failure, and translation contracts.
-- 2026-08-17: Short-path S8 may keep one architecture candidate when S2 alternatives and
-  proportionality evidence show that a second candidate would be ceremony.
-- 2026-08-17: Unresolved policy blocks only dependent implementation slices when isolated
-  behind an owned seam; non-isolatable authority still blocks architecture selection.
-- 2026-08-17: Strategy IDs are registry-extensible and representation supports namespaced
-  extensions; the initial closed enums failed methodology-neutrality self-review.
-
-### Discovery log
-
-- 2026-08-17: The directory contained only the source prompt and was not a Git repository,
-  matching the brief. No pre-existing user work needs reconciliation.
-- 2026-08-17: GitHub Spec Kit is the closest overlap, but its published core does not make
-  methodology selection, responsibility/invariant ownership, or constraint compilation a
-  first-class contract. Reassess extension-over-product if that changes.
-- 2026-08-17: Current behavior of ts-arch, Deptrac, and NetArchTest was not verified within
-  the stopped-early research pass; adapters must not be designed from recall.
-- 2026-08-17: A subsystem must remain a problem-reasoning scope until S6/S7. Naming it a
-  service, module, class, or pipeline during characterization is a gate failure.
-- 2026-08-17: Mixed-method design requires composition contracts; otherwise per-subsystem
-  method neutrality merely moves incoherence to the boundaries.
-- 2026-08-17: JSON Schema proves shape, not cross-file references or stage sufficiency. Full
-  verification will need separate reference, semantic-gate, and code-fact validators.
-- 2026-08-17: S5 ownership precedes architecture elements, so it reserves logical owner IDs;
-  S6 must materialize every reserved owner or the bundle fails reference validation.
-- 2026-08-17: Evaluation must drive only public skill/CLI/library surfaces and cannot expose
-  benchmark expectations to product components during a run.
-- 2026-08-17: Similar distribution ratings are deliberate across logistics, payment,
-  realtime, and enterprise integration; their discriminators are custody/time, atomic value,
-  convergence/latency, and semantic translation respectively.
-- 2026-08-17: Simple CRUD exposed invalid negative evidence and a short-path/candidate-count
-  contradiction. Data processing exposed premature composition, temporal invariant, and
-  global-readiness defects. Expectations were not weakened.
-- 2026-08-17: Time-bounded invariants need structured `applicability`; otherwise source
-  immutability and mandated privacy deletion look irreconcilable.
-- 2026-08-17: The initial filtered listing missed an earlier untracked bootstrap prompt and
-  `.DS_Store`. Phase 7 preserved the prompt as non-normative provenance and ignored, but did
-  not delete, Finder metadata. The earlier “only source prompt” observation was incomplete.
-- 2026-08-17: Benchmark discriminative power and ceremony score 4 rather than 5 because no
-  independent harness runs, judge calibration, or measured artifact burden exists yet.
-
-### Verification log
-
-- 2026-08-17: `git init` succeeded and the initial branch was renamed to `main`.
-- 2026-08-17: Prior-art research stopped after more than eight distinct sources covered all
-  five required categories; unverified details are labeled rather than inferred.
-- 2026-08-17: The reasoning model explicitly maps all ten product questions and gives every
-  stage an input, output, completion condition, and causal loop-back.
-- 2026-08-17: Initial Python validation failed verbatim with `ModuleNotFoundError: No module
-  named 'jsonschema'`; `ajv-cli@5` was also rejected because its help listed support only
-  through draft 2019-09.
-- 2026-08-17: An isolated `jsonschema` Draft202012Validator check passed all six schemas,
-  all embedded examples, and the audit that every property has non-empty writer/readers.
-- 2026-08-17: Every v0.1 validator capability has an explicit D/A/J class; an automated table
-  check found no missing or invalid classification.
-- 2026-08-17: Structural verification found exactly eight benchmark directories and 24 files;
-  every case has problem/expectations/scoring, failure and MUST anchors, all scorer roles,
-  and no prohibited design-leading terms in stakeholder problem text.
-- 2026-08-17: After dogfood repairs, Draft 2020-12 schema checks, embedded examples, field
-  trace audit, and whitespace validation passed again for all six schemas.
-- 2026-08-17: Final audit passed all six schemas/examples, 253 field traces, 14 stage
-  contracts, all methodology verdicts and D/A/J rows, 8×3 benchmark structure, line budgets,
-  whitespace, local links, and direct navigation for all 54 repository files.
-- 2026-08-17: Self-evaluation scores are methodology neutrality 5, determinism honesty 5,
-  traceability 5, benchmark discriminative power 4, and ceremony penalty 4. All 11
-  Definition-of-Done items pass with evidence in `docs/verification.md`.
-
-### Handoff
-
-Run 2 should implement one Model Repository/CLI vertical slice that loads a design bundle and
-runs schema, reference, stage, and field-trace checks against a simple-crud sample. Keep LLM
-reasoning prompts and hosted services out until this contract is executable and measured.
-
-## Run 2 ExecPlan — 2026-08-17
-
-### Outcome
-
-`sah validate <design-bundle-directory>` validates a repository-local design bundle through
-the reusable Model Repository and returns deterministic, actionable human or JSON diagnostics
-with tested exit codes 0, 1, and 2.
-
-### Scope
-
-Included: a schema-validated non-semantic bundle manifest, loading and path containment,
-Draft 2020-12 validation of the six IRs, schema trace audit, cross-IR reference integrity,
-the requested S5/S6/S7/S10/S11 gates, a thin CLI, simple-crud fixtures outside benchmarks,
-tests, build tooling, and user documentation.
-
-Excluded: reasoning prompts/orchestration, LLM calls, hosted services, view rendering,
-code-fact adapters, benchmark judges, constraint compilation/execution, and implementation
-handoff modeling. `benchmarks/simple-crud/problem.md` is read-only input; expectations and all
-other benchmark files remain untouched. No target-system IR ID is changed by this plan. The
-new repository decisions are ADR-0005 and ADR-0006; no compiled project constraint exists yet.
-
-### Constraints
-
-- Preserve Model Repository ownership of loading and semantics; the CLI owns only invocation,
-  presentation, and exit-code mapping.
-- Keep Ajv, terminal formatting, and filesystem conventions out of public semantic types.
-- Apply gates from an explicit completed lifecycle stage and profile, never inferred content.
-- Classify only observable predicates as deterministic; proposed-decision isolation remains an
-  assisted finding because the six IRs do not encode S12 slices.
-- Use npm with the installed Node 24 runtime, work offline after dependency installation, keep
-  documents within line budgets, make milestone commits, and never push.
-
-### Milestones
-
-| Phase | Milestone | Status | Acceptance evidence |
-|---|---|---|---|
-| 0 | Frame run and decide implementation/bundle contracts | complete | this plan; ADR-0005/0006 |
-| 1 | Implement Model Repository validation pipeline | complete | strict typed library; focused unit tests |
-| 2 | Add CLI, fixtures, and integration tests | complete | human/JSON output and exit 0/1/2 tests |
-| 3 | Document, verify, and review the complete slice | complete | required commands pass; clean reviewed diff |
-
-### Decision log
-
-- 2026-08-17: Use strict TypeScript on Node with Ajv Draft 2020-12 and npm. Node 24.14.1 and
-  npm 11.11.0 are already available, and this is the least elaborate local stack that gives a
-  typed library plus CLI and standards-compliant schema validation. See ADR-0005.
-- 2026-08-17: Store non-semantic lifecycle and artifact locations in root `sah.bundle.json`,
-  schema-validated separately from the six IRs. `completedStage` defines applicable gates and
-  `profile` records full/short path. See ADR-0006.
-- 2026-08-17: Treat missing/unreadable/malformed declared inputs, path escape, invalid
-  invocation, and invalid manifest configuration as operational failures (exit 2). Validly
-  loaded IR shape/reference/stage violations use exit 1; a clean validation uses exit 0.
-
-### Discovery log
-
-- 2026-08-17: The repository contains specifications and six canonical schemas but no package
-  manifest, runtime source, or sample design bundle. The worktree is clean at `933f6f4`.
-- 2026-08-17: Architecture IR serializes one `candidate` object rather than a candidate array;
-  the S10 deterministic predicate is therefore that this single candidate is `selected`.
-- 2026-08-17: The six current IRs do not serialize implementation slices or proof that a
-  proposed decision is isolated. This slice can emit an assisted S10 finding and repair path,
-  but must not invent a deterministic isolation failure.
-- 2026-08-17: Ajv strict mode rejected the first manifest role schemas because their local
-  `properties` keywords relied on a sibling `$ref` for `type: object`. Adding the explicit type
-  kept the same contract and removed validator-specific ambiguity.
-- 2026-08-17: Initial formatting and lint attempts stopped because the test glob did not yet
-  exist and typed lint rules reached the JavaScript config file. Tests now exist, lint targets
-  only source/tests, and deliberate number/pointer interpolation is configured explicitly.
-- 2026-08-17: The unchanged user-supplied `sah-bootstrap-prompt-gpt5-sol.md` provenance input
-  is 407 lines. It is excluded from the 400-line product-document audit because repository
-  policy also requires provenance prompts to remain verbatim; every generated document and
-  schema remains within its budget.
-
-### Verification log
-
-- 2026-08-17: Read the root policy, planning mechanism, specified model/architecture/
-  validation authority, all six schema contracts, dogfood walkthrough, ADR-0001–0004,
-  glossary, index, and only the simple-crud stakeholder problem from its benchmark.
-- 2026-08-17: Confirmed `node --version` is `v24.14.1`, `npm --version` is `11.11.0`, and the
-  initial worktree has no tracked or untracked changes.
-- 2026-08-17: ADR-0005 and ADR-0006 record the runtime and bundle representation choices;
-  Phase 0 is complete and Phase 1 has started.
-- 2026-08-17: `npm install` completed with 163 packages audited and zero reported vulnerabilities.
-- 2026-08-17: After the recorded fixes, `npm run lint`, `npm run typecheck`, and `npm test`
-  passed; Vitest reported 3 files and 21 tests passed, including valid bundle and CLI 0/1/2.
-- 2026-08-17: `node dist/cli.js validate fixtures/simple-crud` passed with zero diagnostics;
-  `npm exec -- sah validate fixtures/simple-crud --json` returned status `passed`.
-- 2026-08-17: The first expanded 27-test run failed one candidate-stage test: its generated
-  value `candidate` violated the schema before reaching the gate. This exposed the same stale
-  enum in the private TypeScript view; both now use schema-authoritative `proposed`.
-- 2026-08-17: Final `npm install` exited 0 with 164 packages audited and zero vulnerabilities;
-  `npm run format:check`, `npm run lint`, and strict `npm run typecheck` each exited 0.
-- 2026-08-17: Final `npm test` exited 0 with 3 files and 27 tests passed. Generated mutations
-  cover manifest/artifact loading, malformed JSON location, schema paths, symlink escape,
-  dangling/root/option references, S5 ownership, S6 materialization, S7 timing, S10 selection,
-  S11 observability/accepted decisions/backlinks, outputs, and CLI exits 0/1/2.
-- 2026-08-17: Final `npm run build` exited 0. Human and JSON executions of `npm exec -- sah
-  validate fixtures/simple-crud` exited 0 with zero errors and warnings.
-- 2026-08-17: `npm run verify:schemas` exited 0 with 4 tests: all seven Draft 2020-12 schemas
-  compiled, all embedded examples passed, every serialized property had non-empty writer and
-  reader traces, and the generated missing-trace mutation was detected.
-- 2026-08-17: Deterministic result: all applicable structural checks passed on simple-crud.
-  Assisted result: zero findings on that bundle; proposed decisions would emit a warning.
-  Judgment result: not run and unsupported in this slice. This fixture validation is not a
-  scored benchmark run, and no hidden expectations were read or modified during implementation.
-- 2026-08-17: Final repository audit passed `git diff --check`, all 50 tracked Markdown local
-  links, generated document/schema and AGENTS line budgets, benchmark non-modification, and
-  public declaration Ajv-leak inspection. The full diff review found correct exit separation,
-  guarded unresolved references and stage thresholds, realpath confinement, no CLI/Ajv types
-  in semantic contracts, and no speculative implementation interfaces.
-
-### Handoff
-
-The next vertical slice should add an atomic `sah advance <bundle> <stage>` operation that
-validates the claimed gate before updating manifest lifecycle, without adding reasoning prompts
-or a hosted store.
-
-## Run 3 ExecPlan — 2026-08-17
-
-### Outcome
-
-`sah advance <design-bundle-directory> <target-stage>` and `advanceBundle` move a manifest
-exactly one supported stage only after target-stage validation, with atomic replacement and
-actionable results for success, validation blockage, and operational failure.
-
-### Scope
-
-Included: transition eligibility, proposed-lifecycle validation without an early write,
-same-directory atomic manifest replacement, optimistic source-byte comparison, public library
-types, CLI human/JSON output, tests, documentation, and verification. Excluded: semantic IR
-mutation, missing stage-gate implementation, S12 handoffs, locks/services, prompts, adapters,
-and benchmark judges. No target IR ID or project constraint changes; ADR-0007 is the decision.
-
-### Constraints
-
-- Model Repository owns transition, validation, and persistence; CLI only adapts invocation.
-- Only one-step targets S5, S6, S7, S10, and S11 may advance; all others are unsupported.
-- Validation blockage or operational failure leaves manifest bytes unchanged.
-- Success changes only `lifecycle.completedStage`; public types expose no Ajv/fs objects.
-- Preserve benchmarks and unrelated work, keep documents within budget, commit, never push.
+- Repair the singular candidate premise; do not retain parallel legacy/new authority.
+- Deterministically check only serialized count, status, evidence, and references.
+- One candidate requires short-path or forcing-constraint evidence; two or more satisfy count.
+- At S8/S9 all candidates are proposed; from S10 exactly one is selected and others rejected.
+- Successful advance changes only manifest `completedStage`; retain Run 3 atomicity behavior.
+- Every new property has writer/readers; public types expose no Ajv/fs types; never push.
 
 ### Milestones
 
 | Phase | Milestone | Status | Evidence |
 |---|---|---|---|
-| 0 | Frame transition and atomicity contract | complete | this plan; ADR-0007 |
-| 1 | Implement reusable advance operation | complete | `82fb023`; atomic writer and tests |
-| 2 | Add CLI, result formats, and exit tests | complete | production CLI exits 0/1/2 |
-| 3 | Document, verify, and review | complete | all checks and full diff audit pass |
+| 0 | Frame canonical migration and S8 contract | in_progress | this plan; ADR-0008 |
+| 1 | Migrate schemas, fixture, types, and references | pending | Draft 2020-12 and trace checks |
+| 2 | Implement S8/S10 gates and advance support | pending | library and production CLI tests |
+| 3 | Document, verify, and review | pending | full loop and clean diff |
 
 ### Decision log
 
-- 2026-08-17: Evaluate a proposed stage entirely in memory, then use a flushed same-directory
-  temporary file, source-byte comparison, and rename as commit point. See ADR-0007.
-- 2026-08-17: Require an exact next stage and whitelist only implemented deterministic target
-  gates. Unsupported gates are exit 2, never inferred pass; gate violations are exit 1.
+- 2026-08-17: Prefer one clean plural candidate source over a legacy field plus adapter or a
+  short-path-only gate. Coordinate Architecture and manifest schema v0.2.0. See ADR-0008.
+- 2026-08-17: Candidate coherence, material difference, and proportionality adequacy remain
+  judgment. S8 blocks only on fixed structural/evidence predicates.
 
 ### Discovery log
 
-- 2026-08-17: Worktree is clean at `9a1d045`; Run 2 has 27 passing tests and no mutation API.
-- 2026-08-17: Current explicit target gates are S5/S6/S7/S10/S11. S8 candidate-count shape
-  and S12 handoff facts are not executable, so a general S0–S13 advance would be dishonest.
-- 2026-08-17: Atomic rename prevents partial manifest contents but not full multi-process
-  serializability; the pre-rename byte comparison narrows, but cannot eliminate, the final race.
-- 2026-08-17: A private loaded-bundle preparation lets validation evaluate current or proposed
-  lifecycle without adding a public override; the original validation API remains read-only.
-- 2026-08-17: Canonical artifact schema IDs are rejected by manifest `const` rules before
-  registry lookup; operational-category errors still defensively retain operational status.
+- 2026-08-17: Run 3 ended clean at `7c6ee31` with 47 tests and only S5/S6/S7/S10/S11 advance
+  targets. Its handoff named S8.
+- 2026-08-17: Architecture v0.1 serializes one candidate and global topology, while S8 authority
+  requires multiple candidates or structured single-candidate evidence. A gate alone would make
+  normal full-path S8 impossible and cannot trace the dogfood short-path claim.
+- 2026-08-17: S9 quality assessments lack candidate identity; add the reference now so candidate
+  ownership is unambiguous, but defer S9 coverage enforcement to the next slice.
 
 ### Verification log
 
-- 2026-08-17: Re-read root policy, completed plan, lifecycle/validation authority, ADR-0005/6,
-  manifest schema, Model Repository, stage/schema validators, CLI, and affected tests.
+- 2026-08-17: Re-read `AGENTS.md`, the completed plan, docs index, S8/S10 authority, dogfood R2,
+  current schemas, fixture, types, reference/stage validators, advance tests, and git history.
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
-- 2026-08-17: `82fb023` adds the library, CLI, atomic writer, and focused tests. After one
-  usage-format compatibility fix, format, lint, typecheck, and all 46 tests passed.
-- 2026-08-17: Final `npm install` audited 164 packages with zero vulnerabilities. Format,
-  lint, strict typecheck, production build, and all 47 tests passed; schema verification ran
-  4 tests covering seven Draft 2020-12 schemas, examples, and property traces.
-- 2026-08-17: Production CLI evidence was validate human/JSON 0, S10→S11 advance 0,
-  post-advance validate 0, missing-observable block 1, and unsupported S7→S8 2.
-- 2026-08-17: A first combined manual script was rejected before execution because cleanup
-  used recursive deletion; the split rerun passed and its exact temporary directory was moved
-  to Trash. No repository artifact was affected.
-- 2026-08-17: Link audit checked 100 local Markdown links; 32 policy/doc/schema files met line
-  budgets. Diff, benchmark non-modification, and public Ajv/fs declaration audits passed.
-- 2026-08-17: Deterministic structural and transition checks passed. Assisted findings were
-  exercised as non-blocking warnings; judgment was not run and remains unsupported. This was
-  not a scored benchmark run.
 
 ### Handoff
 
-Next, implement the S8 candidate-comparison gate and exact S7→S8 advancement without widening
-this slice into S9 decisions, reasoning prompts, or benchmark judging.
+Record ADR-0008, then migrate the earliest canonical schema premise before changing validators.

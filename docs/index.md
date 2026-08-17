@@ -47,6 +47,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   and artifact locations in a non-semantic, schema-validated bundle manifest.
 - [ADR-0007](adr/0007-validate-before-atomic-stage-advance.md) — validates a supported target
   gate before atomically replacing lifecycle metadata.
+- [ADR-0008](adr/0008-represent-architecture-candidate-sets.md) — migrates Architecture IR to
+  an explicit candidate set with topology and single-candidate evidence.
 
 ## JSON Schema contracts
 
