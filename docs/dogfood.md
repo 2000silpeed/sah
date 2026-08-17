@@ -61,10 +61,12 @@ dependencies. This is a valid structural handoff, not a claim that its slicing o
 contextually sufficient.
 
 The checked-in manifest now records S12 completion. Its `source-graph` write-authority
-constraint remains intentionally `unsupported` under the first S13 filesystem-only adapter,
-so verification is incomplete rather than falsely passing. Focused tests substitute the exact
-filesystem presence binding against a separate target fixture; they do not alter the dogfood
-architecture claim or benchmark material.
+constraint uses selector `equipment-records` and predicate
+`writers-belong-to-constraint-scope`. With an explicit target-local source mapping, the bounded
+TypeScript adapter confirms the direct writer belongs to `equipment-operations`; an injected
+unmapped writer violates. Without that mapping, or with unsupported source resolution,
+verification remains incomplete rather than falsely passing. The separate target fixture and
+focused mutations do not alter benchmark material or claim contextual architecture quality.
 
 Post-run comparison matched the benchmark's dominant strategy and fatal-avoidance anchors.
 The remaining uncertainty was preserved rather than scored as an architecture defect.

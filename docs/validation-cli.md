@@ -27,7 +27,7 @@ An installed package exposes:
 ```text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--json]
-sah verify <design-bundle-directory> <target-directory> [--json]
+sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -39,6 +39,8 @@ npm exec -- sah advance /path/to/disposable-bundle S12
 npm exec -- sah advance /path/to/disposable-bundle S12 --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 ```
 
 `advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
@@ -68,6 +70,11 @@ the canonical Implementation Handoff role and is an operational schema/declarati
 not silently rewritten. ADR-0009 owns this migration; ADR-0008 owns the earlier Architecture
 candidate migration.
 
+The optional [TypeScript source mapping schema](../schemas/typescript-source-mapping.schema.json)
+is v0.1.0. It is explicit target-local adapter configuration, not an eighth semantic IR or a
+bundle-manifest artifact. `--mapping` never discovers a conventional filename; its value must
+be a confined target-relative regular JSON file.
+
 ## Continuous verification
 
 `verify` first validates the stored bundle at its declared lifecycle stage. S12 must be
@@ -87,10 +94,26 @@ unsafe unsupported bindings.
 An absent or unreadable target root and metadata failures are operational errors. File
 presence proves only presence—not content, test coverage, or architectural adequacy.
 
-The checked-in simple-crud constraint declares a source-graph capability that this slice does
-not implement, so the example `verify` command intentionally returns `incomplete` and exit 2.
-The [S13 target fixture](../fixtures/s13-target/checks/equipment-operations.integration.txt)
-supports focused adapter tests without claiming that benchmark or product code exists.
+The TypeScript capability is `dependency-and-write analysis`, bound only to
+`factSource=source-graph`, `predicate=writers-belong-to-constraint-scope`, and `expected=true`.
+The observable selector resolves through the explicit mapping to one directly exported
+function or function-valued variable. The adapter enumerates every TypeScript file under all
+declared roots, resolves direct relative named imports (including import aliases), finds direct
+calls, maps writer paths to Architecture element IDs, and compares them with constraint scope.
+An unmapped or out-of-scope writer is a violation.
+
+Malformed, schema-invalid, unsafe, dangling, or inaccessible mapping configuration is an
+operational error. Ambiguous ownership, missing selector/module/export coverage, JavaScript,
+source symlinks, syntax errors, path aliases, default/namespace imports, re-exports, dynamic
+loading/code evaluation, TypeScript import assignments, and indirect function aliasing are
+unsupported and produce `incomplete`, never pass. The adapter does not resolve tsconfig paths
+or perform whole-program type checking.
+
+The [filesystem target](../fixtures/s13-target/checks/equipment-operations.integration.txt)
+supports the first capability. The [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json)
+and its source tree exercise the simple-crud write-authority constraint without placing a
+sample solution under benchmark data. Omitting `--mapping` from that source-graph example
+intentionally returns `incomplete` and exit 2.
 
 ## Stage advancement
 
@@ -133,6 +156,7 @@ import {
   verifyBundle,
   type AdvanceResult,
   type ValidationResult,
+  type VerificationOptions,
   type VerificationResult,
 } from "software-architect-harness";
 
@@ -144,6 +168,7 @@ const advancement: AdvanceResult = await advanceBundle(
 const verification: VerificationResult = await verifyBundle(
   "design/equipment",
   "target/equipment",
+  { sourceMappingPath: "sah.source-map.json" } satisfies VerificationOptions,
 );
 ```
 
@@ -157,5 +182,7 @@ declarations contain no Ajv or filesystem types.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in
-bundle. `verifyBundle` executes only the exact filesystem capability above; it does not run
-LLM review, infer code ownership, compile general predicates, or mark lifecycle S13 complete.
+bundle. `verifyBundle` executes only the two exact capabilities above. The optional
+`VerificationOptions` exposes only `sourceMappingPath`; public declarations contain no Ajv,
+TypeScript compiler, or filesystem types. It does not run LLM review, infer ownership without
+configuration, compile general predicates, or mark lifecycle S13 complete.

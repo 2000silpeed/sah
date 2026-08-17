@@ -143,9 +143,17 @@ bindings are unsupported; target access failures are operational. The exact capa
 owned by [Validation CLI usage](validation-cli.md), while ADR-0010 owns its scope decision.
 A structurally valid deterministic observable still is not a claim that target code passes it.
 
+Run 8 executes one TypeScript source-graph binding:
+`writers-belong-to-constraint-scope=true`. Explicit target-local configuration maps complete
+source roots and path prefixes to validated Architecture element IDs and maps the observable
+selector to one direct named write export. Direct relative named imports and calls are
+deterministic; an outside or unmapped writer violates. Configuration defects are operational,
+while incomplete language/symbol resolution is unsupported. ADR-0011 owns the mapping and
+parser boundary; no general dependency graph or constraint compiler is implied.
+
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
-`error`), and remediation/exception path. Run 7 formalizes the deterministic subset as public
+`error`), and remediation/exception path. Runs 7–8 formalize the deterministic subset as public
 verification checks with `pass`, `violation`, `pending`, or `unsupported`; operational errors
 remain diagnostics rather than fabricated checks.
 

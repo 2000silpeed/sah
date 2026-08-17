@@ -33,6 +33,11 @@ the representation decision and the manifest schema owns its serialized shape. A
 validates a proposed explicit stage, then atomically changes only this metadata field; it does
 not revise, infer, or normalize any semantic IR fact. ADR-0007 owns that transition decision.
 
+Target source mapping is also non-semantic metadata, but it is explicit adapter configuration
+rather than bundle lifecycle/storage metadata. It remains in the target checkout, outside the
+manifest and seven IRs, and may map paths only to already validated Architecture element IDs.
+Its schema owns serialized shape; ADR-0011 owns the separation and TypeScript boundary.
+
 Architecture IR v0.2 makes candidates an explicit set. Each candidate points to the topology
 it uses and states operational consequences; an assessment identifies the candidate it
 evaluates. A single-candidate set carries structured short-path or forcing-constraint
@@ -116,12 +121,15 @@ At S13, handoff assignment determines which constraints belong to ready or block
 Execution results are runtime evidence, not another canonical IR: they retain constraint,
 decision, element, and slice IDs without being written back into Architecture or Handoff.
 ADR-0010 owns the first explicit-target filesystem capability and its no-schema-change choice.
+ADR-0011 owns the explicit target-local source mapping used by the bounded TypeScript adapter;
+neither execution result nor mapping becomes canonical design meaning.
 
 ## Elements and relations
 
 An element is a logical owner before it is a deployment unit. Its `logicalRole`, `authority`,
 and responsibility/invariant references justify its existence. S7 adds one representation;
-later adapters may map modules or services to code and deployment facts.
+adapters may explicitly map modules or services to code and deployment facts, but path
+convention alone cannot establish ownership.
 
 A boundary groups elements because it protects a named change or risk, not because a diagram
 needs a box. An interface is owned and states contract, versioning, consistency, and failure

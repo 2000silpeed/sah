@@ -66,12 +66,20 @@ The S12 slice loads canonical Implementation Handoff IR and joins it with select
 and Decision facts. The Model Repository owns reference, coverage, blocker, readiness, and
 acyclic-dependency checks. It does not execute handoff checks or judge slice quality.
 
-The first S13 execution slice exposes `verifyBundle(bundleDirectory, targetDirectory)`. The
-Model Repository validates the stored S12 bundle, selects constraints assigned to ready
-slices, dispatches declared adapter capabilities, and aggregates check states. A private
-filesystem adapter implements only regular-file presence under a physically confined explicit
-target root. The CLI owns presentation and exit mapping; adapter outcomes, Ajv errors, and
-terminal formatting do not enter canonical IR. S13 lifecycle advancement remains unsupported.
+The S13 execution surface exposes `verifyBundle(bundleDirectory, targetDirectory, options)`.
+The Model Repository validates the stored S12 bundle, selects constraints assigned to ready
+slices, dispatches declared adapter capabilities, and aggregates check states. Private
+filesystem and TypeScript adapters implement only confined regular-file presence and one
+explicitly mapped write-authority predicate. The CLI owns invocation, presentation, and exit
+mapping; adapter outcomes, Ajv/compiler objects, and terminal formatting do not enter
+canonical IR. S13 lifecycle advancement remains unsupported.
+
+TypeScript mapping is target-relative, schema-validated adapter context supplied explicitly by
+the caller. It relates complete declared source roots and path prefixes to Architecture element
+IDs, plus observable selectors to write symbols. It is neither inferred from directory names
+nor stored in semantic IR or the bundle manifest. The adapter scans all declared roots with the
+TypeScript parser and refuses unresolved source forms instead of manufacturing a complete
+graph. ADR-0011 owns this boundary.
 
 ### Decision and View Adapters
 
@@ -139,9 +147,11 @@ applicable deterministic checks, emits assisted findings, and schedules judgment
 decision triggers. Violations point to source decision, affected invariant, owner, and allowed
 exception authority.
 
-The current executable subset does not yet map diffs or symbols. It uses S12 slice assignment
-for applicability and can evaluate only a declared target-relative regular-file presence fact.
-Other capabilities remain explicit unsupported coverage.
+The current executable subset does not yet map diffs. It uses S12 slice assignment for
+applicability and can evaluate a declared target-relative regular-file presence fact or direct
+TypeScript calls to one explicitly mapped write symbol. Path aliases, re-exports, dynamic
+loading/code evaluation, import assignments, indirect symbol aliases, mixed JavaScript, and
+whole-program semantics remain explicit unsupported coverage.
 
 ### Benchmark run
 

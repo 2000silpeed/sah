@@ -50,10 +50,10 @@ and S13 lifecycle advancement. Benchmark inputs and expectations remain unchange
 | ----- | ------------------------------------------------------- | ----------- | -------- |
 | 0     | Frame mapping/parser ownership and exact predicate      | complete    | `18f6e14`, ADR-0011 |
 | 1     | Add schema, loader, adapter request, and public options | complete    | strict typecheck |
-| 2     | Add TypeScript target fixture and focused library tests | complete    | 27 focused tests |
+| 2     | Add TypeScript target fixture and focused library tests | complete    | 30 focused tests |
 | 3     | Add CLI mapping flow and production exit evidence       | complete    | 24 CLI tests |
-| 4     | Update authority documentation and operating commands   | in_progress | —        |
-| 5     | Run full verification and adversarial diff review       | pending     | —        |
+| 4     | Update authority documentation and operating commands   | complete    | CLI/model docs, glossary, index, AGENTS |
+| 5     | Run full verification and adversarial diff review       | complete    | 172 tests, CLI 0/1/2, clean audits |
 
 ### Decision log
 
@@ -79,6 +79,9 @@ and S13 lifecycle advancement. Benchmark inputs and expectations remain unchange
 - 2026-08-17: Adversarial review found that post-enumeration symlink replacement and unresolved
   alias/re-export/dynamic forms could otherwise evade complete analysis. Source reads now
   reconfirm confinement, and every such form produces unsupported coverage.
+- 2026-08-17: A second diff audit found namespace re-exports, import assignments, and dynamic
+  code evaluation could hide target calls. They now return explicit unsupported checks and
+  have focused mutations; no broader symbol resolver was introduced.
 
 ### Verification log
 
@@ -87,9 +90,24 @@ and S13 lifecycle advancement. Benchmark inputs and expectations remain unchange
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
 - 2026-08-17: `npm run format`, `npm run lint`, and `npm run typecheck` passed. Focused
   TypeScript/library and CLI integration execution passed 51/51 tests.
+- 2026-08-17: Full pre-documentation execution passed 169/169 tests across nine files; schema
+  compilation/example validation and field-trace auditing are included in that suite.
+- 2026-08-17: Final Node v24.14.1/npm 11.11.0 loop: `npm install` reported up to date, 164
+  packages and zero vulnerabilities; format check, lint, strict typecheck, 172/172 tests,
+  production build, and `npm run verify:schemas` (4/4) passed.
+- 2026-08-17: Nine Draft 2020-12 schemas and nine embedded examples compiled/validated; 317
+  serialized properties passed writer/reader trace audit, and public declarations exposed no
+  Ajv, TypeScript compiler, or filesystem implementation types.
+- 2026-08-17: Built CLI evidence: canonical TypeScript target passed/human/exit 0; an injected
+  unmapped writer returned JSON `CONSTRAINT_VIOLATION`/exit 1; missing mapping returned JSON
+  `SOURCE_MAPPING_UNREADABLE`/exit 2.
+- 2026-08-17: All 54 Markdown files had resolving local links; changed document budgets were
+  below limits; package dry-run included runtime, TypeScript adapter, and all nine schemas;
+  benchmark diff was empty; `git diff --check` passed.
 
 ### Handoff
 
-Run 8 implementation and focused tests are complete. Update the authority documentation, run
-the full verification loop and production CLI evidence, review the complete diff, then close
-the plan and commit without pushing.
+Run 8 is complete. The next bounded slice should replace conservative unsupported outcomes for
+tsconfig path aliases and re-exports with compiler-program symbol resolution while preserving
+explicit mapping, complete-root enumeration, and honest incomplete results for unresolved
+dynamic forms. Do not add S13 lifecycle advancement in that slice.

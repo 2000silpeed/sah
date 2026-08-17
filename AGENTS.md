@@ -121,14 +121,17 @@ npm exec -- sah validate fixtures/simple-crud --json
 npm exec -- sah advance /path/to/disposable-s11-bundle S12 --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 ```
 
 The installed package exposes `sah validate <design-bundle-directory> [--json]` and the
 mutating `sah advance <design-bundle-directory> <target-stage> [--json]`, plus read-only
-`sah verify <design-bundle-directory> <target-directory> [--json]`. Run `advance` only on the
-intended working bundle or a disposable copy. Public library entry points are `validateBundle`,
-`advanceBundle`, and `verifyBundle`; [validation CLI usage](docs/validation-cli.md) owns their
-result, transition, fact-capability, atomicity, and exit-code contracts.
+`sah verify <design-bundle-directory> <target-directory> [--mapping
+<target-relative-mapping-file>] [--json]`. Run `advance` only on the intended working bundle or
+a disposable copy. Public library entry points are `validateBundle`, `advanceBundle`, and
+`verifyBundle`; [validation CLI usage](docs/validation-cli.md) owns their result, transition,
+fact-capability, mapping, atomicity, and exit-code contracts.
 
 ## Change workflow
 

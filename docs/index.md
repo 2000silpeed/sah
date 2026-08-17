@@ -78,6 +78,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   dependencies, accepted decisions, proposed blockers, checks, migration, and rollback.
 - [Bundle manifest](../schemas/design-bundle-manifest.schema.json) — non-semantic lifecycle,
   profile, artifact path, and declared schema metadata for loading a design bundle.
+- [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
+  target-local source roots, Architecture element path prefixes, and write-target symbols.
 
 ## Runtime implementation and executable fixture
 
@@ -104,11 +106,13 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
 - [Code-fact adapter seam](../src/code-fact-adapter.ts), [constraint verification](../src/constraint-verification.ts),
-  and [filesystem presence adapter](../src/filesystem-presence-adapter.ts) — isolate S13
-  selection and one confined target-fact capability from canonical semantics and CLI concerns.
+  [filesystem presence adapter](../src/filesystem-presence-adapter.ts), and
+  [TypeScript source adapter](../src/typescript-source-adapter.ts) — isolate S13 selection and
+  confined target-fact capabilities from canonical semantics and CLI concerns.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
   [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
+  [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), and [schema contract tests](../test/schema-contracts.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   output, and failure families without network use.
@@ -120,6 +124,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   outside benchmark inputs.
 - [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —
   gives filesystem-presence tests one inert target-local regular file outside benchmark data.
+- [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json),
+  [write target](../fixtures/s13-typescript-target/src/equipment-store.ts), and
+  [authorized caller](../fixtures/s13-typescript-target/src/equipment-operations/save-equipment.ts)
+  — exercise direct named-import write authority against the canonical simple-crud constraint.
 
 ## Benchmark fixtures
 
