@@ -62,6 +62,10 @@ The S9 slice joins canonical candidate IDs with must-priority scenario IDs and a
 references inside the Model Repository. It owns coverage, uniqueness, and pre-selection state;
 contextual scenario satisfaction remains an assisted finding rather than CLI policy.
 
+The S12 slice loads canonical Implementation Handoff IR and joins it with selected Architecture
+and Decision facts. The Model Repository owns reference, coverage, blocker, readiness, and
+acyclic-dependency checks. It does not execute handoff checks or judge slice quality.
+
 ### Decision and View Adapters
 
 Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They
@@ -111,8 +115,8 @@ The host adapter starts or resumes a bundle. The orchestrator reads the active s
 Method Library for relevant questions, obtains LLM/human output, validates shape through the
 Model Repository, runs the semantic gate, and either advances or records the causal
 loop-back. Only a successful atomic update makes downstream artifacts current. The current
-runtime can advance only targets with implemented S5, S6, S7, S8, S9, S10, or S11 gates; it reports
-other exact-next stages as unsupported rather than manufacturing a pass.
+runtime can advance targets with implemented S5–S12 gates; it reports other exact-next stages
+as unsupported rather than manufacturing a pass.
 
 ### Constraint compilation
 

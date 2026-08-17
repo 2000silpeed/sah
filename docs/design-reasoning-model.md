@@ -131,12 +131,14 @@ rewording or is downgraded; a missing code fact becomes adapter backlog, not inv
 
 ### S12 — Produce the implementation handoff
 
-**Consumes:** all selected IRs, decisions, and constraints. **Produces:** an implementation
-plan outside this run: ordered change slices, acceptance checks, migration/rollback needs,
-and coding-agent context. **Complete when:** each slice names affected architecture elements,
-constraints, verification, and proposed decisions that block it; unaffected slices may
-proceed. **Loop-back:** an unimplementable boundary returns to S6/S7; no product code begins
-before this gate for a full-path run.
+**Consumes:** all selected IRs, decisions, and constraints. **Produces:** canonical
+Implementation Handoff IR: dependency-ordered change slices, acceptance checks with expected
+results, migration/rollback needs, and coding-agent context. **Complete when:** every selected
+element and applicable constraint is covered; each slice names accepted decisions affecting
+it; every affecting proposed decision blocks that slice; ready/blocked state is consistent;
+and slice dependencies are acyclic. Presence, references, coverage, and status are
+deterministic. Slice wisdom and plan adequacy remain judgment. **Loop-back:** an unimplementable
+boundary returns to S6/S7; no product code begins before this gate for a full-path run.
 
 ### S13 — Verify continuously
 
@@ -157,18 +159,18 @@ analysis. Discovery of a disqualifying force immediately restores the full path.
 
 ## Ten-question coverage
 
-| Question | Owning section |
-|---|---|
-| 1. What problem kind? | `system-characterization.md` — Dimensions and procedure |
-| 2. Which parts differ? | `system-characterization.md` — Unit of assessment |
-| 3. Which methods fit? | `strategy-selection.md` — Strategy catalogue and selection rules |
-| 4. What responsibilities? | S3 |
-| 5. What invariants? | S4 |
-| 6. Who owns them? | S5 |
-| 7. Where are boundaries? | S6 |
-| 8. Which representation? | S7 |
-| 9. Which architecture meets quality needs? | S8–S10 |
-| 10. How is it enforced? | S11–S13 and `validation-model.md` |
+| Question                                   | Owning section                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| 1. What problem kind?                      | `system-characterization.md` — Dimensions and procedure          |
+| 2. Which parts differ?                     | `system-characterization.md` — Unit of assessment                |
+| 3. Which methods fit?                      | `strategy-selection.md` — Strategy catalogue and selection rules |
+| 4. What responsibilities?                  | S3                                                               |
+| 5. What invariants?                        | S4                                                               |
+| 6. Who owns them?                          | S5                                                               |
+| 7. Where are boundaries?                   | S6                                                               |
+| 8. Which representation?                   | S7                                                               |
+| 9. Which architecture meets quality needs? | S8–S10                                                           |
+| 10. How is it enforced?                    | S11–S13 and `validation-model.md`                                |
 
 ## Model change protocol
 

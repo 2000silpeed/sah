@@ -19,64 +19,68 @@ has no complete observable specification.
 
 ## Catalogue
 
-| Capability | Class | Observable boundary and result |
-|---|---:|---|
-| JSON Schema shape and formats | D | IR bytes against the declared Draft 2020-12 schema. |
-| Unique IDs and valid cross-IR references | D | Bundle ID graph; report duplicate or dangling paths. |
-| Required field trace annotations | D | Schema `properties`; require non-empty writer and reader lists. |
-| Stage-state completeness | D | Gate-specific required fields/status; e.g. no `undecided` after S7. |
-| Trace presence from representation to evidence | D | Reference reachability through element → responsibility/invariant → evidence. |
-| Trace evidence adequacy | J | Decide whether cited evidence actually supports the claim. |
-| Material requirement coverage | A | Find uncited requirements mechanically; judge whether mapped responsibilities cover meaning. |
-| Staleness/change-impact propagation | D | Traverse changed IDs through declared references and mark dependents stale. |
-| Characterization completeness | D | Every subsystem has all ten ratings and evidence/unknown markers. |
-| Characterization correctness | J | Judge ratings, omitted forces, and whether evidence deserves its weight. |
-| Subsystem merge/split suggestion | A | Compare ratings, ownership, and relation density; reviewer decides boundaries. |
-| Strategy trace and alternative presence | D | Require dimension/evidence links, costs, and at least one alternative. |
-| Strategy identifier registration | D | Every selected strategy ID resolves to a Method Library definition with required semantics. |
-| Strategy appropriateness | J | Compare forces, simpler options, failure modes, and ceremony. |
-| Responsibility statement representation leakage | A | Flag class/service/repository vocabulary; judge imposed constraints and intent. |
-| Responsibility semantic coverage | J | Judge whether required outcomes and quality responses are actually represented. |
-| Duplicate or low-cohesion responsibilities | A | Surface semantic similarity and divergent change reasons; reviewer resolves. |
-| Owner/reference coverage | D | After S5, require an owner or an explicit unresolved conflict. |
-| Ownership appropriateness | J | Judge authority, information, cohesion, and change reason. |
-| Invariant structural completeness | D | Require trigger, obligation, criticality, consistency, failure, detection, and recovery. |
-| Invariant consistency contradiction | A | Compare span, owner, and stated consistency; judge whether the model is wrong. |
-| Invariant adequacy | J | Judge whether critical business, safety, distributed, and agent obligations are missing. |
-| Boundary trace presence | D | Require protected change/risk, owner, members, and decision references. |
-| Boundary quality | J | Judge semantic cohesion, change isolation, and whether translation belongs there. |
-| Representation ordering | D | Reject accepted representation whose responsibility/owner/boundary traces are absent. |
-| Representation proportionality | J | Judge whether function/module/service/agent complexity is warranted. |
-| Candidate count or single-option evidence | D | Require two options, a hard forcing constraint, or eligible short-path proportionality evidence linked to S2 alternatives. |
-| Candidate coherence and material difference | J | Judge whether options are viable and differ in a real trade-off. |
-| Quality-scenario assessment coverage | D | Every must scenario has a result for every candidate. |
-| Quality-scenario satisfaction | A | Verify measures where test/telemetry exists; judge projections and causal claims. |
-| Accepted decision integrity | D | Selected option exists; authority, costs, consequences, and review triggers exist. |
-| Trade-off quality and risk acceptance | J | Judge whether losses are real and accepted by appropriate authority. |
-| Decision-to-constraint trace | D | Every constraint references an accepted decision and valid scope. |
-| Constraint observability contract | D | Deterministic constraints require fact source, selector, predicate, and expected value. |
-| Constraint classification correctness | A | Inspect observability and flag category inflation; reviewer may reclassify. |
-| Source-to-element mapping syntax | D | Configured path/symbol selectors resolve uniquely or fail as unsupported. |
-| Source-to-element mapping inference | A | Suggest mappings from paths/symbols/ownership; human confirms before hard checks. |
-| Forbidden dependency/import direction | D | Extracted source graph against an accepted allow/deny relation. |
-| Dependency cycles | D | Graph cycle detection within the decision's declared scope and dependency types. |
-| Boundary bypass and unauthorized writes | D | Mapped calls/writes against interface and owner authority. |
-| Layer/module independence | D | Source graph against a project decision; no universal layering rule exists. |
-| API/schema compatibility | D | Machine-readable contracts under the selected compatibility policy. |
-| Message delivery/ordering configuration | D | Declared broker/config facts against explicit decision predicates. |
-| Runtime latency, error, cost, and staleness bounds | D | Telemetry/tests against numeric scenario thresholds with defined windows. |
-| Test/evaluation artifact presence | D | Required named artifact, dataset, or check exists and is runnable. |
-| Test/evaluation sufficiency | J | Judge scenario realism, coverage, leakage, and acceptable risk. |
-| Agent tool permission allow/deny | D | Tool manifest and invocation log against an accepted permission policy. |
-| Agent fallback and human-control wiring | A | Detect declared routes and tests; judge whether behavior is safe and usable. |
-| Data lineage/reference completeness | D | Declared stage and dataset graph has no missing required edge or owner. |
-| Replay/idempotency evidence | A | Surface keys, tests, and retry paths; judge behavior under real failure. |
-| Naming pattern required by a decision | D | Symbols/paths against the scoped pattern. |
-| Catch-all, god-object, anemic-model, and gratuitous-layer smells | A | Size, fan-in/out, names, and behavior distribution produce a weighted finding with escape evidence. |
-| Cohesion/coupling and change-boundary fit | A | Dependency and co-change facts inform a reviewer; counts alone never fail. |
-| Methodology neutrality audit | A | Scan strategy/representation defaults and schema enums; judge whether a preference is unjustified. |
-| Benchmark score calculation | D | Frozen rubric inputs and weights produce a reproducible numeric result. |
-| Benchmark architectural scoring | J | Calibrated judge applies domain expectations; human arbitrates disputed fixture changes. |
+| Capability                                                       | Class | Observable boundary and result                                                                                             |
+| ---------------------------------------------------------------- | ----: | -------------------------------------------------------------------------------------------------------------------------- |
+| JSON Schema shape and formats                                    |     D | IR bytes against the declared Draft 2020-12 schema.                                                                        |
+| Unique IDs and valid cross-IR references                         |     D | Bundle ID graph; report duplicate or dangling paths.                                                                       |
+| Required field trace annotations                                 |     D | Schema `properties`; require non-empty writer and reader lists.                                                            |
+| Stage-state completeness                                         |     D | Gate-specific required fields/status; e.g. no `undecided` after S7.                                                        |
+| Trace presence from representation to evidence                   |     D | Reference reachability through element → responsibility/invariant → evidence.                                              |
+| Trace evidence adequacy                                          |     J | Decide whether cited evidence actually supports the claim.                                                                 |
+| Material requirement coverage                                    |     A | Find uncited requirements mechanically; judge whether mapped responsibilities cover meaning.                               |
+| Staleness/change-impact propagation                              |     D | Traverse changed IDs through declared references and mark dependents stale.                                                |
+| Characterization completeness                                    |     D | Every subsystem has all ten ratings and evidence/unknown markers.                                                          |
+| Characterization correctness                                     |     J | Judge ratings, omitted forces, and whether evidence deserves its weight.                                                   |
+| Subsystem merge/split suggestion                                 |     A | Compare ratings, ownership, and relation density; reviewer decides boundaries.                                             |
+| Strategy trace and alternative presence                          |     D | Require dimension/evidence links, costs, and at least one alternative.                                                     |
+| Strategy identifier registration                                 |     D | Every selected strategy ID resolves to a Method Library definition with required semantics.                                |
+| Strategy appropriateness                                         |     J | Compare forces, simpler options, failure modes, and ceremony.                                                              |
+| Responsibility statement representation leakage                  |     A | Flag class/service/repository vocabulary; judge imposed constraints and intent.                                            |
+| Responsibility semantic coverage                                 |     J | Judge whether required outcomes and quality responses are actually represented.                                            |
+| Duplicate or low-cohesion responsibilities                       |     A | Surface semantic similarity and divergent change reasons; reviewer resolves.                                               |
+| Owner/reference coverage                                         |     D | After S5, require an owner or an explicit unresolved conflict.                                                             |
+| Ownership appropriateness                                        |     J | Judge authority, information, cohesion, and change reason.                                                                 |
+| Invariant structural completeness                                |     D | Require trigger, obligation, criticality, consistency, failure, detection, and recovery.                                   |
+| Invariant consistency contradiction                              |     A | Compare span, owner, and stated consistency; judge whether the model is wrong.                                             |
+| Invariant adequacy                                               |     J | Judge whether critical business, safety, distributed, and agent obligations are missing.                                   |
+| Boundary trace presence                                          |     D | Require protected change/risk, owner, members, and decision references.                                                    |
+| Boundary quality                                                 |     J | Judge semantic cohesion, change isolation, and whether translation belongs there.                                          |
+| Representation ordering                                          |     D | Reject accepted representation whose responsibility/owner/boundary traces are absent.                                      |
+| Representation proportionality                                   |     J | Judge whether function/module/service/agent complexity is warranted.                                                       |
+| Candidate count or single-option evidence                        |     D | Require two options, a hard forcing constraint, or eligible short-path proportionality evidence linked to S2 alternatives. |
+| Candidate coherence and material difference                      |     J | Judge whether options are viable and differ in a real trade-off.                                                           |
+| Quality-scenario assessment coverage                             |     D | Every must scenario has a result for every candidate.                                                                      |
+| Quality-scenario satisfaction                                    |     A | Verify measures where test/telemetry exists; judge projections and causal claims.                                          |
+| Accepted decision integrity                                      |     D | Selected option exists; authority, costs, consequences, and review triggers exist.                                         |
+| Trade-off quality and risk acceptance                            |     J | Judge whether losses are real and accepted by appropriate authority.                                                       |
+| Decision-to-constraint trace                                     |     D | Every constraint references an accepted decision and valid scope.                                                          |
+| Constraint observability contract                                |     D | Deterministic constraints require fact source, selector, predicate, and expected value.                                    |
+| Constraint classification correctness                            |     A | Inspect observability and flag category inflation; reviewer may reclassify.                                                |
+| Implementation slice coverage                                    |     D | Every selected element and applicable constraint is assigned to a slice covering its scope.                                |
+| Implementation decision/blocker assignment                       |     D | Accepted decisions accompany affected slices; affecting proposed decisions block them.                                     |
+| Implementation dependency order                                  |     D | Slice references resolve with no self-dependency or cycle.                                                                 |
+| Implementation handoff adequacy                                  |     J | Judge slice cohesion, acceptance checks, migration, rollback, and executable usefulness.                                   |
+| Source-to-element mapping syntax                                 |     D | Configured path/symbol selectors resolve uniquely or fail as unsupported.                                                  |
+| Source-to-element mapping inference                              |     A | Suggest mappings from paths/symbols/ownership; human confirms before hard checks.                                          |
+| Forbidden dependency/import direction                            |     D | Extracted source graph against an accepted allow/deny relation.                                                            |
+| Dependency cycles                                                |     D | Graph cycle detection within the decision's declared scope and dependency types.                                           |
+| Boundary bypass and unauthorized writes                          |     D | Mapped calls/writes against interface and owner authority.                                                                 |
+| Layer/module independence                                        |     D | Source graph against a project decision; no universal layering rule exists.                                                |
+| API/schema compatibility                                         |     D | Machine-readable contracts under the selected compatibility policy.                                                        |
+| Message delivery/ordering configuration                          |     D | Declared broker/config facts against explicit decision predicates.                                                         |
+| Runtime latency, error, cost, and staleness bounds               |     D | Telemetry/tests against numeric scenario thresholds with defined windows.                                                  |
+| Test/evaluation artifact presence                                |     D | Required named artifact, dataset, or check exists and is runnable.                                                         |
+| Test/evaluation sufficiency                                      |     J | Judge scenario realism, coverage, leakage, and acceptable risk.                                                            |
+| Agent tool permission allow/deny                                 |     D | Tool manifest and invocation log against an accepted permission policy.                                                    |
+| Agent fallback and human-control wiring                          |     A | Detect declared routes and tests; judge whether behavior is safe and usable.                                               |
+| Data lineage/reference completeness                              |     D | Declared stage and dataset graph has no missing required edge or owner.                                                    |
+| Replay/idempotency evidence                                      |     A | Surface keys, tests, and retry paths; judge behavior under real failure.                                                   |
+| Naming pattern required by a decision                            |     D | Symbols/paths against the scoped pattern.                                                                                  |
+| Catch-all, god-object, anemic-model, and gratuitous-layer smells |     A | Size, fan-in/out, names, and behavior distribution produce a weighted finding with escape evidence.                        |
+| Cohesion/coupling and change-boundary fit                        |     A | Dependency and co-change facts inform a reviewer; counts alone never fail.                                                 |
+| Methodology neutrality audit                                     |     A | Scan strategy/representation defaults and schema enums; judge whether a preference is unjustified.                         |
+| Benchmark score calculation                                      |     D | Frozen rubric inputs and weights produce a reproducible numeric result.                                                    |
+| Benchmark architectural scoring                                  |     J | Calibrated judge applies domain expectations; human arbitrates disputed fixture changes.                                   |
 
 ## Applicability and compilation
 
@@ -106,14 +110,12 @@ than silently accepting.
 Run 2 implements bundle loading, schema/format checks, schema field traces, cross-IR identity
 and references, decision/constraint backlinks, and selected S5–S11 completeness gates. These
 are deterministic because the manifest supplies explicit lifecycle and artifact declarations.
-Proposed-decision isolation produces an assisted warning: the current six IRs do not serialize
-S12 implementation slices, so the validator cannot prove isolation or blocker coverage.
+Through S11, proposed-decision isolation produces an assisted warning because no S12 slice is
+yet authoritative.
 
 Run 3 reuses those same deterministic predicates to test a proposed exact-next lifecycle
-before committing it. Target gates S5, S6, S7, S8, S9, S10, and S11 are executable. Missing gate
-implementations are operational `unsupported` outcomes, not validation passes. Deterministic
-errors block advancement; the assisted proposed-decision isolation finding remains a warning
-and cannot become a hard failure merely because the command can write lifecycle metadata.
+before committing it. Missing gate implementations are operational `unsupported` outcomes,
+not validation passes. Deterministic errors block advancement; warnings alone do not.
 
 Run 4 makes S8 structurally executable. It deterministically checks candidate count and
 status, candidate topology and assessment references, and resolved evidence for a justified
@@ -127,6 +129,12 @@ candidate/must-scenario pair, rejects duplicate pairs, and keeps candidates, dec
 selected-option state pre-selection through S9. A non-pass must result emits an assisted
 warning because result adequacy and risk acceptance are contextual. Missing coverage or wrong
 stage state blocks S8→S9; the warning alone does not.
+
+Run 6 adds canonical Implementation Handoff IR and makes S12 structurally executable. It
+checks selected-element and applicable-constraint coverage, accepted-decision context,
+proposed-decision blockers, ready/blocked consistency, and an acyclic slice dependency graph.
+The S10 isolation warning applies only through S11; at S12 the required slice facts make
+blocker coverage a deterministic predicate. The runtime supports exact targets S5–S12.
 
 This slice validates constraint declarations but does not bind code-fact adapters or execute
 compiled project constraints. A structurally valid deterministic observable is therefore not

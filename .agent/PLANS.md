@@ -211,8 +211,8 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 | 0     | Frame canonical S12 representation and predicates        | complete    | `e12b046`; ADR-0009    |
 | 1     | Add schema, manifest migration, types, and references    | complete    | v0.3/v0.1 schemas pass |
 | 2     | Implement S12 gates, advance, fixture, and focused tests | complete    | 110 tests pass         |
-| 3     | Update authority documentation                           | in_progress | —                      |
-| 4     | Run full verification and adversarial review             | pending     | —                      |
+| 3     | Update authority documentation                           | complete    | S12 contracts aligned  |
+| 4     | Run full verification and adversarial review             | in_progress | —                      |
 
 ### Decision log
 
@@ -250,8 +250,11 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 - 2026-08-17: Manifest v0.3, Implementation Handoff v0.1, all embedded examples, and every
   schema property trace pass Draft 2020-12 validation. Format, lint, strict typecheck, and
   110/110 tests pass, including all handoff reference families and S11→S12 atomicity.
+- 2026-08-17: Architecture, reasoning, validation, harness, CLI, dogfood, glossary, index,
+  ADR-0003/0006/0007/0009, and `AGENTS.md` now agree on the seventh IR, manifest v0.3, S12
+  deterministic boundary, exact commands, and S11→S12 support.
 
 ### Handoff
 
-Run 6 is active. Resume at Phase 3: update affected authority documents and public commands,
-then run the complete verification loop without extending into S13 code-fact execution.
+Run 6 is active. Resume at Phase 4: run the complete verification and diff audit, record exact
+evidence, and close the plan without extending into S13 code-fact execution.

@@ -68,6 +68,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   relations, interfaces, assessments, and constraints.
 - [Architecture Decision](../schemas/architecture-decision.schema.json) — options, evidence,
   costs, authority, consequences, review triggers, and constraint links.
+- [Implementation Handoff](../schemas/implementation-handoff.schema.json) — S12 slices,
+  dependencies, accepted decisions, proposed blockers, checks, migration, and rollback.
 - [Bundle manifest](../schemas/design-bundle-manifest.schema.json) — non-semantic lifecycle,
   profile, artifact path, and declared schema metadata for loading a design bundle.
 
@@ -90,20 +92,21 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   and audits field traces.
 - [Reference validation](../src/reference-validation.ts) — checks unique IDs, typed references,
   root links, option ownership, and decision/constraint backlinks.
-- [Stage validation](../src/stage-validation.ts) — applies observable S5–S11 gates from the
+- [Stage validation](../src/stage-validation.ts) — applies observable S5–S12 gates from the
   manifest's completed stage.
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
-  [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts),
+  [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
   [advance tests](../test/advance-bundle.test.ts), [CLI tests](../test/cli.test.ts), and
   [schema contract tests](../test/schema-contracts.test.ts) — generate isolated mutations and
   verify validation, atomic transition, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
   [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
   [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),
-  and [decisions](../fixtures/simple-crud/architecture-decision.json) — form the valid external
-  equipment-register fixture derived from the dogfood walkthrough, outside benchmark inputs.
+  [decisions](../fixtures/simple-crud/architecture-decision.json), and [handoff](../fixtures/simple-crud/implementation-handoff.json)
+  — form the valid external equipment-register fixture derived from the dogfood walkthrough,
+  outside benchmark inputs.
 
 ## Benchmark fixtures
 

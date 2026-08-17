@@ -4,87 +4,88 @@ English terms are canonical. Korean equivalents aid review but must not become a
 identifiers. The Owner column names the document that may change the definition; other
 documents link or apply it.
 
-| English term | 한국어 대응어 | Canonical definition | Owner |
-|---|---|---|---|
-| Accepted decision | 승인된 결정 | A decision with selected option, authority, costs, consequences, and review triggers. | architecture-model.md |
-| Adapter | 어댑터 | A target-specific translator at a stable seam; it does not own canonical semantics. | harness-architecture.md |
-| ADR | 아키텍처 결정 기록 | A durable human view of a consequential decision, alternatives, costs, and consequences. | architecture-model.md |
-| Agent representation | 에이전트 표현 | A runtime form that delegates bounded choices to a probabilistic model using context and tools. | architecture-model.md |
-| Agentic tool loop | 에이전트 도구 루프 | A strategy centered on model uncertainty, tools, permissions, context, memory, evaluation, fallback, latency, and cost. | strategy-selection.md |
-| Aggregate | 애그리게이트 | An optional representation that gives one boundary authority to preserve a related invariant set. | architecture-model.md |
-| Architecture candidate | 아키텍처 후보 | One member of a candidate set, identifying the elements, relations, boundaries, interfaces, and operational consequences it uses. | design-reasoning-model.md |
-| Architecture constraint | 아키텍처 제약 | An enforceable or reviewable proposition compiled from an accepted decision for a named scope. | validation-model.md |
-| Architecture Decision IR | 아키텍처 결정 IR | Canonical structured options, evidence, authority, selection, costs, consequences, and review triggers. | architecture-model.md |
-| Architecture element | 아키텍처 요소 | A stable logical owner with role, authority, responsibility/invariant traces, and later a representation. | architecture-model.md |
-| Architecture IR | 아키텍처 IR | Canonical candidates, elements, boundaries, relations, interfaces, quality assessments, and constraints. | architecture-model.md |
-| Assisted validation | 보조형 검증 | Observable facts narrow a contextual question whose interpretation remains LLM/human review. | validation-model.md |
-| Assumption | 가정 | Evidence explicitly marked uncertain and paired with a condition that would falsify it. | system-characterization.md |
-| Authority | 권한 | The legitimate ability to decide, mutate, enforce, accept risk, or grant an exception in a stated scope. | architecture-model.md |
-| Benchmark expectations | 벤치마크 기대 결과 | Hidden acceptable conclusions, alternatives, failures, and mandatory trade-offs used only after a run is frozen. | benchmark-strategy.md |
-| Boundary | 경계 | A grouping that protects a named change, invariant, authority, risk, or failure mode. | architecture-model.md |
-| Bundle manifest | 번들 매니페스트 | Non-semantic, schema-validated metadata declaring a design bundle's completed stage, profile, artifact paths, and schema IDs. | harness-architecture.md |
-| Candidate assessment | 후보 평가 | A candidate/scenario result with evidence, sensitivity points, risks, and trade-offs; every must pair appears exactly once after S9. | design-reasoning-model.md |
-| Candidate set | 후보 집합 | The explicit S8 alternatives under evaluation; one member requires resolved short-path or forcing-constraint justification. | architecture-model.md |
-| Characterization | 특성화 | Evidence-backed description of design forces before selecting a strategy or representation. | system-characterization.md |
-| Characterization dimension | 특성화 차원 | One canonical axis used to compare problem regions without deciding implementation form. | system-characterization.md |
-| Change isolation | 변경 격리 | Degree to which ownership, release cadence, substitution, or roadmap requires independent evolution. | system-characterization.md |
-| Change reason | 변경 이유 | The coherent cause that makes a responsibility or policy evolve. | design-reasoning-model.md |
-| Class | 클래스 | An optional representation combining identity, state, or behavior after ownership is known. | architecture-model.md |
-| Code-fact adapter | 코드 사실 어댑터 | A language/tool-specific extractor that supplies observable source, contract, test, or telemetry facts. | harness-architecture.md |
-| Collaboration | 협력 | A directed interaction needed for one owner to fulfill a responsibility without surrendering authority. | design-reasoning-model.md |
-| Component | 컴포넌트 | A replaceable structural representation with an explicit contract; it is not necessarily deployable. | architecture-model.md |
-| Composition seam | 조합 접점 | An S2, representation-free record that two differently designed problem regions must collaborate and what remains unresolved. | strategy-selection.md |
-| Constraint compiler | 제약 컴파일러 | The component binding observable decision claims to language-neutral check plans and fact adapters. | harness-architecture.md |
-| Counter-case | 양보 조건 | The stated condition under which a principle or usual choice should yield. | principles.md |
-| Data contract | 데이터 계약 | Owned semantics, shape, quality, versioning, and use obligations for exchanged or persisted data. | architecture-model.md |
-| Dataflow | 데이터 흐름 | Movement and transformation of data through explicit sources, stages, lineage, effects, and outputs. | strategy-selection.md |
-| Datastore | 데이터 저장소 | A representation that persists owned facts under stated consistency, retention, and access semantics. | architecture-model.md |
-| Decision reversal evidence | 결정 반전 근거 | A future observation that would make the selected option lose to an alternative. | architecture-model.md |
-| Design bundle | 설계 번들 | The linked set of canonical IR artifacts for one target-system reasoning scope. | architecture-model.md |
-| Design strategy | 설계 전략 | A provisional reasoning emphasis chosen per subsystem from characterized forces. | strategy-selection.md |
-| Deterministic validation | 결정적 검증 | Complete observable inputs plus a fixed predicate yielding the same result. | validation-model.md |
-| Evidence | 근거 | A located stakeholder, regulatory, observed, measured, contractual, existing-system, or assumed claim. | system-characterization.md |
-| Exception | 예외 승인 | Authorized, reasoned, compensating, and expiring acceptance of a known constraint violation. | validation-model.md |
-| Failure indicator | 실패 신호 | A concrete benchmark output that loses category points or caps the total as architecturally wrong. | benchmark-strategy.md |
-| Fitness function | 적합성 함수 | A repeatable check or review trigger that detects drift from an accepted architectural decision. | validation-model.md |
-| Full path | 전체 경로 | The complete S0–S13 reasoning flow used when short-path eligibility is absent or lost. | design-reasoning-model.md |
-| Function | 함수 | A representation for a focused computation or effect whose ownership does not require richer identity/state. | architecture-model.md |
-| Hard constraint | 강제 제약 | An externally imposed, evidenced restriction that candidate architectures must satisfy. | system-characterization.md |
-| Host coding agent | 호스트 코딩 에이전트 | The external agent product that invokes SAH and later implements an approved handoff. | harness-architecture.md |
-| Implementation slice | 구현 단위 조각 | An ordered, independently verifiable change unit linked to affected elements, constraints, and blockers. | design-reasoning-model.md |
-| Immutable data | 불변 데이터 | A representation whose value is replaced or derived rather than mutated in place. | architecture-model.md |
-| Intermediate representation (IR) | 중간 표현 | Schema-validated canonical state passed between reasoning and validation stages. | architecture-model.md |
-| Interface | 인터페이스 | An owner-controlled collaboration contract with consumers, mode, versioning, consistency, and failure semantics. | architecture-model.md |
-| Invariant | 불변식 | A scoped, applicable obligation with trigger, consistency, failure impact, detection, recovery, and owner. | design-reasoning-model.md |
-| Judgment validation | 판단형 검증 | Rubric-based assessment whose adequacy depends on context, alternatives, and trade-offs. | validation-model.md |
-| Logical owner | 논리 소유자 | The accountable authority for a responsibility or invariant before choosing its representation. | design-reasoning-model.md |
-| Loop-back | 되돌림 | A gate-directed return to the earliest reasoning stage capable of repairing a causal defect. | design-reasoning-model.md |
-| Method Library | 방법론 라이브러리 | The SAH component supplying strategy definitions, questions, verdicts, and weighted heuristics without selecting or mutating. | harness-architecture.md |
-| Methodology neutrality | 방법론 중립성 | Selection of methods from subsystem evidence rather than a universal preferred paradigm. | principles.md |
-| Mixed strategy | 혼합 전략 | A system design using different dominant reasoning strategies for materially different subsystems. | strategy-selection.md |
-| Model Repository | 모델 저장소 | The SAH component owning schema/reference integrity, identities, bundle state, atomic updates, and impact traversal. | harness-architecture.md |
-| Module | 모듈 | An in-process representation hiding cohesive responsibilities and change behind an explicit surface. | architecture-model.md |
-| Owner | 소유자 | The single accountable logical authority, or explicit protocol, responsible for an outcome or obligation. | design-reasoning-model.md |
-| Pipeline | 파이프라인 | A representation that makes ordered or graph-shaped data transformations and their lineage explicit. | architecture-model.md |
-| Problem region | 문제 영역 | A provisional evidence-backed reasoning scope differentiated by design forces, not implementation form. | system-characterization.md |
-| Quality attribute | 품질 속성 | A non-functional concern made actionable only through concrete scenarios and measures. | system-characterization.md |
-| Quality attribute scenario | 품질 속성 시나리오 | Source, stimulus, environment, artifact, response, measurable bound, and priority used to compare candidates. | system-characterization.md |
-| Queue | 큐 | A representation for buffered asynchronous transfer with explicit delivery, ordering, retry, and ownership semantics. | architecture-model.md |
-| Relation | 관계 | A directed, meaningful containment, call, publication, transformation, data access, control, tool, or approval link. | architecture-model.md |
-| Representation | 표현 형식 | The concrete function/data/class/aggregate/module/component/service/pipeline/state-machine/agent/store/queue form chosen after ownership. | design-reasoning-model.md |
-| Responsibility | 책임 | An evidence-backed outcome, policy, decision, transformation, coordination, state, side effect, or assurance obligation. | design-reasoning-model.md |
-| Review trigger | 재검토 조건 | An observable event that reopens an accepted decision or schedules contextual review. | validation-model.md |
-| Service | 서비스 | An independently deployable representation with an operational and failure boundary. | architecture-model.md |
-| Short path | 단축 경로 | A risk-qualified compression of artifacts that retains every mandatory design question. | design-reasoning-model.md |
-| Source of truth | 단일 진실원 | The one canonical representation authorized to resolve a fact; SAH uses structured JSON IR. | architecture-model.md |
-| Stage | 단계 | One S0–S13 reasoning operation with named inputs, outputs, gate, and loop-back. | design-reasoning-model.md |
-| Stage advancement | 단계 전진 | An exact-next lifecycle transition committed only after the target gate passes against one loaded bundle snapshot. | validation-cli.md |
-| Stage gate | 단계 통과 조건 | The evidence and semantic sufficiency required before downstream reasoning may rely on output. | design-reasoning-model.md |
-| Staleness | 효력 상실 상태 | Explicit invalidity of downstream facts after a referenced premise changes. | architecture-model.md |
-| State machine | 상태 기계 | A representation making allowed states, transitions, temporal rules, and concurrency explicit. | architecture-model.md |
-| Strategy disqualifier | 전략 배제 조건 | Evidence that invalidates a selected strategy and forces reconsideration. | strategy-selection.md |
-| Subsystem | 서브시스템 | A problem region with materially distinct design characteristics; it does not imply deployment. | system-characterization.md |
-| Traceability | 추적 가능성 | Reachability from a claim or representation to its producer, consumers, evidence, decisions, and constraints. | architecture-model.md |
-| Trade-off | 절충 | An explicit improvement in one concern accompanied by a real loss, cost, or risk in another. | architecture-model.md |
-| Validator | 검증기 | A named capability producing deterministic results, assisted findings, or judgment reviews under its declared class. | validation-model.md |
-| View adapter | 뷰 어댑터 | A one-way projection from canonical IR to ADR, C4, diagram, or other human/tool view. | harness-architecture.md |
+| English term                     | 한국어 대응어        | Canonical definition                                                                                                                                          | Owner                      |
+| -------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Accepted decision                | 승인된 결정          | A decision with selected option, authority, costs, consequences, and review triggers.                                                                         | architecture-model.md      |
+| Adapter                          | 어댑터               | A target-specific translator at a stable seam; it does not own canonical semantics.                                                                           | harness-architecture.md    |
+| ADR                              | 아키텍처 결정 기록   | A durable human view of a consequential decision, alternatives, costs, and consequences.                                                                      | architecture-model.md      |
+| Agent representation             | 에이전트 표현        | A runtime form that delegates bounded choices to a probabilistic model using context and tools.                                                               | architecture-model.md      |
+| Agentic tool loop                | 에이전트 도구 루프   | A strategy centered on model uncertainty, tools, permissions, context, memory, evaluation, fallback, latency, and cost.                                       | strategy-selection.md      |
+| Aggregate                        | 애그리게이트         | An optional representation that gives one boundary authority to preserve a related invariant set.                                                             | architecture-model.md      |
+| Architecture candidate           | 아키텍처 후보        | One member of a candidate set, identifying the elements, relations, boundaries, interfaces, and operational consequences it uses.                             | design-reasoning-model.md  |
+| Architecture constraint          | 아키텍처 제약        | An enforceable or reviewable proposition compiled from an accepted decision for a named scope.                                                                | validation-model.md        |
+| Architecture Decision IR         | 아키텍처 결정 IR     | Canonical structured options, evidence, authority, selection, costs, consequences, and review triggers.                                                       | architecture-model.md      |
+| Architecture element             | 아키텍처 요소        | A stable logical owner with role, authority, responsibility/invariant traces, and later a representation.                                                     | architecture-model.md      |
+| Architecture IR                  | 아키텍처 IR          | Canonical candidates, elements, boundaries, relations, interfaces, quality assessments, and constraints.                                                      | architecture-model.md      |
+| Assisted validation              | 보조형 검증          | Observable facts narrow a contextual question whose interpretation remains LLM/human review.                                                                  | validation-model.md        |
+| Assumption                       | 가정                 | Evidence explicitly marked uncertain and paired with a condition that would falsify it.                                                                       | system-characterization.md |
+| Authority                        | 권한                 | The legitimate ability to decide, mutate, enforce, accept risk, or grant an exception in a stated scope.                                                      | architecture-model.md      |
+| Benchmark expectations           | 벤치마크 기대 결과   | Hidden acceptable conclusions, alternatives, failures, and mandatory trade-offs used only after a run is frozen.                                              | benchmark-strategy.md      |
+| Boundary                         | 경계                 | A grouping that protects a named change, invariant, authority, risk, or failure mode.                                                                         | architecture-model.md      |
+| Bundle manifest                  | 번들 매니페스트      | Non-semantic, schema-validated metadata declaring a design bundle's completed stage, profile, artifact paths, and schema IDs.                                 | harness-architecture.md    |
+| Candidate assessment             | 후보 평가            | A candidate/scenario result with evidence, sensitivity points, risks, and trade-offs; every must pair appears exactly once after S9.                          | design-reasoning-model.md  |
+| Candidate set                    | 후보 집합            | The explicit S8 alternatives under evaluation; one member requires resolved short-path or forcing-constraint justification.                                   | architecture-model.md      |
+| Characterization                 | 특성화               | Evidence-backed description of design forces before selecting a strategy or representation.                                                                   | system-characterization.md |
+| Characterization dimension       | 특성화 차원          | One canonical axis used to compare problem regions without deciding implementation form.                                                                      | system-characterization.md |
+| Change isolation                 | 변경 격리            | Degree to which ownership, release cadence, substitution, or roadmap requires independent evolution.                                                          | system-characterization.md |
+| Change reason                    | 변경 이유            | The coherent cause that makes a responsibility or policy evolve.                                                                                              | design-reasoning-model.md  |
+| Class                            | 클래스               | An optional representation combining identity, state, or behavior after ownership is known.                                                                   | architecture-model.md      |
+| Code-fact adapter                | 코드 사실 어댑터     | A language/tool-specific extractor that supplies observable source, contract, test, or telemetry facts.                                                       | harness-architecture.md    |
+| Collaboration                    | 협력                 | A directed interaction needed for one owner to fulfill a responsibility without surrendering authority.                                                       | design-reasoning-model.md  |
+| Component                        | 컴포넌트             | A replaceable structural representation with an explicit contract; it is not necessarily deployable.                                                          | architecture-model.md      |
+| Composition seam                 | 조합 접점            | An S2, representation-free record that two differently designed problem regions must collaborate and what remains unresolved.                                 | strategy-selection.md      |
+| Constraint compiler              | 제약 컴파일러        | The component binding observable decision claims to language-neutral check plans and fact adapters.                                                           | harness-architecture.md    |
+| Counter-case                     | 양보 조건            | The stated condition under which a principle or usual choice should yield.                                                                                    | principles.md              |
+| Data contract                    | 데이터 계약          | Owned semantics, shape, quality, versioning, and use obligations for exchanged or persisted data.                                                             | architecture-model.md      |
+| Dataflow                         | 데이터 흐름          | Movement and transformation of data through explicit sources, stages, lineage, effects, and outputs.                                                          | strategy-selection.md      |
+| Datastore                        | 데이터 저장소        | A representation that persists owned facts under stated consistency, retention, and access semantics.                                                         | architecture-model.md      |
+| Decision reversal evidence       | 결정 반전 근거       | A future observation that would make the selected option lose to an alternative.                                                                              | architecture-model.md      |
+| Design bundle                    | 설계 번들            | The linked set of canonical IR artifacts for one target-system reasoning scope.                                                                               | architecture-model.md      |
+| Design strategy                  | 설계 전략            | A provisional reasoning emphasis chosen per subsystem from characterized forces.                                                                              | strategy-selection.md      |
+| Deterministic validation         | 결정적 검증          | Complete observable inputs plus a fixed predicate yielding the same result.                                                                                   | validation-model.md        |
+| Evidence                         | 근거                 | A located stakeholder, regulatory, observed, measured, contractual, existing-system, or assumed claim.                                                        | system-characterization.md |
+| Exception                        | 예외 승인            | Authorized, reasoned, compensating, and expiring acceptance of a known constraint violation.                                                                  | validation-model.md        |
+| Failure indicator                | 실패 신호            | A concrete benchmark output that loses category points or caps the total as architecturally wrong.                                                            | benchmark-strategy.md      |
+| Fitness function                 | 적합성 함수          | A repeatable check or review trigger that detects drift from an accepted architectural decision.                                                              | validation-model.md        |
+| Full path                        | 전체 경로            | The complete S0–S13 reasoning flow used when short-path eligibility is absent or lost.                                                                        | design-reasoning-model.md  |
+| Function                         | 함수                 | A representation for a focused computation or effect whose ownership does not require richer identity/state.                                                  | architecture-model.md      |
+| Hard constraint                  | 강제 제약            | An externally imposed, evidenced restriction that candidate architectures must satisfy.                                                                       | system-characterization.md |
+| Host coding agent                | 호스트 코딩 에이전트 | The external agent product that invokes SAH and later implements an approved handoff.                                                                         | harness-architecture.md    |
+| Implementation slice             | 구현 단위 조각       | An ordered, independently verifiable change unit linked to affected elements, constraints, and blockers.                                                      | design-reasoning-model.md  |
+| Immutable data                   | 불변 데이터          | A representation whose value is replaced or derived rather than mutated in place.                                                                             | architecture-model.md      |
+| Implementation Handoff IR        | 구현 인계 IR         | Canonical S12 slices linking selected elements, constraints, decisions, blockers, dependencies, checks, migration, and rollback for coding-agent consumption. | architecture-model.md      |
+| Intermediate representation (IR) | 중간 표현            | Schema-validated canonical state passed between reasoning and validation stages.                                                                              | architecture-model.md      |
+| Interface                        | 인터페이스           | An owner-controlled collaboration contract with consumers, mode, versioning, consistency, and failure semantics.                                              | architecture-model.md      |
+| Invariant                        | 불변식               | A scoped, applicable obligation with trigger, consistency, failure impact, detection, recovery, and owner.                                                    | design-reasoning-model.md  |
+| Judgment validation              | 판단형 검증          | Rubric-based assessment whose adequacy depends on context, alternatives, and trade-offs.                                                                      | validation-model.md        |
+| Logical owner                    | 논리 소유자          | The accountable authority for a responsibility or invariant before choosing its representation.                                                               | design-reasoning-model.md  |
+| Loop-back                        | 되돌림               | A gate-directed return to the earliest reasoning stage capable of repairing a causal defect.                                                                  | design-reasoning-model.md  |
+| Method Library                   | 방법론 라이브러리    | The SAH component supplying strategy definitions, questions, verdicts, and weighted heuristics without selecting or mutating.                                 | harness-architecture.md    |
+| Methodology neutrality           | 방법론 중립성        | Selection of methods from subsystem evidence rather than a universal preferred paradigm.                                                                      | principles.md              |
+| Mixed strategy                   | 혼합 전략            | A system design using different dominant reasoning strategies for materially different subsystems.                                                            | strategy-selection.md      |
+| Model Repository                 | 모델 저장소          | The SAH component owning schema/reference integrity, identities, bundle state, atomic updates, and impact traversal.                                          | harness-architecture.md    |
+| Module                           | 모듈                 | An in-process representation hiding cohesive responsibilities and change behind an explicit surface.                                                          | architecture-model.md      |
+| Owner                            | 소유자               | The single accountable logical authority, or explicit protocol, responsible for an outcome or obligation.                                                     | design-reasoning-model.md  |
+| Pipeline                         | 파이프라인           | A representation that makes ordered or graph-shaped data transformations and their lineage explicit.                                                          | architecture-model.md      |
+| Problem region                   | 문제 영역            | A provisional evidence-backed reasoning scope differentiated by design forces, not implementation form.                                                       | system-characterization.md |
+| Quality attribute                | 품질 속성            | A non-functional concern made actionable only through concrete scenarios and measures.                                                                        | system-characterization.md |
+| Quality attribute scenario       | 품질 속성 시나리오   | Source, stimulus, environment, artifact, response, measurable bound, and priority used to compare candidates.                                                 | system-characterization.md |
+| Queue                            | 큐                   | A representation for buffered asynchronous transfer with explicit delivery, ordering, retry, and ownership semantics.                                         | architecture-model.md      |
+| Relation                         | 관계                 | A directed, meaningful containment, call, publication, transformation, data access, control, tool, or approval link.                                          | architecture-model.md      |
+| Representation                   | 표현 형식            | The concrete function/data/class/aggregate/module/component/service/pipeline/state-machine/agent/store/queue form chosen after ownership.                     | design-reasoning-model.md  |
+| Responsibility                   | 책임                 | An evidence-backed outcome, policy, decision, transformation, coordination, state, side effect, or assurance obligation.                                      | design-reasoning-model.md  |
+| Review trigger                   | 재검토 조건          | An observable event that reopens an accepted decision or schedules contextual review.                                                                         | validation-model.md        |
+| Service                          | 서비스               | An independently deployable representation with an operational and failure boundary.                                                                          | architecture-model.md      |
+| Short path                       | 단축 경로            | A risk-qualified compression of artifacts that retains every mandatory design question.                                                                       | design-reasoning-model.md  |
+| Source of truth                  | 단일 진실원          | The one canonical representation authorized to resolve a fact; SAH uses structured JSON IR.                                                                   | architecture-model.md      |
+| Stage                            | 단계                 | One S0–S13 reasoning operation with named inputs, outputs, gate, and loop-back.                                                                               | design-reasoning-model.md  |
+| Stage advancement                | 단계 전진            | An exact-next lifecycle transition committed only after the target gate passes against one loaded bundle snapshot.                                            | validation-cli.md          |
+| Stage gate                       | 단계 통과 조건       | The evidence and semantic sufficiency required before downstream reasoning may rely on output.                                                                | design-reasoning-model.md  |
+| Staleness                        | 효력 상실 상태       | Explicit invalidity of downstream facts after a referenced premise changes.                                                                                   | architecture-model.md      |
+| State machine                    | 상태 기계            | A representation making allowed states, transitions, temporal rules, and concurrency explicit.                                                                | architecture-model.md      |
+| Strategy disqualifier            | 전략 배제 조건       | Evidence that invalidates a selected strategy and forces reconsideration.                                                                                     | strategy-selection.md      |
+| Subsystem                        | 서브시스템           | A problem region with materially distinct design characteristics; it does not imply deployment.                                                               | system-characterization.md |
+| Traceability                     | 추적 가능성          | Reachability from a claim or representation to its producer, consumers, evidence, decisions, and constraints.                                                 | architecture-model.md      |
+| Trade-off                        | 절충                 | An explicit improvement in one concern accompanied by a real loss, cost, or risk in another.                                                                  | architecture-model.md      |
+| Validator                        | 검증기               | A named capability producing deterministic results, assisted findings, or judgment reviews under its declared class.                                          | validation-model.md        |
+| View adapter                     | 뷰 어댑터            | A one-way projection from canonical IR to ADR, C4, diagram, or other human/tool view.                                                                         | harness-architecture.md    |

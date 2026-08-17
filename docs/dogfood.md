@@ -54,6 +54,12 @@ S11 classified uniqueness, authorization, audit append/retention, and archive-qu
 as deterministic when mapped to storage/API facts. Catch-all naming and future model richness
 remain assisted/judgment. No distributed check was generated.
 
+S12 assigns the selected `equipment-operations` element, its accepted decision, and the
+`equipment-owns-writes` constraint to one ready slice. The slice declares an integration check
+with its expected result and explicit no-data-migration/rollback plans. It has no blockers or
+dependencies. This is a valid structural handoff, not a claim that its slicing or check is
+contextually sufficient.
+
 Post-run comparison matched the benchmark's dominant strategy and fatal-avoidance anchors.
 The remaining uncertainty was preserved rather than scored as an architecture defect.
 
@@ -122,13 +128,13 @@ strategy and all fatal-avoidance anchors.
 
 ## Repairs forced into the model
 
-| ID | Broken contract | Model repair | Files changed |
-|---|---|---|---|
-| R1 | Unknown ratings could cite unrelated positive evidence. | Unknown cites the inspected source and explicitly states the missing fact; examples use distinct absence evidence. | characterization doc and schema example |
-| R2 | Short path still required artificial architecture alternatives. | Permit one S8 candidate with eligible short-path proportionality evidence and S2 alternative analysis. | reasoning/validation models and Architecture schema/runtime |
-| R3 | S2 composition contracts decided ownership and interaction before S3–S6. | Replace them with representation-free composition seams; S6 owns full interfaces/relations. | strategy, reasoning, architecture-model, Strategy schema |
-| R4 | Time-bounded or superseding obligations existed only inside prose. | Add required invariant `applicability`, read by boundary and constraint work. | reasoning and Invariant schema |
-| R5 | One unresolved policy blocked selection of the whole architecture. | Allow scoped readiness: isolate proposed decisions and block only dependent S12 slices. | reasoning and architecture-model |
+| ID  | Broken contract                                                          | Model repair                                                                                                       | Files changed                                               |
+| --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| R1  | Unknown ratings could cite unrelated positive evidence.                  | Unknown cites the inspected source and explicitly states the missing fact; examples use distinct absence evidence. | characterization doc and schema example                     |
+| R2  | Short path still required artificial architecture alternatives.          | Permit one S8 candidate with eligible short-path proportionality evidence and S2 alternative analysis.             | reasoning/validation models and Architecture schema/runtime |
+| R3  | S2 composition contracts decided ownership and interaction before S3–S6. | Replace them with representation-free composition seams; S6 owns full interfaces/relations.                        | strategy, reasoning, architecture-model, Strategy schema    |
+| R4  | Time-bounded or superseding obligations existed only inside prose.       | Add required invariant `applicability`, read by boundary and constraint work.                                      | reasoning and Invariant schema                              |
+| R5  | One unresolved policy blocked selection of the whole architecture.       | Allow scoped readiness: isolate proposed decisions and block only dependent S12 slices.                            | reasoning and architecture-model                            |
 
 These are reasoning-model changes, not relaxed benchmark expectations. Both benchmark files
 remain unchanged.

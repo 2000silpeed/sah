@@ -34,8 +34,8 @@ From this source checkout, use the package binary without global installation:
 ```text
 npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
-npm exec -- sah advance /path/to/disposable-bundle S11
-npm exec -- sah advance /path/to/disposable-bundle S11 --json
+npm exec -- sah advance /path/to/disposable-bundle S12
+npm exec -- sah advance /path/to/disposable-bundle S12 --json
 ```
 
 `advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
@@ -45,35 +45,39 @@ category, severity, artifact path, JSON Pointer, reference, message, expected co
 repair, and owning stage when applicable. Malformed JSON also reports a one-based source line
 and column when the runtime supplies an error offset.
 
-| Exit | Meaning |
-|---:|---|
-| 0 | Validation passed, or advancement committed. Assisted warnings may remain. |
-| 1 | Valid input has schema/reference/gate errors; advancement is blocked and does not write. |
-| 2 | Invocation, transition eligibility, loading, configuration, concurrency, or atomic persistence failed. |
+| Exit | Meaning                                                                                                |
+| ---: | ------------------------------------------------------------------------------------------------------ |
+|    0 | Validation passed, or advancement committed. Assisted warnings may remain.                             |
+|    1 | Valid input has schema/reference/gate errors; advancement is blocked and does not write.               |
+|    2 | Invocation, transition eligibility, loading, configuration, concurrency, or atomic persistence failed. |
 
 The root [manifest schema](../schemas/design-bundle-manifest.schema.json) defines lifecycle and
 artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR. Declared
 artifact paths use forward-slash relative paths, and physical targets—including symlinks—must
 remain inside the bundle.
 
-The current manifest and Architecture IR schema IDs are v0.2.0; the other five semantic IR
-schemas remain v0.1.0. The migration is a deliberate hard cut: a v0.1 manifest or singular
-Architecture candidate is an operational schema/declaration failure, not silently rewritten.
-ADR-0008 records why a dual representation was rejected.
+The current manifest schema is v0.3.0, Architecture IR is v0.2.0, and the other six semantic
+IR schemas are v0.1.0. The manifest migration is a deliberate hard cut: a v0.2 manifest lacks
+the canonical Implementation Handoff role and is an operational schema/declaration failure,
+not silently rewritten. ADR-0009 owns this migration; ADR-0008 owns the earlier Architecture
+candidate migration.
 
 ## Stage advancement
 
-Advancement is forward-only and exactly one stage. The executable target gates are S5, S6,
-S7, S8, S9, S10, and S11, so successful transitions can currently be S4→S5, S5→S6, S6→S7,
-S7→S8, S8→S9, S9→S10, or S10→S11. An exact-next target without an implemented gate, such as
-S11→S12, returns
-`ADVANCE_STAGE_UNSUPPORTED` and exit 2. Equal/backward, skipped, and invalid targets are also
-operational failures. A warning alone does not block; any error-severity proposed-stage
-diagnostic returns `blocked` and exit 1.
+Advancement is forward-only and exactly one stage. The executable target gates are S5–S12, so
+successful transitions currently range from S4→S5 through S11→S12. An exact-next target
+without an implemented gate, such as S12→S13, returns `ADVANCE_STAGE_UNSUPPORTED` and exit 2.
+Equal/backward, skipped, and invalid targets are also operational failures. A warning alone
+does not block; any error-severity proposed-stage diagnostic returns `blocked` and exit 1.
 
 At S9, missing or duplicate candidate/must-scenario coverage and premature decision selection
 are errors. A `risk`, `fail`, or `unknown` must result is an assisted warning and can advance;
 the result alone cannot prove scenario satisfaction or authorized risk acceptance.
+
+At S12, selected-element, applicable-constraint, decision, blocker, readiness, reference, and
+dependency-graph defects are errors. Blocked slices are valid when every blocker is a proposed
+decision affecting that slice. The command validates declared checks and plans but does not
+execute them.
 
 The Model Repository loads one byte snapshot, evaluates schema, references, and applicable
 gates as if `targetStage` were completed, and writes only after that result passes. Success
@@ -101,7 +105,10 @@ import {
 } from "software-architect-harness";
 
 const validation: ValidationResult = await validateBundle("design/equipment");
-const advancement: AdvanceResult = await advanceBundle("design/equipment", "S11");
+const advancement: AdvanceResult = await advanceBundle(
+  "design/equipment",
+  "S12",
+);
 ```
 
 Validation `status` is `passed`, `violations`, or `operational-error`. Advancement `status` is

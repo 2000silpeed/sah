@@ -18,9 +18,10 @@ concurrent change, or imply that unimplemented S0–S13 gates passed.
 ## Decision
 
 The Model Repository validates current artifact bytes as if the requested next stage were
-completed. It advances only to implemented deterministic targets S5, S6, S7, S8, S9, S10, or
-S11. S8 support was added with the candidate-set contract in ADR-0008; S9 reuses that model for
-assessment coverage. Equal, backward, skipped, and other target stages fail without writing.
+completed. It advances only to implemented deterministic targets S5–S12. S8 support was added
+with the candidate-set contract in ADR-0008; S9 reuses that model for assessment coverage;
+ADR-0009 adds canonical S12 handoff coverage and blocker checks. Equal, backward, skipped, and
+other target stages fail without writing.
 
 After validation, write complete JSON to an exclusively created temporary file in the manifest
 directory, preserve mode, flush and close it, compare the manifest with its initially loaded
@@ -29,11 +30,11 @@ owned temporary file after pre-commit failure.
 
 ## Trade-offs accepted
 
-+ No invalid target state or partial JSON becomes the canonical manifest.
-+ The source comparison detects ordinary lost-update races without a persistent lock format.
-− Atomic rename and file sync depend on local filesystem semantics.
-− Formatting the manifest rewrites its bytes on success even though only one value changes.
-− A concurrent writer can still race between the final comparison and rename.
+- No invalid target state or partial JSON becomes the canonical manifest.
+- The source comparison detects ordinary lost-update races without a persistent lock format.
+  − Atomic rename and file sync depend on local filesystem semantics.
+  − Formatting the manifest rewrites its bytes on success even though only one value changes.
+  − A concurrent writer can still race between the final comparison and rename.
 
 Mitigation: keep the comparison immediately before rename, expose the residual race honestly,
 and add a lock/store only after measured concurrent writers. Preserve every parsed manifest

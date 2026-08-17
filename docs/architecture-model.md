@@ -3,16 +3,17 @@
 This document owns the canonical IR suite, cross-IR semantics, and the relationship to C4
 and ADRs. JSON Schemas own serialized shape. The reasoning model owns stage gates.
 
-## Why six IRs
+## Why seven IRs
 
-| IR | Owns | Deliberately excludes |
-|---|---|---|
-| System Characterization | scope, evidence, uncertainty, problem regions, force ratings, quality scenarios | methods and implementation forms |
-| Design Strategy | per-subsystem strategy, alternatives, costs, mixed-edge seams, short-path decision | ownership, interaction mechanisms, and architecture elements |
-| Responsibility | required outcomes, inputs/outputs, triggers, change reasons, collaborators, logical ownership | classes, services, and technology |
-| Invariant | precise obligations, consistency, failure, detection/recovery, enforcement ownership | generic “business rules” with no trigger or failure meaning |
-| Architecture | candidate sets over elements, boundaries, relations, interfaces, scenario assessments, constraints | requirement prose and unstructured ADR text |
-| Architecture Decision | evaluated options, evidence, authority, costs, consequences, reversal and review triggers | architecture facts already owned by Architecture IR |
+| IR                      | Owns                                                                                               | Deliberately excludes                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| System Characterization | scope, evidence, uncertainty, problem regions, force ratings, quality scenarios                    | methods and implementation forms                                                    |
+| Design Strategy         | per-subsystem strategy, alternatives, costs, mixed-edge seams, short-path decision                 | ownership, interaction mechanisms, and architecture elements                        |
+| Responsibility          | required outcomes, inputs/outputs, triggers, change reasons, collaborators, logical ownership      | classes, services, and technology                                                   |
+| Invariant               | precise obligations, consistency, failure, detection/recovery, enforcement ownership               | generic “business rules” with no trigger or failure meaning                         |
+| Architecture            | candidate sets over elements, boundaries, relations, interfaces, scenario assessments, constraints | requirement prose and unstructured ADR text                                         |
+| Architecture Decision   | evaluated options, evidence, authority, costs, consequences, reversal and review triggers          | architecture facts already owned by Architecture IR                                 |
+| Implementation Handoff  | executable S12 slices, dependencies, checks, migration/rollback, readiness, and decision blockers  | selected architecture facts, source mappings, execution results, and generated code |
 
 The split follows different writers and gates. Merging responsibility and architecture would
 permit representation during S3. Merging decisions and architecture would either duplicate
@@ -26,7 +27,7 @@ embedded copies, so an IR can be diffed independently. `modelId` identifies one 
 artifact; external storage will supply revision metadata rather than polluting semantic IR.
 
 Bundle lifecycle and artifact locations are non-semantic metadata in `sah.bundle.json`, whose
-schema is separate from the six IRs. `lifecycle.completedStage` states which gate is claimed
+schema is separate from the seven IRs. `lifecycle.completedStage` states which gate is claimed
 complete; validators must not infer it from optional fields or present files. ADR-0006 owns
 the representation decision and the manifest schema owns its serialized shape. Advancement
 validates a proposed explicit stage, then atomically changes only this metadata field; it does
@@ -51,8 +52,9 @@ Characterization → Strategy → Responsibility ─┐
                          └──→ Invariant ───────┼→ Architecture
 Characterization.qualityScenarios ────────────┘       ↕
                                               Architecture Decision
-                                                       ↓
+                                                       ↘
                                               Architecture.constraints
+Architecture + Architecture Decision ───────→ Implementation Handoff
 ```
 
 The Architecture/Decision cycle is by stable ID: S9 proposes decisions against candidate
@@ -78,6 +80,9 @@ stronger conditions:
   remain only behind an owned seam and block every dependent S12 slice;
 - after S11, each accepted decision is classified into deterministic, assisted, or judgment
   enforcement, even when it generates no hard rule.
+- after S12, every selected element and applicable constraint is assigned to an acyclic slice;
+  accepted decisions accompany affected slices, and proposed decisions block each affected
+  slice explicitly.
 
 An IR update changes `modelId` only when it becomes a separately addressable artifact. Source
 control supplies revision history; SAH does not add mutable revision counters with no
@@ -91,6 +96,21 @@ Assessment coverage and pair uniqueness are deterministic because candidate IDs,
 priorities, and assessment references are complete inputs. A non-pass result triggers assisted
 review: the serialized enum cannot prove the measure, causal evidence, or risk authority is
 adequate.
+
+## Implementation handoff
+
+Implementation Handoff IR is written by S12 and read by coding-agent integration and S13. Its
+root references identify the selected Architecture and Decision artifacts. Each stable slice
+names an outcome, ready/blocked state, selected elements, applicable constraints, accepted
+decisions, proposed-decision blockers, explicit slice dependencies, acceptance checks with
+expected results, and migration and rollback needs.
+
+Dependency references, not array order, define execution order. Self-references and cycles are
+invalid. A constraint applies when its element scope intersects the selected candidate and must
+be assigned to a slice covering that scope. These reference, status, and coverage rules are
+deterministic. Whether the slices, checks, or operational plans are adequate remains judgment;
+schema-valid handoff is not an implementation-quality endorsement. ADR-0009 owns the seventh
+IR decision and the schema owns serialized shape.
 
 ## Elements and relations
 
