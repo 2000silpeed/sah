@@ -149,12 +149,15 @@ applicable deterministic checks, emits assisted findings, and schedules judgment
 decision triggers. Violations point to source decision, affected invariant, owner, and allowed
 exception authority.
 
-The current executable subset does not yet map diffs. It uses S12 slice assignment for
-applicability and can evaluate a declared target-relative regular-file presence fact or direct
-TypeScript calls to one explicitly mapped write symbol. Explicit-project path aliases and
-static named/star re-exports are resolved; namespace/default forms, dynamic loading/code
-evaluation, import assignments, indirect symbol aliases, mixed JavaScript, multi-project
-configuration, and general graph semantics remain explicit unsupported coverage.
+The current executable subset accepts explicit changed-file paths but does not discover or
+interpret diffs. The TypeScript mapping resolves paths to elements, and the Model Repository
+intersects those elements with assigned S12 slices. Incomplete mapping expands to all
+constraints; selected fact adapters retain full evidence boundaries. The runtime can evaluate
+a declared target-relative regular-file presence fact or direct TypeScript calls to one mapped
+write symbol. Explicit-project path aliases and static named/star re-exports are resolved;
+namespace/default forms, dynamic loading/code evaluation, import assignments, indirect symbol
+aliases, mixed JavaScript, multi-project configuration, and general graph semantics remain
+explicit unsupported coverage. ADR-0013 owns change selection and fallback.
 
 ### Benchmark run
 

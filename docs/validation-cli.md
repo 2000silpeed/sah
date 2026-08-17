@@ -27,7 +27,7 @@ An installed package exposes:
 ```text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--json]
+sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -41,6 +41,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 ```
 
 `advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
@@ -52,6 +53,11 @@ repair, and owning stage when applicable. Verification checks preserve constrain
 scope elements, invariants, slices, capability, status, expected/observed facts, blockers, and
 repair. Malformed JSON also reports a one-based source line and column when the runtime
 supplies an error offset.
+
+`--changed` is repeatable and requires `--mapping`. It accepts normalized target-relative file
+paths and does not require a path to still exist, so deleted files remain selectable. SAH does
+not inspect git state. Unsafe input, an empty library change set, or missing mapping is an
+operational failure.
 
 | Exit | Meaning                                                                                                                      |
 | ---: | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -85,6 +91,15 @@ are also `pending`. A ready deterministic constraint runs only when its declared
 capability is available. Missing adapters and unsupported bindings are `unsupported`, never
 pass. Any pending or unsupported check makes the overall result `incomplete`; a known
 violation takes precedence.
+
+When changed paths are present, the mapping first resolves them to Architecture elements. SAH
+selects constraints assigned to S12 slices containing those elements; blocked-only affected
+constraints remain pending. Every selected adapter still reads its complete declared evidence
+boundary. If any path is outside declared roots, unmapped, or ambiguous, selection becomes
+`full-fallback` and all constraints run. The result's optional `selection` reports mode,
+requested paths, resolved elements, and stable per-path issues. Because fallback removes the
+selection uncertainty by running everything, its final status and exit code come from ordinary
+checks rather than from the fallback itself.
 
 The first available capability is `filesystem-artifact-presence`, bound only to
 `factSource=filesystem`, `predicate=regular-file-exists`, and `expected=true`. Its selector is
@@ -175,7 +190,10 @@ const advancement: AdvanceResult = await advanceBundle(
 const verification: VerificationResult = await verifyBundle(
   "design/equipment",
   "target/equipment",
-  { sourceMappingPath: "sah.source-map.json" } satisfies VerificationOptions,
+  {
+    sourceMappingPath: "sah.source-map.json",
+    changedPaths: ["src/equipment-operations/save-equipment.ts"],
+  } satisfies VerificationOptions,
 );
 ```
 
@@ -185,11 +203,13 @@ target, and actually completed stage. `summary` counts errors and warnings. Expe
 are returned rather than thrown. Verification `status` is `passed`, `violations`,
 `incomplete`, or `operational-error`; each check is `pass`, `violation`, `pending`, or
 `unsupported`. Its summary counts all four check states plus operational diagnostics. Public
-declarations contain no Ajv or filesystem types.
+declarations contain no Ajv or filesystem types. Change-scoped results add framework-neutral
+`VerificationSelection` metadata; ordinary full verification omits it.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in
 bundle. `verifyBundle` executes only the two exact capabilities above. The optional
-`VerificationOptions` exposes only `sourceMappingPath`; public declarations contain no Ajv,
-TypeScript compiler, or filesystem types. It does not run LLM review, infer ownership without
-configuration, compile general predicates, or mark lifecycle S13 complete.
+`VerificationOptions` exposes `sourceMappingPath` and readonly `changedPaths`; public
+declarations contain no Ajv, TypeScript compiler, filesystem, git, or CLI parser types. It does
+not run LLM review, infer ownership without configuration, compile general predicates, or mark
+lifecycle S13 complete.

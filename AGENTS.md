@@ -123,6 +123,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 ```
 
 The installed package exposes `sah validate <design-bundle-directory> [--json]` and the
@@ -134,6 +135,8 @@ a disposable copy. Public library entry points are `validateBundle`, `advanceBun
 fact-capability, mapping, atomicity, and exit-code contracts.
 TypeScript mapping v0.2 names a confined project configuration explicitly; verification does
 not discover ambient `tsconfig.json` files or let project globs narrow declared source roots.
+Repeat `--changed` only for explicit change-scoped verification; SAH never discovers git state,
+and an incomplete change mapping expands to full verification.
 
 ## Change workflow
 

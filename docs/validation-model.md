@@ -158,9 +158,17 @@ configured path aliases and finite static named/star re-exports. Unsafe/invalid 
 operational, while ambiguous resolution, compiler errors, unsupported project features, and
 source forms outside the proven boundary remain incomplete. ADR-0012 owns this expansion.
 
+Run 10 adds deterministic applicability selection, not a new fact capability. Explicit changed
+paths resolve through source mapping to Architecture elements, then intersect S12 slice element
+assignments. Complete selection runs only assigned constraints, but each adapter retains its
+full evidence boundary. Any outside-root, unmapped, or ambiguous path triggers transparent
+full verification, so mapping incompleteness cannot skip a violation. Invalid input is
+operational; fallback issues are runtime metadata rather than fabricated validation checks.
+ADR-0013 owns the explicit-input and safe-fallback contract.
+
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
-`error`), and remediation/exception path. Runs 7–9 formalize the deterministic subset as public
+`error`), and remediation/exception path. Runs 7–10 formalize the deterministic subset as public
 verification checks with `pass`, `violation`, `pending`, or `unsupported`; operational errors
 remain diagnostics rather than fabricated checks.
 

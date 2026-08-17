@@ -261,7 +261,7 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 | 1     | Add public selection result and source mapping join    | complete    | strict typecheck |
 | 2     | Filter constraints through assigned S12 slices        | complete    | focused slice tests |
 | 3     | Add library/CLI selection and fallback mutations      | complete    | 118 focused tests |
-| 4     | Update authority docs, index, glossary, and commands  | pending     | —        |
+| 4     | Update authority docs, index, glossary, and commands  | complete    | CLI/model docs, glossary, index, AGENTS |
 | 5     | Run full verification and adversarial diff review     | pending     | —        |
 
 ### Decision log
@@ -301,6 +301,9 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 - 2026-08-17: Mutations prove affected-only constraint selection, full-root evidence after
   selection, deleted-path mapping, blocked pending state, repeatable CLI input, deterministic
   human/JSON metadata, safe full fallback, rogue-writer exit 1, and operational input failures.
+- 2026-08-17: Updated the public CLI/library contract, runtime ownership and S13 descriptions,
+  validation catalogue, dogfood evidence, glossary, index, and exact AGENTS commands. ADR-0013
+  remains the sole authority for input alternatives and fallback costs; schemas are unchanged.
 
 ### Handoff
 

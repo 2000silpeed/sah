@@ -126,6 +126,8 @@ ADR-0010 owns the first explicit-target filesystem capability and its no-schema-
 ADR-0011 owns the explicit target-local source mapping used by the bounded TypeScript adapter;
 ADR-0012 owns compiler-project symbol resolution. Neither execution result, mapping, nor
 project configuration becomes canonical design meaning.
+ADR-0013 likewise keeps requested changed paths, resolved elements, fallback issues, and check
+selection as runtime evidence; none are written into Architecture or Handoff IR.
 
 ## Elements and relations
 

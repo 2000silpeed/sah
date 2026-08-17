@@ -113,7 +113,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Code-fact adapter seam](../src/code-fact-adapter.ts), [constraint verification](../src/constraint-verification.ts),
   [filesystem presence adapter](../src/filesystem-presence-adapter.ts), and
   [TypeScript source adapter](../src/typescript-source-adapter.ts) — isolate S13 selection and
-  confined target-fact capabilities from canonical semantics and CLI concerns.
+  changed-path mapping plus confined target-fact capabilities from canonical semantics and CLI
+  concerns.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
   [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
