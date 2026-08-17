@@ -43,7 +43,7 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 | 0 | Frame canonical migration and S8 contract | complete | `3c9ddd7`; ADR-0008 |
 | 1 | Migrate schemas, fixture, types, and references | complete | v0.2 examples/traces pass |
 | 2 | Implement S8/S10 gates and advance support | complete | 67 library/production CLI tests |
-| 3 | Document, verify, and review | in_progress | authority updated; final audits pending |
+| 3 | Document, verify, and review | complete | `b1afb00`; full loop and diff audit pass |
 
 ### Decision log
 
@@ -75,8 +75,19 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 - 2026-08-17: Architecture, reasoning, validation, harness, CLI, dogfood, glossary, index,
   operating guidance, and ADR-0007 now agree on candidate-set semantics and S8 support. Local
   Markdown links, file budgets, formatting, and `git diff --check` passed.
+- 2026-08-17: Final loop: `npm install` was current (164 packages, 0 vulnerabilities);
+  `format:check`, lint, strict typecheck, 67/67 tests, production build, and the 4/4
+  schema/example/trace suite passed. The package binary validated simple-crud in JSON mode.
+- 2026-08-17: Production CLI evidence: valid human/JSON and S7→S8 returned exit 0; a missing
+  single-candidate justification returned exit 1 with
+  `STAGE_S8_SINGLE_CANDIDATE_JUSTIFICATION_MISSING`; unsupported S8→S9 returned exit 2 with
+  `ADVANCE_STAGE_UNSUPPORTED`. The blocked manifest remained S7.
+- 2026-08-17: Baseline diff audit passed: no benchmark changes, whitespace errors, broken local
+  links, over-budget documents, network/model calls, or Ajv/filesystem public declarations.
+  Deterministic checks passed; the existing assisted proposed-decision warning is covered by a
+  passing test; no candidate-coherence/material-difference judgment or benchmark judge ran.
 
 ### Handoff
 
-Run the full production verification and adversarial diff audit, record D/A/J outcomes, and
-commit the clean handoff without pushing.
+Run 4 is complete. Next, implement the S9 quality-assessment coverage gate and exact S8→S9
+advance while keeping scenario satisfaction and trade-off quality assisted/judgment.
