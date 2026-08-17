@@ -124,7 +124,7 @@ inputs and expectations remain untouched.
 | 0 | Frame S9 observable predicate and plan | complete | `2c69efb` |
 | 1 | Implement S9 gate, advance, and focused tests | complete | 89 tests pass |
 | 2 | Update affected authority documentation | complete | S9/CLI/runtime authority aligned |
-| 3 | Run full verification and adversarial review | in_progress | — |
+| 3 | Run full verification and adversarial review | complete | full loop and diff audit pass |
 
 ### Decision log
 
@@ -159,7 +159,19 @@ inputs and expectations remain untouched.
 - 2026-08-17: Architecture, reasoning, validation, CLI, harness, dogfood, glossary, index,
   ADR-0007, and operating guidance now agree on S9 coverage and S8→S9 support. Local Markdown
   links, file budgets, and `git diff --check` passed.
+- 2026-08-17: Final loop: `npm install` was current (164 packages, 0 vulnerabilities);
+  `format:check`, lint, strict typecheck, 89/89 tests, production build, and the 4/4
+  schema/example/trace suite passed. Human and JSON simple-crud validation returned exit 0.
+- 2026-08-17: Production advancement evidence: complete S8→S9 returned exit 0; a `risk` result
+  returned exit 0 with `STAGE_S9_MUST_SCENARIO_REVIEW`; missing coverage returned exit 1 with
+  `STAGE_S9_MUST_ASSESSMENT_MISSING`, and the manifest SHA-1 stayed identical; unsupported
+  S11→S12 returned operational exit 2 with `ADVANCE_STAGE_UNSUPPORTED`.
+- 2026-08-17: Baseline `739cddb` diff audit found no benchmark changes, whitespace errors,
+  broken links, over-budget docs, network/model calls, public Ajv/fs types, stage-order errors,
+  duplicate-pair false passes, CLI leakage, or speculative interfaces. Deterministic checks
+  passed; the assisted warning was exercised; no scenario/trade-off judgment or judge ran.
 
 ### Handoff
 
-Run the complete source/CLI/schema/diff verification loop and commit the clean handoff.
+Run 5 is complete. Next, define the canonical S12 implementation-handoff artifact and gate,
+recording the consequential IR/manifest choice before enabling exact S11→S12 advancement.
