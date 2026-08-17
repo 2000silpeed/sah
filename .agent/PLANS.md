@@ -182,3 +182,81 @@ determinism question.
 Run 2 should implement one Model Repository/CLI vertical slice that loads a design bundle and
 runs schema, reference, stage, and field-trace checks against a simple-crud sample. Keep LLM
 reasoning prompts and hosted services out until this contract is executable and measured.
+
+## Run 2 ExecPlan — 2026-08-17
+
+### Outcome
+
+`sah validate <design-bundle-directory>` validates a repository-local design bundle through
+the reusable Model Repository and returns deterministic, actionable human or JSON diagnostics
+with tested exit codes 0, 1, and 2.
+
+### Scope
+
+Included: a schema-validated non-semantic bundle manifest, loading and path containment,
+Draft 2020-12 validation of the six IRs, schema trace audit, cross-IR reference integrity,
+the requested S5/S6/S7/S10/S11 gates, a thin CLI, simple-crud fixtures outside benchmarks,
+tests, build tooling, and user documentation.
+
+Excluded: reasoning prompts/orchestration, LLM calls, hosted services, view rendering,
+code-fact adapters, benchmark judges, constraint compilation/execution, and implementation
+handoff modeling. `benchmarks/simple-crud/problem.md` is read-only input; expectations and all
+other benchmark files remain untouched. No target-system IR ID is changed by this plan. The
+new repository decisions are ADR-0005 and ADR-0006; no compiled project constraint exists yet.
+
+### Constraints
+
+- Preserve Model Repository ownership of loading and semantics; the CLI owns only invocation,
+  presentation, and exit-code mapping.
+- Keep Ajv, terminal formatting, and filesystem conventions out of public semantic types.
+- Apply gates from an explicit completed lifecycle stage and profile, never inferred content.
+- Classify only observable predicates as deterministic; proposed-decision isolation remains an
+  assisted finding because the six IRs do not encode S12 slices.
+- Use npm with the installed Node 24 runtime, work offline after dependency installation, keep
+  documents within line budgets, make milestone commits, and never push.
+
+### Milestones
+
+| Phase | Milestone | Status | Acceptance evidence |
+|---|---|---|---|
+| 0 | Frame run and decide implementation/bundle contracts | complete | this plan; ADR-0005/0006 |
+| 1 | Implement Model Repository validation pipeline | in_progress | strict typed library; focused unit tests |
+| 2 | Add CLI, fixtures, and integration tests | pending | human/JSON output and exit 0/1/2 tests |
+| 3 | Document, verify, and review the complete slice | pending | required commands pass; clean reviewed diff |
+
+### Decision log
+
+- 2026-08-17: Use strict TypeScript on Node with Ajv Draft 2020-12 and npm. Node 24.14.1 and
+  npm 11.11.0 are already available, and this is the least elaborate local stack that gives a
+  typed library plus CLI and standards-compliant schema validation. See ADR-0005.
+- 2026-08-17: Store non-semantic lifecycle and artifact locations in root `sah.bundle.json`,
+  schema-validated separately from the six IRs. `completedStage` defines applicable gates and
+  `profile` records full/short path. See ADR-0006.
+- 2026-08-17: Treat missing/unreadable/malformed declared inputs, path escape, invalid
+  invocation, and invalid manifest configuration as operational failures (exit 2). Validly
+  loaded IR shape/reference/stage violations use exit 1; a clean validation uses exit 0.
+
+### Discovery log
+
+- 2026-08-17: The repository contains specifications and six canonical schemas but no package
+  manifest, runtime source, or sample design bundle. The worktree is clean at `933f6f4`.
+- 2026-08-17: Architecture IR serializes one `candidate` object rather than a candidate array;
+  the S10 deterministic predicate is therefore that this single candidate is `selected`.
+- 2026-08-17: The six current IRs do not serialize implementation slices or proof that a
+  proposed decision is isolated. This slice can emit an assisted S10 finding and repair path,
+  but must not invent a deterministic isolation failure.
+
+### Verification log
+
+- 2026-08-17: Read the root policy, planning mechanism, specified model/architecture/
+  validation authority, all six schema contracts, dogfood walkthrough, ADR-0001–0004,
+  glossary, index, and only the simple-crud stakeholder problem from its benchmark.
+- 2026-08-17: Confirmed `node --version` is `v24.14.1`, `npm --version` is `11.11.0`, and the
+  initial worktree has no tracked or untracked changes.
+- 2026-08-17: ADR-0005 and ADR-0006 record the runtime and bundle representation choices;
+  Phase 0 is complete and Phase 1 has started.
+
+### Handoff
+
+Scaffold the minimal npm package and implement manifest loading before semantic reference and
+stage validators.

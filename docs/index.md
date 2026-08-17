@@ -39,6 +39,10 @@ Start with [vision](vision.md), [principles](principles.md), and the
   and justifies the documentation layout split.
 - [ADR-0004](adr/0004-classify-enforcement-by-observability.md) — establishes deterministic,
   assisted, and judgment enforcement.
+- [ADR-0005](adr/0005-use-typescript-node-and-ajv-for-the-local-runtime.md) — selects the
+  strict local TypeScript/Node/Ajv runtime and protects its adapter boundary.
+- [ADR-0006](adr/0006-use-a-schema-validated-bundle-manifest.md) — stores explicit lifecycle
+  and artifact locations in a non-semantic, schema-validated bundle manifest.
 
 ## JSON Schema contracts
 
