@@ -22,6 +22,7 @@ export type ValidationClassification =
 export type DiagnosticCategory = "validation" | "operational";
 export type DiagnosticSeverity = "error" | "warning";
 export type ValidationStatus = "passed" | "violations" | "operational-error";
+export type AdvanceStatus = "advanced" | "blocked" | "operational-error";
 
 export type SourceLocation = {
   line: number;
@@ -60,6 +61,22 @@ export type ValidationResult = {
   status: ValidationStatus;
   bundleDirectory: string;
   bundle?: ValidatedBundle;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
+export type AdvancedBundle = {
+  id: string;
+  profile: LifecycleProfile;
+  previousStage: Stage;
+  targetStage: Stage;
+  completedStage: Stage;
+};
+
+export type AdvanceResult = {
+  status: AdvanceStatus;
+  bundleDirectory: string;
+  bundle?: AdvancedBundle;
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
 };

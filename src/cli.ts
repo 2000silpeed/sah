@@ -2,11 +2,20 @@
 
 import { resolve } from "node:path";
 
-import type { SahDiagnostic, ValidationResult } from "./contracts.js";
+import {
+  stages,
+  type AdvanceResult,
+  type SahDiagnostic,
+  type Stage,
+  type ValidationResult,
+} from "./contracts.js";
 import { result } from "./diagnostics.js";
-import { validateBundle } from "./model-repository.js";
+import { advanceBundle, validateBundle } from "./model-repository.js";
 
-const usage = "Usage: sah validate <design-bundle-directory> [--json]";
+const usage = [
+  "Usage: sah validate <design-bundle-directory> [--json]",
+  "       sah advance <design-bundle-directory> <target-stage> [--json]",
+].join("\n");
 
 function invocationError(message: string): ValidationResult {
   const diagnostic: SahDiagnostic = {
@@ -17,7 +26,7 @@ function invocationError(message: string): ValidationResult {
     message,
     expected: usage,
     repair:
-      "Invoke validate with exactly one bundle directory and optional --json.",
+      "Invoke one command with the required arguments and optional --json.",
   };
   return result("operational-error", resolve("."), [diagnostic]);
 }
@@ -49,7 +58,7 @@ function humanDiagnostic(diagnostic: SahDiagnostic): string {
   ].join("\n");
 }
 
-export function formatHuman(validation: ValidationResult): string {
+export function formatValidationHuman(validation: ValidationResult): string {
   const title =
     validation.status === "passed"
       ? "SAH validation passed"
@@ -71,15 +80,43 @@ export function formatHuman(validation: ValidationResult): string {
   ].join("\n\n");
 }
 
-function exitCode(validation: ValidationResult): 0 | 1 | 2 {
-  switch (validation.status) {
+export function formatAdvanceHuman(advance: AdvanceResult): string {
+  const title =
+    advance.status === "advanced"
+      ? "SAH bundle advanced"
+      : advance.status === "blocked"
+        ? "SAH bundle advance blocked"
+        : "SAH bundle could not advance";
+  const bundle =
+    advance.bundle === undefined
+      ? []
+      : [
+          `Bundle: ${advance.bundle.id} (${advance.bundle.previousStage} -> ${advance.bundle.targetStage}, ${advance.bundle.profile})`,
+          `Completed stage: ${advance.bundle.completedStage}`,
+        ];
+  return [
+    title,
+    ...bundle,
+    ...advance.diagnostics.map(humanDiagnostic),
+    `Summary: ${advance.summary.errors} error(s), ${advance.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
+function exitCode(outcome: ValidationResult | AdvanceResult): 0 | 1 | 2 {
+  switch (outcome.status) {
     case "passed":
+    case "advanced":
       return 0;
     case "violations":
+    case "blocked":
       return 1;
     case "operational-error":
       return 2;
   }
+}
+
+function isStage(value: string | undefined): value is Stage {
+  return value !== undefined && (stages as readonly string[]).includes(value);
 }
 
 async function main(arguments_: string[]): Promise<number> {
@@ -93,16 +130,38 @@ async function main(arguments_: string[]): Promise<number> {
     return 0;
   }
 
-  const validation =
-    positional.length === 2 && positional[0] === "validate"
-      ? await validateBundle(positional[1] ?? "")
-      : invocationError(
-          "The command requires validate and one design-bundle directory.",
-        );
-  process.stdout.write(
-    `${json ? JSON.stringify(validation, null, 2) : formatHuman(validation)}\n`,
+  if (positional.length === 2 && positional[0] === "validate") {
+    const validation = await validateBundle(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(validation, null, 2) : formatValidationHuman(validation)}\n`,
+    );
+    return exitCode(validation);
+  }
+
+  if (positional.length === 3 && positional[0] === "advance") {
+    if (!isStage(positional[2])) {
+      const invalid = invocationError(
+        `${String(positional[2])} is not a valid lifecycle target stage.`,
+      );
+      process.stdout.write(
+        `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      );
+      return 2;
+    }
+    const advance = await advanceBundle(positional[1] ?? "", positional[2]);
+    process.stdout.write(
+      `${json ? JSON.stringify(advance, null, 2) : formatAdvanceHuman(advance)}\n`,
+    );
+    return exitCode(advance);
+  }
+
+  const invalid = invocationError(
+    "The command and arguments do not match a supported invocation.",
   );
-  return exitCode(validation);
+  process.stdout.write(
+    `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+  );
+  return 2;
 }
 
 process.exitCode = await main(process.argv.slice(2));

@@ -1,4 +1,7 @@
 export type {
+  AdvancedBundle,
+  AdvanceResult,
+  AdvanceStatus,
   DiagnosticCategory,
   DiagnosticSeverity,
   LifecycleProfile,
@@ -11,4 +14,4 @@ export type {
   ValidationStatus,
   ValidationSummary,
 } from "./contracts.js";
-export { validateBundle } from "./model-repository.js";
+export { advanceBundle, validateBundle } from "./model-repository.js";

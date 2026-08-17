@@ -1,9 +1,32 @@
 import type {
+  AdvancedBundle,
+  AdvanceResult,
+  AdvanceStatus,
   SahDiagnostic,
   ValidationResult,
   ValidationStatus,
   ValidatedBundle,
 } from "./contracts.js";
+
+function orderDiagnostics(diagnostics: SahDiagnostic[]): SahDiagnostic[] {
+  return [...diagnostics].sort((left, right) =>
+    [
+      left.artifactPath ?? "",
+      left.jsonPointer ?? "",
+      left.code,
+      left.reference ?? "",
+    ]
+      .join("\0")
+      .localeCompare(
+        [
+          right.artifactPath ?? "",
+          right.jsonPointer ?? "",
+          right.code,
+          right.reference ?? "",
+        ].join("\0"),
+      ),
+  );
+}
 
 export function summarize(diagnostics: SahDiagnostic[]): {
   errors: number;
@@ -22,24 +45,24 @@ export function result(
   diagnostics: SahDiagnostic[],
   bundle?: ValidatedBundle,
 ): ValidationResult {
-  const ordered = [...diagnostics].sort((left, right) =>
-    [
-      left.artifactPath ?? "",
-      left.jsonPointer ?? "",
-      left.code,
-      left.reference ?? "",
-    ]
-      .join("\0")
-      .localeCompare(
-        [
-          right.artifactPath ?? "",
-          right.jsonPointer ?? "",
-          right.code,
-          right.reference ?? "",
-        ].join("\0"),
-      ),
-  );
+  const ordered = orderDiagnostics(diagnostics);
 
+  return {
+    status,
+    bundleDirectory,
+    ...(bundle === undefined ? {} : { bundle }),
+    diagnostics: ordered,
+    summary: summarize(ordered),
+  };
+}
+
+export function advanceResult(
+  status: AdvanceStatus,
+  bundleDirectory: string,
+  diagnostics: SahDiagnostic[],
+  bundle?: AdvancedBundle,
+): AdvanceResult {
+  const ordered = orderDiagnostics(diagnostics);
   return {
     status,
     bundleDirectory,

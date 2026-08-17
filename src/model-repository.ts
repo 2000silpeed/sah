@@ -1,13 +1,17 @@
 import { constants } from "node:fs";
-import { access, readFile, realpath, stat } from "node:fs/promises";
+import { access, lstat, readFile, realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 import type {
+  AdvanceResult,
   SahDiagnostic,
   SourceLocation,
+  Stage,
   ValidationResult,
 } from "./contracts.js";
-import { hasErrors, result } from "./diagnostics.js";
+import { stages } from "./contracts.js";
+import { advanceResult, hasErrors, result } from "./diagnostics.js";
+import { replaceManifestAtomically } from "./atomic-manifest.js";
 import {
   artifactRoles,
   type ArchitectureDecisionModel,
@@ -22,7 +26,10 @@ import {
   type SystemCharacterization,
 } from "./internal-model.js";
 import { validateReferences } from "./reference-validation.js";
-import { loadSchemaRegistry } from "./schema-validation.js";
+import {
+  loadSchemaRegistry,
+  type SchemaRegistry,
+} from "./schema-validation.js";
 import {
   requiredArtifactDiagnostics,
   validateStageGates,
@@ -33,7 +40,11 @@ const manifestSchemaId =
   "https://sah.dev/schemas/design-bundle-manifest/v0.1.0";
 
 type JsonReadResult =
-  { ok: true; data: unknown } | { ok: false; diagnostic: SahDiagnostic };
+  | { ok: true; data: unknown; source: Uint8Array }
+  | {
+      ok: false;
+      diagnostic: SahDiagnostic;
+    };
 
 type ArtifactReadResult =
   | { ok: true; artifact: LoadedArtifact }
@@ -45,6 +56,7 @@ function operationalDiagnostic(input: {
   jsonPointer?: string;
   sourceLocation?: SourceLocation;
   reference?: string;
+  capability?: string;
   message: string;
   expected: string;
   repair: string;
@@ -52,7 +64,7 @@ function operationalDiagnostic(input: {
   return {
     code: input.code,
     category: "operational",
-    capability: "Bundle loading",
+    capability: input.capability ?? "Bundle loading",
     severity: "error",
     ...(input.artifactPath === undefined
       ? {}
@@ -104,10 +116,10 @@ async function readJson(
   path: string,
   artifactPath: string,
 ): Promise<JsonReadResult> {
-  let source: string;
+  let source: Uint8Array;
   try {
     await access(path, constants.R_OK);
-    source = await readFile(path, "utf8");
+    source = await readFile(path);
   } catch (error) {
     return {
       ok: false,
@@ -130,12 +142,13 @@ async function readJson(
     };
   }
 
+  const sourceText = Buffer.from(source).toString("utf8");
   try {
-    return { ok: true, data: JSON.parse(source) as unknown };
+    return { ok: true, data: JSON.parse(sourceText) as unknown, source };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : `Cannot parse ${artifactPath}.`;
-    const location = sourceLocation(message, source);
+    const location = sourceLocation(message, sourceText);
     return {
       ok: false,
       diagnostic: operationalDiagnostic({
@@ -264,17 +277,32 @@ function toModels(artifacts: LoadedArtifact[]): LoadedModels {
   return models;
 }
 
-export async function validateBundle(
-  directory: string,
-): Promise<ValidationResult> {
+type PreparedBundle = {
+  bundleRoot: string;
+  manifestLexicalPath: string;
+  manifestSource: Uint8Array;
+  manifest: BundleManifest;
+  registry: SchemaRegistry;
+  paths: Partial<Record<ArtifactRole, string>>;
+  artifacts: LoadedArtifact[];
+};
+
+type PreparationResult =
+  | { ok: true; prepared: PreparedBundle }
+  | { ok: false; validation: ValidationResult };
+
+async function prepareBundle(directory: string): Promise<PreparationResult> {
   const requestedDirectory = resolve(directory);
   const registryResult = await loadSchemaRegistry();
   if (!registryResult.ok) {
-    return result(
-      "operational-error",
-      requestedDirectory,
-      registryResult.diagnostics,
-    );
+    return {
+      ok: false,
+      validation: result(
+        "operational-error",
+        requestedDirectory,
+        registryResult.diagnostics,
+      ),
+    };
   }
 
   let bundleRoot: string;
@@ -283,18 +311,21 @@ export async function validateBundle(
     if (!(await stat(bundleRoot)).isDirectory())
       throw new Error(`${directory} is not a directory`);
   } catch (error) {
-    return result("operational-error", requestedDirectory, [
-      operationalDiagnostic({
-        code: "BUNDLE_DIRECTORY_UNREADABLE",
-        artifactPath: directory,
-        message:
-          error instanceof Error
-            ? error.message
-            : `Cannot open bundle directory ${directory}.`,
-        expected: "an existing readable design-bundle directory",
-        repair: "Pass a readable bundle directory to sah validate.",
-      }),
-    ]);
+    return {
+      ok: false,
+      validation: result("operational-error", requestedDirectory, [
+        operationalDiagnostic({
+          code: "BUNDLE_DIRECTORY_UNREADABLE",
+          artifactPath: directory,
+          message:
+            error instanceof Error
+              ? error.message
+              : `Cannot open bundle directory ${directory}.`,
+          expected: "an existing readable design-bundle directory",
+          repair: "Pass a readable bundle directory to the SAH command.",
+        }),
+      ]),
+    };
   }
 
   const manifestLexicalPath = resolve(bundleRoot, manifestName);
@@ -302,16 +333,19 @@ export async function validateBundle(
   try {
     manifestPhysicalPath = await realpath(manifestLexicalPath);
     if (!isWithin(bundleRoot, manifestPhysicalPath)) {
-      return result("operational-error", bundleRoot, [
-        operationalDiagnostic({
-          code: "MANIFEST_PATH_OUTSIDE_BUNDLE",
-          artifactPath: manifestName,
-          message: `${manifestName} resolves outside the design bundle.`,
-          expected: "a physical manifest file inside the bundle root",
-          repair:
-            "Replace the escaping manifest symlink with a local manifest file.",
-        }),
-      ]);
+      return {
+        ok: false,
+        validation: result("operational-error", bundleRoot, [
+          operationalDiagnostic({
+            code: "MANIFEST_PATH_OUTSIDE_BUNDLE",
+            artifactPath: manifestName,
+            message: `${manifestName} resolves outside the design bundle.`,
+            expected: "a physical manifest file inside the bundle root",
+            repair:
+              "Replace the escaping manifest symlink with a local manifest file.",
+          }),
+        ]),
+      };
     }
   } catch {
     manifestPhysicalPath = manifestLexicalPath;
@@ -319,7 +353,12 @@ export async function validateBundle(
 
   const manifestRead = await readJson(manifestPhysicalPath, manifestName);
   if (!manifestRead.ok) {
-    return result("operational-error", bundleRoot, [manifestRead.diagnostic]);
+    return {
+      ok: false,
+      validation: result("operational-error", bundleRoot, [
+        manifestRead.diagnostic,
+      ]),
+    };
   }
 
   const manifestDiagnostics = registryResult.registry.validate(
@@ -329,14 +368,13 @@ export async function validateBundle(
     "operational",
   );
   if (manifestDiagnostics.length > 0) {
-    return result("operational-error", bundleRoot, manifestDiagnostics);
+    return {
+      ok: false,
+      validation: result("operational-error", bundleRoot, manifestDiagnostics),
+    };
   }
   const manifest = manifestRead.data as BundleManifest;
-  const bundle = {
-    id: manifest.bundleId,
-    completedStage: manifest.lifecycle.completedStage,
-    profile: manifest.lifecycle.profile,
-  };
+  const bundle = bundleMetadata(manifest, manifest.lifecycle.completedStage);
   const paths: Partial<Record<ArtifactRole, string>> = {};
   for (const role of artifactRoles) {
     const descriptor = manifest.artifacts[role];
@@ -368,7 +406,15 @@ export async function validateBundle(
     }
   }
   if (pathDiagnostics.length > 0) {
-    return result("operational-error", bundleRoot, pathDiagnostics, bundle);
+    return {
+      ok: false,
+      validation: result(
+        "operational-error",
+        bundleRoot,
+        pathDiagnostics,
+        bundle,
+      ),
+    };
   }
 
   const readResults = await Promise.all(
@@ -383,19 +429,55 @@ export async function validateBundle(
     read.ok ? [] : [read.diagnostic],
   );
   if (operationalFailures.length > 0) {
-    return result("operational-error", bundleRoot, operationalFailures, bundle);
+    return {
+      ok: false,
+      validation: result(
+        "operational-error",
+        bundleRoot,
+        operationalFailures,
+        bundle,
+      ),
+    };
   }
   const artifacts = readResults.flatMap((read) =>
     read.ok ? [read.artifact] : [],
   );
 
+  return {
+    ok: true,
+    prepared: {
+      bundleRoot,
+      manifestLexicalPath,
+      manifestSource: manifestRead.source,
+      manifest,
+      registry: registryResult.registry,
+      paths,
+      artifacts,
+    },
+  };
+}
+
+function bundleMetadata(manifest: BundleManifest, completedStage: Stage) {
+  return {
+    id: manifest.bundleId,
+    completedStage,
+    profile: manifest.lifecycle.profile,
+  };
+}
+
+function evaluatePreparedBundle(
+  prepared: PreparedBundle,
+  completedStage: Stage,
+): ValidationResult {
+  const bundle = bundleMetadata(prepared.manifest, completedStage);
+
   const validationDiagnostics = requiredArtifactDiagnostics(
-    bundle.completedStage,
-    paths,
+    completedStage,
+    prepared.paths,
   );
-  for (const artifact of artifacts) {
+  for (const artifact of prepared.artifacts) {
     validationDiagnostics.push(
-      ...registryResult.registry.validate(
+      ...prepared.registry.validate(
         artifact.schemaId,
         artifact.data,
         artifact.path,
@@ -404,18 +486,232 @@ export async function validateBundle(
     );
   }
   if (hasErrors(validationDiagnostics)) {
-    return result("violations", bundleRoot, validationDiagnostics, bundle);
+    return result(
+      "violations",
+      prepared.bundleRoot,
+      validationDiagnostics,
+      bundle,
+    );
   }
 
-  const models = toModels(artifacts);
-  validationDiagnostics.push(...validateReferences(models, paths));
+  const models = toModels(prepared.artifacts);
+  validationDiagnostics.push(...validateReferences(models, prepared.paths));
   validationDiagnostics.push(
-    ...validateStageGates(bundle.completedStage, models, paths),
+    ...validateStageGates(completedStage, models, prepared.paths),
   );
   return result(
     hasErrors(validationDiagnostics) ? "violations" : "passed",
-    bundleRoot,
+    prepared.bundleRoot,
     validationDiagnostics,
     bundle,
+  );
+}
+
+export async function validateBundle(
+  directory: string,
+): Promise<ValidationResult> {
+  const preparation = await prepareBundle(directory);
+  return preparation.ok
+    ? evaluatePreparedBundle(
+        preparation.prepared,
+        preparation.prepared.manifest.lifecycle.completedStage,
+      )
+    : preparation.validation;
+}
+
+const supportedAdvanceTargets: ReadonlySet<Stage> = new Set([
+  "S5",
+  "S6",
+  "S7",
+  "S10",
+  "S11",
+]);
+
+function transitionDiagnostic(input: {
+  code: string;
+  message: string;
+  expected: string;
+  repair: string;
+  reference?: string;
+}): SahDiagnostic {
+  return operationalDiagnostic({
+    ...input,
+    capability: "Bundle lifecycle transition",
+    artifactPath: manifestName,
+    jsonPointer: "/lifecycle/completedStage",
+  });
+}
+
+function failedPreparationForAdvance(
+  validation: ValidationResult,
+  targetStage: Stage,
+): AdvanceResult {
+  const bundle =
+    validation.bundle === undefined
+      ? undefined
+      : {
+          id: validation.bundle.id,
+          profile: validation.bundle.profile,
+          previousStage: validation.bundle.completedStage,
+          targetStage,
+          completedStage: validation.bundle.completedStage,
+        };
+  return advanceResult(
+    "operational-error",
+    validation.bundleDirectory,
+    validation.diagnostics,
+    bundle,
+  );
+}
+
+export async function advanceBundle(
+  directory: string,
+  targetStage: Stage,
+): Promise<AdvanceResult> {
+  const requestedDirectory = resolve(directory);
+  if (!(stages as readonly string[]).includes(targetStage)) {
+    return advanceResult("operational-error", requestedDirectory, [
+      transitionDiagnostic({
+        code: "ADVANCE_STAGE_INVALID",
+        reference: targetStage,
+        message: `${targetStage} is not a valid SAH lifecycle stage.`,
+        expected: `one of ${stages.join(", ")}`,
+        repair: "Choose the exact next lifecycle stage and retry.",
+      }),
+    ]);
+  }
+
+  const preparation = await prepareBundle(directory);
+  if (!preparation.ok)
+    return failedPreparationForAdvance(preparation.validation, targetStage);
+
+  const { prepared } = preparation;
+  const previousStage = prepared.manifest.lifecycle.completedStage;
+  const bundle = {
+    id: prepared.manifest.bundleId,
+    profile: prepared.manifest.lifecycle.profile,
+    previousStage,
+    targetStage,
+    completedStage: previousStage,
+  };
+  const currentIndex = stages.indexOf(previousStage);
+  const targetIndex = stages.indexOf(targetStage);
+  let invalidTransition: SahDiagnostic | undefined;
+  if (targetIndex <= currentIndex) {
+    invalidTransition = transitionDiagnostic({
+      code: "ADVANCE_STAGE_NOT_FORWARD",
+      reference: `${previousStage}->${targetStage}`,
+      message: `Cannot advance from ${previousStage} to ${targetStage}.`,
+      expected: `the exact stage after ${previousStage}`,
+      repair: "Choose the next uncompleted lifecycle stage.",
+    });
+  } else if (targetIndex !== currentIndex + 1) {
+    invalidTransition = transitionDiagnostic({
+      code: "ADVANCE_STAGE_SKIPPED",
+      reference: `${previousStage}->${targetStage}`,
+      message: `Advancing from ${previousStage} to ${targetStage} would skip lifecycle stages.`,
+      expected: `the exact stage after ${previousStage}`,
+      repair: `Advance to ${stages[currentIndex + 1]} first.`,
+    });
+  } else if (!supportedAdvanceTargets.has(targetStage)) {
+    invalidTransition = transitionDiagnostic({
+      code: "ADVANCE_STAGE_UNSUPPORTED",
+      reference: targetStage,
+      message: `The deterministic gate for target ${targetStage} is not implemented.`,
+      expected: `an exact-next target with implemented gates: ${[...supportedAdvanceTargets].join(", ")}`,
+      repair:
+        "Keep the manifest at its current stage until this target gate is supported.",
+    });
+  }
+  if (invalidTransition !== undefined) {
+    return advanceResult(
+      "operational-error",
+      prepared.bundleRoot,
+      [invalidTransition],
+      bundle,
+    );
+  }
+
+  let manifestStatus: Awaited<ReturnType<typeof lstat>>;
+  try {
+    manifestStatus = await lstat(prepared.manifestLexicalPath);
+  } catch (error) {
+    return advanceResult(
+      "operational-error",
+      prepared.bundleRoot,
+      [
+        operationalDiagnostic({
+          code: "MANIFEST_ADVANCE_UNSAFE",
+          capability: "Atomic bundle lifecycle update",
+          artifactPath: manifestName,
+          message:
+            error instanceof Error
+              ? error.message
+              : `Cannot inspect ${manifestName}.`,
+          expected: "a regular, writable manifest file at the bundle root",
+          repair: "Restore the local manifest file and retry.",
+        }),
+      ],
+      bundle,
+    );
+  }
+  if (manifestStatus.isSymbolicLink() || !manifestStatus.isFile()) {
+    return advanceResult(
+      "operational-error",
+      prepared.bundleRoot,
+      [
+        operationalDiagnostic({
+          code: "MANIFEST_ADVANCE_UNSAFE",
+          capability: "Atomic bundle lifecycle update",
+          artifactPath: manifestName,
+          message: `${manifestName} is not a regular local file; stage advancement was refused.`,
+          expected: "a non-symlink regular manifest file at the bundle root",
+          repair:
+            "Replace the manifest symlink or special file with a regular local file.",
+        }),
+      ],
+      bundle,
+    );
+  }
+
+  const proposedValidation = evaluatePreparedBundle(prepared, targetStage);
+  if (proposedValidation.status !== "passed") {
+    return advanceResult(
+      proposedValidation.status === "violations"
+        ? "blocked"
+        : "operational-error",
+      prepared.bundleRoot,
+      proposedValidation.diagnostics,
+      bundle,
+    );
+  }
+
+  const nextManifest: BundleManifest = {
+    ...prepared.manifest,
+    lifecycle: {
+      ...prepared.manifest.lifecycle,
+      completedStage: targetStage,
+    },
+  };
+  const replacement = await replaceManifestAtomically({
+    manifestPath: prepared.manifestLexicalPath,
+    expectedSource: prepared.manifestSource,
+    manifest: nextManifest,
+    mode: manifestStatus.mode,
+  });
+  if (!replacement.ok) {
+    return advanceResult(
+      "operational-error",
+      prepared.bundleRoot,
+      [replacement.diagnostic],
+      bundle,
+    );
+  }
+
+  return advanceResult(
+    "advanced",
+    prepared.bundleRoot,
+    proposedValidation.diagnostics,
+    { ...bundle, completedStage: targetStage },
   );
 }
