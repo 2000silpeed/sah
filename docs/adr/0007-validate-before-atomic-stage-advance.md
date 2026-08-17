@@ -18,8 +18,9 @@ concurrent change, or imply that unimplemented S0–S13 gates passed.
 ## Decision
 
 The Model Repository validates current artifact bytes as if the requested next stage were
-completed. It advances only to implemented deterministic targets S5, S6, S7, S10, or S11.
-Equal, backward, skipped, and other target stages fail without writing.
+completed. It advances only to implemented deterministic targets S5, S6, S7, S8, S10, or
+S11. S8 support was added with the candidate-set contract in ADR-0008. Equal, backward,
+skipped, and other target stages fail without writing.
 
 After validation, write complete JSON to an exclusively created temporary file in the manifest
 directory, preserve mode, flush and close it, compare the manifest with its initially loaded

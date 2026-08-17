@@ -11,7 +11,7 @@ and ADRs. JSON Schemas own serialized shape. The reasoning model owns stage gate
 | Design Strategy | per-subsystem strategy, alternatives, costs, mixed-edge seams, short-path decision | ownership, interaction mechanisms, and architecture elements |
 | Responsibility | required outcomes, inputs/outputs, triggers, change reasons, collaborators, logical ownership | classes, services, and technology |
 | Invariant | precise obligations, consistency, failure, detection/recovery, enforcement ownership | generic “business rules” with no trigger or failure meaning |
-| Architecture | candidate/selected elements, boundaries, relations, interfaces, scenario assessments, constraints | requirement prose and unstructured ADR text |
+| Architecture | candidate sets over elements, boundaries, relations, interfaces, scenario assessments, constraints | requirement prose and unstructured ADR text |
 | Architecture Decision | evaluated options, evidence, authority, costs, consequences, reversal and review triggers | architecture facts already owned by Architecture IR |
 
 The split follows different writers and gates. Merging responsibility and architecture would
@@ -31,6 +31,12 @@ complete; validators must not infer it from optional fields or present files. AD
 the representation decision and the manifest schema owns its serialized shape. Advancement
 validates a proposed explicit stage, then atomically changes only this metadata field; it does
 not revise, infer, or normalize any semantic IR fact. ADR-0007 owns that transition decision.
+
+Architecture IR v0.2 makes candidates an explicit set. Each candidate points to the topology
+it uses and states operational consequences; an assessment identifies the candidate it
+evaluates. A single-candidate set carries structured short-path or forcing-constraint
+evidence. ADR-0008 owns the coordinated manifest/Architecture schema migration; the schemas
+remain the sole authority for serialized shape.
 
 S5 may reserve a `logicalOwnerRef` before Architecture IR exists. S6 must materialize every
 such owner as an architecture element with matching authority. A full-bundle reference
@@ -61,9 +67,13 @@ stronger conditions:
 
 - after S5, every responsibility and invariant has an owner or an unresolved conflict;
 - after S7, no architecture element remains `undecided`;
+- after S8, the candidate set contains at least two proposed candidates, or one proposed
+  candidate with resolved forcing-constraint evidence or eligible short-path evidence tied
+  to S2 alternatives;
 - after S9, must-priority scenarios have an assessment for every candidate;
-- after S10, exactly one coherent candidate is `selected`, accepted decisions have a selected
-  option and authority, and rejected alternatives remain in the log; proposed decisions may
+- after S10, exactly one candidate is `selected`, every other candidate is `rejected`,
+  accepted decisions have a selected option and authority, and rejected alternatives remain
+  in the log; proposed decisions may
   remain only behind an owned seam and block every dependent S12 slice;
 - after S11, each accepted decision is classified into deterministic, assisted, or judgment
   enforcement, even when it generates no hard rule.
@@ -71,6 +81,10 @@ stronger conditions:
 An IR update changes `modelId` only when it becomes a separately addressable artifact. Source
 control supplies revision history; SAH does not add mutable revision counters with no
 reasoning consumer.
+
+Candidate count, status, and reference resolution are deterministic. Whether candidates are
+coherent, materially different, proportionate, or good trade-offs remains judgment; a valid
+candidate set is not an architecture-quality endorsement.
 
 ## Elements and relations
 

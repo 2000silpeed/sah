@@ -92,15 +92,19 @@ to S6; hidden methodology assumptions return to S2.
 **Consumes:** the represented architecture basis and quality scenarios. **Produces:** at
 least two materially different Architecture IR candidates for consequential choices, or one
 candidate plus forcing evidence. An eligible short path may instead produce one candidate
-when S2 alternatives and proportionality evidence show that another architecture is ceremony.
-**Complete when:** candidates are internally coherent, make topology and operational
-consequences explicit, and vary a real trade-off rather than names. **Loop-back:** no credible
-alternative outside the short path returns to S6/S7 or records the forcing constraint.
+when resolved S2 alternatives and proportionality evidence show that another architecture is
+ceremony. Each candidate identifies its topology and operational consequences; a
+single-candidate set records its justification explicitly. **Complete when:** candidate
+count/status and evidence references pass deterministic checks, and review finds candidates
+internally coherent and materially different where alternatives exist. **Loop-back:** no
+credible alternative outside the short path returns to S6/S7 or records the forcing
+constraint.
 
 ### S9 — Evaluate quality and trade-offs
 
 **Consumes:** candidates and quality scenarios. **Produces:** proposed Architecture Decision
-IR options with scenario results, risks, sensitivity points, costs, and reversal evidence.
+IR options with scenario results tied to their candidate, risks, sensitivity points, costs,
+and reversal evidence.
 **Complete when:** every must scenario is met or its risk is assigned to an authorized human,
 and trade-offs name what worsens. **Loop-back:** a failed scenario returns to S8; a scenario
 that cannot discriminate returns to S1; a hidden responsibility returns to S3.

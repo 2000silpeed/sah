@@ -62,7 +62,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   reasons, and logical ownership.
 - [Invariant](../schemas/invariant.schema.json) — obligations, applicability, consistency,
   failure, detection, recovery, and enforcement ownership.
-- [Architecture](../schemas/architecture.schema.json) — candidates, elements, boundaries,
+- [Architecture](../schemas/architecture.schema.json) — candidate sets, elements, boundaries,
   relations, interfaces, assessments, and constraints.
 - [Architecture Decision](../schemas/architecture-decision.schema.json) — options, evidence,
   costs, authority, consequences, review triggers, and constraint links.
@@ -93,7 +93,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
-  [advance tests](../test/advance-bundle.test.ts), [CLI tests](../test/cli.test.ts), and
+  [S8 tests](../test/s8-stage.test.ts), [advance tests](../test/advance-bundle.test.ts),
+  [CLI tests](../test/cli.test.ts), and
   [schema contract tests](../test/schema-contracts.test.ts) — generate isolated mutations and
   verify validation, atomic transition, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

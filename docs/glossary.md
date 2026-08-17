@@ -12,7 +12,7 @@ documents link or apply it.
 | Agent representation | 에이전트 표현 | A runtime form that delegates bounded choices to a probabilistic model using context and tools. | architecture-model.md |
 | Agentic tool loop | 에이전트 도구 루프 | A strategy centered on model uncertainty, tools, permissions, context, memory, evaluation, fallback, latency, and cost. | strategy-selection.md |
 | Aggregate | 애그리게이트 | An optional representation that gives one boundary authority to preserve a related invariant set. | architecture-model.md |
-| Architecture candidate | 아키텍처 후보 | One coherent alternative of elements, relations, boundaries, interfaces, and operational consequences. | design-reasoning-model.md |
+| Architecture candidate | 아키텍처 후보 | One member of a candidate set, identifying the elements, relations, boundaries, interfaces, and operational consequences it uses. | design-reasoning-model.md |
 | Architecture constraint | 아키텍처 제약 | An enforceable or reviewable proposition compiled from an accepted decision for a named scope. | validation-model.md |
 | Architecture Decision IR | 아키텍처 결정 IR | Canonical structured options, evidence, authority, selection, costs, consequences, and review triggers. | architecture-model.md |
 | Architecture element | 아키텍처 요소 | A stable logical owner with role, authority, responsibility/invariant traces, and later a representation. | architecture-model.md |
@@ -24,6 +24,7 @@ documents link or apply it.
 | Boundary | 경계 | A grouping that protects a named change, invariant, authority, risk, or failure mode. | architecture-model.md |
 | Bundle manifest | 번들 매니페스트 | Non-semantic, schema-validated metadata declaring a design bundle's completed stage, profile, artifact paths, and schema IDs. | harness-architecture.md |
 | Candidate assessment | 후보 평가 | Scenario-based result, evidence, sensitivity points, risks, and trade-offs for an architecture candidate. | design-reasoning-model.md |
+| Candidate set | 후보 집합 | The explicit S8 alternatives under evaluation; one member requires resolved short-path or forcing-constraint justification. | architecture-model.md |
 | Characterization | 특성화 | Evidence-backed description of design forces before selecting a strategy or representation. | system-characterization.md |
 | Characterization dimension | 특성화 차원 | One canonical axis used to compare problem regions without deciding implementation form. | system-characterization.md |
 | Change isolation | 변경 격리 | Degree to which ownership, release cadence, substitution, or roadmap requires independent evolution. | system-characterization.md |

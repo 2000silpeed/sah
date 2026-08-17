@@ -43,7 +43,7 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 | 0 | Frame canonical migration and S8 contract | complete | `3c9ddd7`; ADR-0008 |
 | 1 | Migrate schemas, fixture, types, and references | complete | v0.2 examples/traces pass |
 | 2 | Implement S8/S10 gates and advance support | complete | 67 library/production CLI tests |
-| 3 | Document, verify, and review | in_progress | authority and final audits pending |
+| 3 | Document, verify, and review | in_progress | authority updated; final audits pending |
 
 ### Decision log
 
@@ -72,8 +72,11 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 - 2026-08-17: Architecture/manifest v0.2 examples and trace audit passed. Format, lint, strict
   typecheck, and 67 tests passed across five files, including S8 success/block/reference/status
   families, v0.1 rejection, S10 disposition, and production CLI S7→S8.
+- 2026-08-17: Architecture, reasoning, validation, harness, CLI, dogfood, glossary, index,
+  operating guidance, and ADR-0007 now agree on candidate-set semantics and S8 support. Local
+  Markdown links, file budgets, formatting, and `git diff --check` passed.
 
 ### Handoff
 
-Update architecture, validation, CLI, glossary, index, and operating docs, then run the full
-production verification and adversarial diff audit.
+Run the full production verification and adversarial diff audit, record D/A/J outcomes, and
+commit the clean handoff without pushing.

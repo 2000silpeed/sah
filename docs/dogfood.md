@@ -43,10 +43,11 @@ services, broker, or single-implementation interfaces were justified.
 
 ### S8–S11: candidate, decision, enforcement
 
-After R2, S8 used one short-path candidate plus proportionality evidence referencing the S2
-alternative analysis. S9 accepted the operational simplicity cost: richer rules would force
-re-entry at S2/S3. It kept concurrent editing as an isolated proposed policy. S10 selected the
-modular candidate without pretending that policy was decided.
+After R2, S8 used an explicit one-member candidate set. Its structured short-path
+justification resolves to the S2 alternative and its evidence, while the candidate identifies
+its topology and operational consequences. S9 accepted the operational simplicity cost:
+richer rules would force re-entry at S2/S3. It kept concurrent editing as an isolated proposed
+policy. S10 selected the modular candidate without pretending that policy was decided.
 
 S11 classified uniqueness, authorization, audit append/retention, and archive-query behavior
 as deterministic when mapped to storage/API facts. Catch-all naming and future model richness
@@ -123,7 +124,7 @@ strategy and all fatal-avoidance anchors.
 | ID | Broken contract | Model repair | Files changed |
 |---|---|---|---|
 | R1 | Unknown ratings could cite unrelated positive evidence. | Unknown cites the inspected source and explicitly states the missing fact; examples use distinct absence evidence. | characterization doc and schema example |
-| R2 | Short path still required artificial architecture alternatives. | Permit one S8 candidate with eligible short-path proportionality evidence and S2 alternative analysis. | reasoning and validation models |
+| R2 | Short path still required artificial architecture alternatives. | Permit one S8 candidate with eligible short-path proportionality evidence and S2 alternative analysis. | reasoning/validation models and Architecture schema/runtime |
 | R3 | S2 composition contracts decided ownership and interaction before S3–S6. | Replace them with representation-free composition seams; S6 owns full interfaces/relations. | strategy, reasoning, architecture-model, Strategy schema |
 | R4 | Time-bounded or superseding obligations existed only inside prose. | Add required invariant `applicability`, read by boundary and constraint work. | reasoning and Invariant schema |
 | R5 | One unresolved policy blocked selection of the whole architecture. | Allow scoped readiness: isolate proposed decisions and block only dependent S12 slices. | reasoning and architecture-model |

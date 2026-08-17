@@ -1,8 +1,8 @@
 # Validation Model
 
 This document owns the determinism split, validator catalogue, enforcement lifecycle, and
-exception semantics. The catalogue is exhaustive for v0.1: a capability not listed here is
-unsupported, not implicitly deterministic.
+exception semantics. The catalogue is exhaustive for the current slice: a capability not
+listed here is unsupported, not implicitly deterministic.
 
 ## Classifications
 
@@ -110,10 +110,18 @@ Proposed-decision isolation produces an assisted warning: the current six IRs do
 S12 implementation slices, so the validator cannot prove isolation or blocker coverage.
 
 Run 3 reuses those same deterministic predicates to test a proposed exact-next lifecycle
-before committing it. Only target gates S5, S6, S7, S10, and S11 are executable. Missing gate
+before committing it. Target gates S5, S6, S7, S8, S10, and S11 are executable. Missing gate
 implementations are operational `unsupported` outcomes, not validation passes. Deterministic
 errors block advancement; the assisted proposed-decision isolation finding remains a warning
 and cannot become a hard failure merely because the command can write lifecycle metadata.
+
+Run 4 makes S8 structurally executable. It deterministically checks candidate count and
+status, candidate topology and assessment references, and resolved evidence for a justified
+single candidate. A short-path justification must match the manifest profile, S2 eligibility,
+and every selection's evidence and alternative analysis; a forcing justification must resolve
+to a declared hard constraint. Candidate coherence, material difference, proportionality,
+and trade-off quality remain judgment capabilities. S9 assessment coverage is still
+unsupported, so advancement from S8 to S9 cannot claim a pass.
 
 This slice validates constraint declarations but does not bind code-fact adapters or execute
 compiled project constraints. A structurally valid deterministic observable is therefore not

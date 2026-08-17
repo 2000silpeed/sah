@@ -118,6 +118,7 @@ npm test
 npm run build
 npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
+npm exec -- sah advance /path/to/disposable-bundle S8 --json
 ```
 
 The installed package exposes `sah validate <design-bundle-directory> [--json]` and the

@@ -56,11 +56,17 @@ artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR
 artifact paths use forward-slash relative paths, and physical targets—including symlinks—must
 remain inside the bundle.
 
+The current manifest and Architecture IR schema IDs are v0.2.0; the other five semantic IR
+schemas remain v0.1.0. The migration is a deliberate hard cut: a v0.1 manifest or singular
+Architecture candidate is an operational schema/declaration failure, not silently rewritten.
+ADR-0008 records why a dual representation was rejected.
+
 ## Stage advancement
 
 Advancement is forward-only and exactly one stage. The executable target gates are S5, S6,
-S7, S10, and S11, so successful transitions can currently be S4→S5, S5→S6, S6→S7, S9→S10,
-or S10→S11. An exact-next target without an implemented gate, such as S7→S8, returns
+S7, S8, S10, and S11, so successful transitions can currently be S4→S5, S5→S6, S6→S7,
+S7→S8, S9→S10, or S10→S11. An exact-next target without an implemented gate, such as S8→S9,
+returns
 `ADVANCE_STAGE_UNSUPPORTED` and exit 2. Equal/backward, skipped, and invalid targets are also
 operational failures. A warning alone does not block; any error-severity proposed-stage
 diagnostic returns `blocked` and exit 1.

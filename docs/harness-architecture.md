@@ -54,6 +54,10 @@ manifest symlinks and compares source bytes immediately before the commit point.
 atomic file replacement with optimistic conflict detection, not a lock or a multi-file/
 multi-process transaction. The CLI remains an invocation, presentation, and exit-code adapter.
 
+The S8 slice evaluates the Architecture candidate set and its resolved S2/evidence/constraint
+links inside the Model Repository. It exposes no Ajv representation through the library and
+does not promote candidate quality judgments into deterministic failures.
+
 ### Decision and View Adapters
 
 Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They
@@ -103,7 +107,7 @@ The host adapter starts or resumes a bundle. The orchestrator reads the active s
 Method Library for relevant questions, obtains LLM/human output, validates shape through the
 Model Repository, runs the semantic gate, and either advances or records the causal
 loop-back. Only a successful atomic update makes downstream artifacts current. The current
-runtime can advance only targets with implemented S5, S6, S7, S10, or S11 gates; it reports
+runtime can advance only targets with implemented S5, S6, S7, S8, S10, or S11 gates; it reports
 other exact-next stages as unsupported rather than manufacturing a pass.
 
 ### Constraint compilation
