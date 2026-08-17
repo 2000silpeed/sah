@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "0.1.0",
+  "logId": "equipment-register-decisions",
+  "decisions": [
+    {
+      "id": "choose-equipment-module",
+      "title": "Use direct modular operations for equipment administration",
+      "status": "accepted",
+      "decidedAt": "2026-08-17",
+      "context": "Equipment changes are local and governed by record-level validation and audit",
+      "evidenceRefs": ["ev-equipment-maintenance"],
+      "affectedElementRefs": ["equipment-operations"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "options": [
+        {
+          "id": "equipment-module-option",
+          "description": "Plain module with transaction operations and one datastore",
+          "scenarioResults": [
+            {
+              "scenarioRef": "qs-valid-edit",
+              "result": "pass",
+              "evidence": "Record mutation and audit append share one transaction"
+            }
+          ],
+          "benefits": ["Low ceremony and one obvious write authority"],
+          "costs": [
+            "The module must be split if unrelated change reasons emerge"
+          ],
+          "risks": ["Richer behavior may be recognized late"],
+          "reversalEvidence": "Multiple interacting equipment policies emerge"
+        },
+        {
+          "id": "equipment-rich-domain-option",
+          "description": "Rich domain model with aggregate and repository abstractions",
+          "scenarioResults": [
+            {
+              "scenarioRef": "qs-valid-edit",
+              "result": "pass",
+              "evidence": "An aggregate can also coordinate record and audit behavior"
+            }
+          ],
+          "benefits": ["Explicit home for future interacting rules"],
+          "costs": ["Unjustified abstractions and mapping for current CRUD"],
+          "risks": ["Ceremony obscures direct data movement"],
+          "reversalEvidence": "Several interacting invariants require richer behavior ownership"
+        }
+      ],
+      "selectedOptionRef": "equipment-module-option",
+      "decision": "Use one equipment operations module with direct transaction scripts",
+      "tradeoffsAccepted": [
+        "Reopen structure if interacting rules or independent release needs emerge"
+      ],
+      "consequences": [
+        "Equipment writes remain behind one in-process module boundary"
+      ],
+      "supersedes": [],
+      "constraintRefs": ["equipment-owns-writes"],
+      "reviewTriggers": [
+        "A rule coordinates multiple equipment records or independent owners"
+      ],
+      "authority": {
+        "decider": "architecture owner",
+        "scope": "Equipment administration"
+      }
+    }
+  ]
+}

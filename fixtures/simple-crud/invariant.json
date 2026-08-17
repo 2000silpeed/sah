@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-invariants",
+  "characterizationRef": "equipment-register-characterization",
+  "responsibilityRef": "equipment-register-responsibilities",
+  "invariants": [
+    {
+      "id": "asset-tag-unique",
+      "subsystemRef": "equipment-administration",
+      "statement": "Every active or archived equipment record has a unique asset tag",
+      "kind": "state",
+      "applicability": "From record creation until permanent deletion",
+      "evidenceRefs": ["ev-equipment-maintenance"],
+      "responsibilityRefs": ["maintain-equipment-record"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "scope": {
+        "description": "All equipment records including archived records",
+        "ownershipSpan": "single-owner"
+      },
+      "triggers": ["Create equipment", "Change an asset tag"],
+      "preconditions": ["Actor is authorized"],
+      "postconditions": [
+        "No other equipment record has the accepted asset tag"
+      ],
+      "consistency": {
+        "mode": "atomic",
+        "stalenessBound": "none",
+        "ordering": "one database transaction"
+      },
+      "criticality": "medium",
+      "failureImpact": "Staff cannot identify equipment reliably",
+      "detection": "Check the unique key before or during commit",
+      "recovery": "Reject the change with an asset-tag validation error",
+      "owner": {
+        "logicalOwnerRef": "equipment-operations",
+        "enforcementResponsibilityRef": "maintain-equipment-record",
+        "authority": "May reject a write that duplicates an asset tag",
+        "rationale": "The equipment transaction owns the unique-key check and commit"
+      }
+    }
+  ],
+  "unresolvedConflicts": []
+}

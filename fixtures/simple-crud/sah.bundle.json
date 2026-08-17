@@ -1,0 +1,35 @@
+{
+  "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.1.0",
+  "manifestVersion": "0.1.0",
+  "bundleId": "equipment-register",
+  "lifecycle": {
+    "completedStage": "S11",
+    "profile": "short"
+  },
+  "artifacts": {
+    "systemCharacterization": {
+      "path": "system-characterization.json",
+      "schemaId": "https://sah.dev/schemas/system-characterization/v0.1.0"
+    },
+    "designStrategy": {
+      "path": "design-strategy.json",
+      "schemaId": "https://sah.dev/schemas/design-strategy/v0.1.0"
+    },
+    "responsibility": {
+      "path": "responsibility.json",
+      "schemaId": "https://sah.dev/schemas/responsibility/v0.1.0"
+    },
+    "invariant": {
+      "path": "invariant.json",
+      "schemaId": "https://sah.dev/schemas/invariant/v0.1.0"
+    },
+    "architecture": {
+      "path": "architecture.json",
+      "schemaId": "https://sah.dev/schemas/architecture/v0.1.0"
+    },
+    "architectureDecision": {
+      "path": "architecture-decision.json",
+      "schemaId": "https://sah.dev/schemas/architecture-decision/v0.1.0"
+    }
+  }
+}

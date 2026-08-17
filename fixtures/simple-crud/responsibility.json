@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-responsibilities",
+  "characterizationRef": "equipment-register-characterization",
+  "strategyRef": "equipment-register-strategy",
+  "responsibilities": [
+    {
+      "id": "maintain-equipment-record",
+      "subsystemRef": "equipment-administration",
+      "statement": "Accept or reject an authorized equipment record change and append its audit fact",
+      "kind": "outcome",
+      "evidenceRefs": ["ev-equipment-maintenance"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "inputs": [
+        "current equipment record",
+        "requested fields",
+        "actor identity"
+      ],
+      "outputs": [
+        "accepted equipment record and audit fact, or useful validation errors"
+      ],
+      "trigger": "An authorized coordinator submits an equipment change",
+      "changeReason": "Equipment maintenance and audit rules change",
+      "collaboratorRefs": [],
+      "owner": {
+        "logicalOwnerRef": "equipment-operations",
+        "authority": "May accept one equipment transaction and its audit append",
+        "rationale": "One transaction owns record validation, mutation, and audit consistency"
+      }
+    }
+  ],
+  "unresolvedConflicts": []
+}

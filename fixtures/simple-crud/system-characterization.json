@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-characterization",
+  "systemName": "Equipment register",
+  "scope": {
+    "inScope": [
+      "Maintain, search, archive, export, and audit equipment records"
+    ],
+    "outOfScope": ["Inventory purchasing and identity-provider administration"],
+    "stakeholders": [
+      "Operations coordinators",
+      "Office staff",
+      "Maintaining developer"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "ev-equipment-maintenance",
+      "sourceType": "stakeholder",
+      "sourceLocator": "benchmarks/simple-crud/problem.md:3-10",
+      "claim": "Three coordinators maintain fewer than 20,000 equipment records with archive, search, CSV, and one-year audit needs",
+      "confidence": 1,
+      "falsifiedBy": "The stakeholder changes the operating scope or load target"
+    },
+    {
+      "id": "ev-concurrency-unspecified",
+      "sourceType": "assumption",
+      "sourceLocator": "benchmarks/simple-crud/problem.md:12-14",
+      "claim": "The supplied requirements do not decide concurrent-edit behavior",
+      "confidence": 1,
+      "falsifiedBy": "An authorized concurrency policy is supplied"
+    }
+  ],
+  "unresolvedQuestions": [
+    {
+      "id": "q-concurrent-edit",
+      "question": "What happens when two coordinators edit the same item?",
+      "consequence": "The write contract cannot yet promise conflict or overwrite behavior",
+      "resolutionOwner": "Operations product owner"
+    }
+  ],
+  "subsystems": [
+    {
+      "id": "equipment-administration",
+      "name": "Equipment administration",
+      "purpose": "Maintain and retrieve independent equipment records",
+      "evidenceRefs": [
+        "ev-equipment-maintenance",
+        "ev-concurrency-unspecified"
+      ],
+      "dimensions": {
+        "rule_change_complexity": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "Rules are record-local validation and visibility rules"
+        },
+        "invariant_criticality": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "Uniqueness and audit obligations are important but not safety critical"
+        },
+        "dataflow_orientation": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "CSV is a direct filtered projection, not a transformation pipeline"
+        },
+        "distribution_consistency": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "No distributed ownership is required"
+        },
+        "concurrency_temporality": {
+          "level": "unknown",
+          "evidenceRefs": ["ev-concurrency-unspecified"],
+          "rationale": "Concurrent-edit behavior is explicitly undecided"
+        },
+        "autonomy_uncertainty": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "All behavior is deterministic and user initiated"
+        },
+        "integration_volatility": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "No external provider behavior is in scope"
+        },
+        "scale_performance": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "Fewer than 20,000 records and ordinary weekday use"
+        },
+        "assurance_governance": {
+          "level": "medium",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "Authorization and one-year change history require explicit assurance"
+        },
+        "change_isolation": {
+          "level": "low",
+          "evidenceRefs": ["ev-equipment-maintenance"],
+          "rationale": "One small tool and one maintaining developer are expected"
+        }
+      }
+    }
+  ],
+  "qualityScenarios": [
+    {
+      "id": "qs-valid-edit",
+      "sourceEvidenceRefs": ["ev-equipment-maintenance"],
+      "stimulus": "An authorized coordinator submits a valid equipment edit",
+      "environment": "Ordinary weekday operation",
+      "artifact": "One equipment record and its audit history",
+      "response": "The record changes atomically and the actor and time are appended",
+      "measure": "One accepted transaction and one matching audit entry",
+      "priority": "must"
+    }
+  ],
+  "hardConstraints": []
+}

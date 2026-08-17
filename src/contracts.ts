@@ -1,0 +1,65 @@
+export const stages = [
+  "S0",
+  "S1",
+  "S2",
+  "S3",
+  "S4",
+  "S5",
+  "S6",
+  "S7",
+  "S8",
+  "S9",
+  "S10",
+  "S11",
+  "S12",
+  "S13",
+] as const;
+
+export type Stage = (typeof stages)[number];
+export type LifecycleProfile = "full" | "short";
+export type ValidationClassification =
+  "deterministic" | "assisted" | "judgment";
+export type DiagnosticCategory = "validation" | "operational";
+export type DiagnosticSeverity = "error" | "warning";
+export type ValidationStatus = "passed" | "violations" | "operational-error";
+
+export type SourceLocation = {
+  line: number;
+  column: number;
+  offset: number;
+};
+
+export type SahDiagnostic = {
+  code: string;
+  category: DiagnosticCategory;
+  capability: string;
+  severity: DiagnosticSeverity;
+  classification?: ValidationClassification;
+  artifactPath?: string;
+  jsonPointer?: string;
+  sourceLocation?: SourceLocation;
+  reference?: string;
+  message: string;
+  expected?: string;
+  repair?: string;
+  owningStage?: Stage;
+};
+
+export type ValidatedBundle = {
+  id: string;
+  completedStage: Stage;
+  profile: LifecycleProfile;
+};
+
+export type ValidationSummary = {
+  errors: number;
+  warnings: number;
+};
+
+export type ValidationResult = {
+  status: ValidationStatus;
+  bundleDirectory: string;
+  bundle?: ValidatedBundle;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};

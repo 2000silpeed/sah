@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-strategy",
+  "characterizationRef": "equipment-register-characterization",
+  "selections": [
+    {
+      "subsystemRef": "equipment-administration",
+      "dominantStrategy": "transaction-script-modular",
+      "supportingStrategies": [],
+      "rationale": {
+        "dimensionIds": ["rule_change_complexity", "invariant_criticality"],
+        "evidenceRefs": ["ev-equipment-maintenance"],
+        "text": "Independent record changes and local validation favor direct modular operations"
+      },
+      "alternatives": [
+        {
+          "strategy": "responsibility-centered-domain",
+          "benefits": ["Makes interacting domain policies explicit"],
+          "costs": ["Adds model and mapping ceremony"],
+          "rejectedBecause": "No interacting equipment rules are evidenced",
+          "reversalEvidence": "Multiple policies begin coordinating equipment state transitions"
+        }
+      ],
+      "disqualifiers": [
+        "A critical invariant spans multiple records or owners"
+      ],
+      "costs": ["Structure must be revisited if interacting rules emerge"],
+      "confidence": 0.9
+    }
+  ],
+  "compositionSeams": [],
+  "shortPath": {
+    "eligible": true,
+    "rationale": "Local, reversible CRUD with no critical or distributed invariant",
+    "disqualifyingForces": [
+      "Distribution",
+      "critical cross-record rules",
+      "probabilistic autonomy"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "software-architect-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Methodology-neutral design reasoning validation harness",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "sah": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schemas"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"eslint.config.js\" \"package.json\" \"tsconfig*.json\" \"schemas/design-bundle-manifest.schema.json\" \"fixtures/**/*.json\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"eslint.config.js\" \"package.json\" \"tsconfig*.json\" \"schemas/design-bundle-manifest.schema.json\" \"fixtures/**/*.json\"",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build --silent && vitest run",
+    "verify:schemas": "vitest run test/schema-contracts.test.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^24.13.3",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^3.2.7"
+  }
+}

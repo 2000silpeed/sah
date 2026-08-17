@@ -25,6 +25,11 @@ Identifiers are stable lowercase kebab-case within a design bundle. References a
 embedded copies, so an IR can be diffed independently. `modelId` identifies one versioned
 artifact; external storage will supply revision metadata rather than polluting semantic IR.
 
+Bundle lifecycle and artifact locations are non-semantic metadata in `sah.bundle.json`, whose
+schema is separate from the six IRs. `lifecycle.completedStage` states which gate is claimed
+complete; validators must not infer it from optional fields or present files. ADR-0006 owns
+the representation decision and the manifest schema owns its serialized shape.
+
 S5 may reserve a `logicalOwnerRef` before Architecture IR exists. S6 must materialize every
 such owner as an architecture element with matching authority. A full-bundle reference
 validator rejects dangling evidence, subsystem, responsibility, invariant, element,

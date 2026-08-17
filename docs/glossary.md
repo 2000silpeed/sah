@@ -22,6 +22,7 @@ documents link or apply it.
 | Authority | 권한 | The legitimate ability to decide, mutate, enforce, accept risk, or grant an exception in a stated scope. | architecture-model.md |
 | Benchmark expectations | 벤치마크 기대 결과 | Hidden acceptable conclusions, alternatives, failures, and mandatory trade-offs used only after a run is frozen. | benchmark-strategy.md |
 | Boundary | 경계 | A grouping that protects a named change, invariant, authority, risk, or failure mode. | architecture-model.md |
+| Bundle manifest | 번들 매니페스트 | Non-semantic, schema-validated metadata declaring a design bundle's completed stage, profile, artifact paths, and schema IDs. | harness-architecture.md |
 | Candidate assessment | 후보 평가 | Scenario-based result, evidence, sensitivity points, risks, and trade-offs for an architecture candidate. | design-reasoning-model.md |
 | Characterization | 특성화 | Evidence-backed description of design forces before selecting a strategy or representation. | system-characterization.md |
 | Characterization dimension | 특성화 차원 | One canonical axis used to compare problem regions without deciding implementation form. | system-characterization.md |

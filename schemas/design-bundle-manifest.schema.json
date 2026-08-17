@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/design-bundle-manifest/v0.1.0",
+  "title": "SAH Design Bundle Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "manifestVersion",
+    "bundleId",
+    "lifecycle",
+    "artifacts"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/design-bundle-manifest/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["bundle-author"],
+        "readBy": ["model-repository"]
+      }
+    },
+    "manifestVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["bundle-author"],
+        "readBy": ["model-repository"]
+      }
+    },
+    "bundleId": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["bundle-author"],
+        "readBy": ["model-repository", "validation-reporter"]
+      }
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/lifecycle",
+      "x-sah-trace": {
+        "writtenBy": ["reasoning-orchestrator"],
+        "readBy": ["stage-gate-validator", "validation-reporter"]
+      }
+    },
+    "artifacts": {
+      "$ref": "#/$defs/artifacts",
+      "x-sah-trace": {
+        "writtenBy": ["bundle-author"],
+        "readBy": ["model-repository", "reference-validator"]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completedStage", "profile"],
+      "properties": {
+        "completedStage": {
+          "enum": [
+            "S0",
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "S5",
+            "S6",
+            "S7",
+            "S8",
+            "S9",
+            "S10",
+            "S11",
+            "S12",
+            "S13"
+          ],
+          "x-sah-trace": {
+            "writtenBy": ["reasoning-orchestrator"],
+            "readBy": ["stage-gate-validator", "validation-reporter"]
+          }
+        },
+        "profile": {
+          "enum": ["full", "short"],
+          "x-sah-trace": {
+            "writtenBy": ["S2"],
+            "readBy": ["stage-gate-validator", "validation-reporter"]
+          }
+        }
+      }
+    },
+    "artifactDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "schemaId"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.json$",
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository"]
+          }
+        },
+        "schemaId": {
+          "enum": [
+            "https://sah.dev/schemas/system-characterization/v0.1.0",
+            "https://sah.dev/schemas/design-strategy/v0.1.0",
+            "https://sah.dev/schemas/responsibility/v0.1.0",
+            "https://sah.dev/schemas/invariant/v0.1.0",
+            "https://sah.dev/schemas/architecture/v0.1.0",
+            "https://sah.dev/schemas/architecture-decision/v0.1.0"
+          ],
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["schema-validator", "model-repository"]
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "systemCharacterization": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/system-characterization/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        },
+        "designStrategy": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/design-strategy/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        },
+        "responsibility": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/responsibility/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        },
+        "invariant": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/invariant/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        },
+        "architecture": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/architecture/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        },
+        "architectureDecision": {
+          "type": "object",
+          "$ref": "#/$defs/artifactDescriptor",
+          "properties": {
+            "schemaId": {
+              "const": "https://sah.dev/schemas/architecture-decision/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["bundle-author"],
+                "readBy": ["schema-validator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["bundle-author"],
+            "readBy": ["model-repository", "reference-validator"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/design-bundle-manifest/v0.1.0",
+      "manifestVersion": "0.1.0",
+      "bundleId": "catalog-admin",
+      "lifecycle": {
+        "completedStage": "S11",
+        "profile": "short"
+      },
+      "artifacts": {
+        "systemCharacterization": {
+          "path": "system-characterization.json",
+          "schemaId": "https://sah.dev/schemas/system-characterization/v0.1.0"
+        },
+        "designStrategy": {
+          "path": "design-strategy.json",
+          "schemaId": "https://sah.dev/schemas/design-strategy/v0.1.0"
+        },
+        "responsibility": {
+          "path": "responsibility.json",
+          "schemaId": "https://sah.dev/schemas/responsibility/v0.1.0"
+        },
+        "invariant": {
+          "path": "invariant.json",
+          "schemaId": "https://sah.dev/schemas/invariant/v0.1.0"
+        },
+        "architecture": {
+          "path": "architecture.json",
+          "schemaId": "https://sah.dev/schemas/architecture/v0.1.0"
+        },
+        "architectureDecision": {
+          "path": "architecture-decision.json",
+          "schemaId": "https://sah.dev/schemas/architecture-decision/v0.1.0"
+        }
+      }
+    }
+  ]
+}

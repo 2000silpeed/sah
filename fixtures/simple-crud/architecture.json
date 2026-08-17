@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "equipment-register-architecture",
+  "systemRef": "equipment-register-characterization",
+  "strategyRef": "equipment-register-strategy",
+  "responsibilityModelRef": "equipment-register-responsibilities",
+  "invariantModelRef": "equipment-register-invariants",
+  "candidate": {
+    "id": "equipment-modular-candidate",
+    "name": "Modular equipment operations",
+    "status": "selected",
+    "rationale": "One local module and datastore satisfy the evidenced short-path forces"
+  },
+  "elements": [
+    {
+      "id": "equipment-operations",
+      "name": "Equipment operations",
+      "subsystemRef": "equipment-administration",
+      "logicalRole": "Own equipment validation, mutation, query, export, and audit coordination",
+      "representation": "module",
+      "authority": "Controls the equipment transaction boundary",
+      "responsibilityRefs": ["maintain-equipment-record"],
+      "invariantRefs": ["asset-tag-unique"],
+      "decisionRefs": ["choose-equipment-module"]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "equipment-boundary",
+      "name": "Equipment administration boundary",
+      "insideElementRefs": ["equipment-operations"],
+      "protectedChange": "Equipment maintenance and audit rules",
+      "ownerElementRef": "equipment-operations",
+      "decisionRefs": ["choose-equipment-module"]
+    }
+  ],
+  "relations": [],
+  "interfaces": [],
+  "qualityAssessments": [
+    {
+      "scenarioRef": "qs-valid-edit",
+      "result": "pass",
+      "evidence": "A single local transaction owns record and audit mutation",
+      "sensitivityPoints": [
+        "Rules that require independent audit availability"
+      ],
+      "tradeoffRefs": ["equipment-module-option"]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "equipment-owns-writes",
+      "decisionRef": "choose-equipment-module",
+      "statement": "Only equipment operations may write equipment records",
+      "classification": "deterministic",
+      "scopeElementRefs": ["equipment-operations"],
+      "invariantRefs": ["asset-tag-unique"],
+      "observable": {
+        "factSource": "source-graph",
+        "selector": "writes to equipment records",
+        "predicate": "origin is equipment-operations",
+        "expected": "true"
+      },
+      "enforcement": {
+        "adapterCapability": "dependency-and-write analysis",
+        "timing": "ci",
+        "severity": "error",
+        "failureMessage": "Equipment record write bypasses its owner"
+      },
+      "exceptionPolicy": {
+        "authority": "architecture owner",
+        "expiryRequired": true,
+        "requiredRationale": "Name the incident or migration forcing the bypass"
+      }
+    }
+  ]
+}

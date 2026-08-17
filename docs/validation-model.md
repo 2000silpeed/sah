@@ -101,6 +101,19 @@ than silently accepting.
 5. Route a code contradiction to implementation repair, a mapping gap to adapter backlog,
    and changed design forces to the earliest S0–S10 stage.
 
+## Executable structural slice
+
+Run 2 implements bundle loading, schema/format checks, schema field traces, cross-IR identity
+and references, decision/constraint backlinks, and selected S5–S11 completeness gates. These
+are deterministic because the manifest supplies explicit lifecycle and artifact declarations.
+Proposed-decision isolation produces an assisted warning: the current six IRs do not serialize
+S12 implementation slices, so the validator cannot prove isolation or blocker coverage.
+
+This slice validates constraint declarations but does not bind code-fact adapters or execute
+compiled project constraints. A structurally valid deterministic observable is therefore not
+a claim that target code passes it. [Validation CLI usage](validation-cli.md) owns result and
+exit-code presentation rather than this semantic catalogue.
+
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
 `error`), and remediation/exception path. The implementation run may formalize this result

@@ -220,9 +220,9 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
 | Phase | Milestone | Status | Acceptance evidence |
 |---|---|---|---|
 | 0 | Frame run and decide implementation/bundle contracts | complete | this plan; ADR-0005/0006 |
-| 1 | Implement Model Repository validation pipeline | in_progress | strict typed library; focused unit tests |
-| 2 | Add CLI, fixtures, and integration tests | pending | human/JSON output and exit 0/1/2 tests |
-| 3 | Document, verify, and review the complete slice | pending | required commands pass; clean reviewed diff |
+| 1 | Implement Model Repository validation pipeline | complete | strict typed library; focused unit tests |
+| 2 | Add CLI, fixtures, and integration tests | complete | human/JSON output and exit 0/1/2 tests |
+| 3 | Document, verify, and review the complete slice | in_progress | required commands pass; clean reviewed diff |
 
 ### Decision log
 
@@ -245,6 +245,12 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
 - 2026-08-17: The six current IRs do not serialize implementation slices or proof that a
   proposed decision is isolated. This slice can emit an assisted S10 finding and repair path,
   but must not invent a deterministic isolation failure.
+- 2026-08-17: Ajv strict mode rejected the first manifest role schemas because their local
+  `properties` keywords relied on a sibling `$ref` for `type: object`. Adding the explicit type
+  kept the same contract and removed validator-specific ambiguity.
+- 2026-08-17: Initial formatting and lint attempts stopped because the test glob did not yet
+  exist and typed lint rules reached the JavaScript config file. Tests now exist, lint targets
+  only source/tests, and deliberate number/pointer interpolation is configured explicitly.
 
 ### Verification log
 
@@ -255,8 +261,13 @@ new repository decisions are ADR-0005 and ADR-0006; no compiled project constrai
   initial worktree has no tracked or untracked changes.
 - 2026-08-17: ADR-0005 and ADR-0006 record the runtime and bundle representation choices;
   Phase 0 is complete and Phase 1 has started.
+- 2026-08-17: `npm install` completed with 163 packages audited and zero reported vulnerabilities.
+- 2026-08-17: After the recorded fixes, `npm run lint`, `npm run typecheck`, and `npm test`
+  passed; Vitest reported 3 files and 21 tests passed, including valid bundle and CLI 0/1/2.
+- 2026-08-17: `node dist/cli.js validate fixtures/simple-crud` passed with zero diagnostics;
+  `npm exec -- sah validate fixtures/simple-crud --json` returned status `passed`.
 
 ### Handoff
 
-Scaffold the minimal npm package and implement manifest loading before semantic reference and
-stage validators.
+Run the complete verification loop, review the full diff and public declarations, repair every
+finding, update this log, and commit the verified documentation/handoff milestone.

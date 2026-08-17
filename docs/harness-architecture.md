@@ -41,6 +41,12 @@ Owns schema validation, stable identities, cross-IR references, bundle status, a
 updates, and change-impact traversal. JSON IR is canonical. It exposes typed semantic
 operations rather than filesystem conventions to other components.
 
+The first executable slice exposes `validateBundle(directory)`. Its filesystem adapter reads
+the non-semantic manifest, confines declared real paths to the bundle, and translates Ajv
+results into stable SAH diagnostics before reference and stage validators run. The `sah
+validate` adapter only parses invocation, selects human or JSON presentation, and maps result
+status to exit 0, 1, or 2. [Validation CLI usage](validation-cli.md) owns the public contract.
+
 ### Decision and View Adapters
 
 Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They

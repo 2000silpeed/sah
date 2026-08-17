@@ -22,6 +22,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   rules, delivery topology, and failures.
 - [Validation model](validation-model.md) — owns the D/A/J split, validator catalogue,
   continuous enforcement, and exceptions.
+- [Validation CLI and library](validation-cli.md) — owns install, invocation, output, public
+  result types, and exit codes for the executable structural slice.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the two manual walkthroughs and five model repairs they forced.
@@ -60,6 +62,38 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   relations, interfaces, assessments, and constraints.
 - [Architecture Decision](../schemas/architecture-decision.schema.json) — options, evidence,
   costs, authority, consequences, review triggers, and constraint links.
+- [Bundle manifest](../schemas/design-bundle-manifest.schema.json) — non-semantic lifecycle,
+  profile, artifact path, and declared schema metadata for loading a design bundle.
+
+## Runtime implementation and executable fixture
+
+- [Package manifest](../package.json) and [lockfile](../package-lock.json) — own exact npm
+  scripts, binary/export surfaces, supported Node range, and resolved dependency versions.
+- [TypeScript configuration](../tsconfig.json) and [production build configuration](../tsconfig.build.json)
+  — enforce strict checking and emit the distributable library/CLI.
+- [ESLint configuration](../eslint.config.js) — owns typed lint rules for runtime and tests.
+- [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
+  framework-neutral diagnostics, results, stages, and `validateBundle`.
+- [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
+  validation sequencing, and operational/violation separation.
+- [Internal model view](../src/internal-model.ts) — gives strict private shapes to already
+  schema-validated artifacts without becoming another serialized contract.
+- [Schema validation](../src/schema-validation.ts) — privately adapts Ajv Draft 2020-12 errors
+  and audits field traces.
+- [Reference validation](../src/reference-validation.ts) — checks unique IDs, typed references,
+  root links, option ownership, and decision/constraint backlinks.
+- [Stage validation](../src/stage-validation.ts) — applies observable S5–S11 gates from the
+  manifest's completed stage.
+- [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
+  results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
+- [Test helpers](../test/helpers.ts), [library tests](../test/model-repository.test.ts),
+  [CLI tests](../test/cli.test.ts), and [schema contract tests](../test/schema-contracts.test.ts)
+  — generate isolated mutations and verify every requested failure family without network use.
+- [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
+  [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
+  [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),
+  and [decisions](../fixtures/simple-crud/architecture-decision.json) — form the valid external
+  equipment-register fixture derived from the dogfood walkthrough, outside benchmark inputs.
 
 ## Benchmark fixtures
 

@@ -105,6 +105,25 @@ to deterministic errors. Follow [docs/validation-model.md](docs/validation-model
 - The source prompts linked under index Provenance are inputs, not current product authority.
   Their no-implementation scope applies to the bootstrap plan, not forever.
 
+## Executable validation slice
+
+Use these exact source-checkout commands:
+
+```text
+npm install
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm exec -- sah validate fixtures/simple-crud
+npm exec -- sah validate fixtures/simple-crud --json
+```
+
+The installed package exposes `sah validate <design-bundle-directory> [--json]`. The public
+library entry point is `validateBundle`; [validation CLI usage](docs/validation-cli.md) owns
+its result and exit-code contract.
+
 ## Change workflow
 
 Before editing, identify the authoritative document, active stage, affected IR IDs, decisions,
