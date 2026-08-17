@@ -149,10 +149,10 @@ exceptions, LLM review, services, and benchmark changes.
 
 | Phase | Milestone                                              | Status      | Evidence |
 | ----- | ------------------------------------------------------ | ----------- | -------- |
-| 0     | Frame compiler/config boundary and migration          | in_progress | ADR-0012 |
-| 1     | Implement v0.2 mapping and confined Program creation  | pending     | —        |
-| 2     | Resolve aliases/re-exports by canonical symbol        | pending     | —        |
-| 3     | Add focused library/CLI fixtures and mutations        | pending     | —        |
+| 0     | Frame compiler/config boundary and migration          | complete    | `e8c1ead`, ADR-0012 |
+| 1     | Implement v0.2 mapping and confined Program creation  | complete    | strict typecheck |
+| 2     | Resolve aliases/re-exports by canonical symbol        | complete    | focused symbol tests |
+| 3     | Add focused library/CLI fixtures and mutations        | complete    | 74 focused tests |
 | 4     | Update authority docs, glossary, index, and commands  | pending     | —        |
 | 5     | Run full verification and adversarial diff review    | pending     | —        |
 
@@ -174,12 +174,23 @@ exceptions, LLM review, services, and benchmark changes.
   resolve the symbol exactly.
 - 2026-08-17: The mapping file already owns roots and target symbols, so tsconfig belongs beside
   that adapter context rather than in `VerificationOptions`, semantic IR, or the manifest.
+- 2026-08-17: TypeChecker alias canonicalization resolves both configured path aliases and
+  static named/star re-exports without teaching SAH TypeScript path semantics. Compiler errors
+  are evaluated after the mapped target export so a missing mapped export keeps its precise
+  unsupported code while other resolution failures remain incomplete.
+- 2026-08-17: Lexical confinement alone is insufficient for explicit compiler paths. Config,
+  source roots, source files, and explicit `baseUrl` are also checked for symbolic-link and
+  physical-path escape before they can contribute evidence.
 
 ### Verification log
 
 - 2026-08-17: Re-read `AGENTS.md`, Run 8 handoff, ADR-0011, mapping schema/fixture/tests,
   TypeScript configuration, adapter request, and parser/resolution implementation. Initial
   `git status --short --branch` reported only `## main`.
+- 2026-08-17: Formatting check, lint, strict typecheck, and 74/74 focused schema, TypeScript
+  verification, and CLI tests passed. Mutations cover path aliases, named/star and ambiguous
+  re-exports, invalid/unsafe/symlinked config, unsupported inheritance/project references,
+  source-root completeness, and JSON exit 0.
 
 ### Handoff
 

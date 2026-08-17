@@ -20,6 +20,7 @@ const options = { sourceMappingPath } as const;
 
 type SourceMapping = {
   language?: string;
+  tsconfigPath?: string;
   sourceRoots: string[];
   elements: Array<{ elementRef: string; pathPrefixes: string[] }>;
   writeTargets: Array<{
@@ -28,6 +29,19 @@ type SourceMapping = {
     exportName: string;
   }>;
 };
+
+type TypeScriptConfig = {
+  extends?: string;
+  references?: Array<{ path: string }>;
+  compilerOptions: Record<string, unknown> | string;
+  include?: string[];
+};
+
+function compilerOptions(config: TypeScriptConfig): Record<string, unknown> {
+  if (typeof config.compilerOptions === "string")
+    throw new Error("fixture compilerOptions must be an object");
+  return config.compilerOptions;
+}
 
 function checkCode(
   verification: Awaited<ReturnType<typeof verifyBundle>>,
@@ -73,6 +87,97 @@ describe("TypeScript source verification", () => {
           "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
       }),
     );
+  });
+
+  it("passes a scoped writer imported through a tsconfig path alias", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "equipment-operations", "save-equipment.ts"),
+      'import { writeEquipmentRecord as persistEquipment } from "@equipment/store";\n\nexport function saveEquipment(): void {\n  persistEquipment();\n}\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("passed");
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_PASSED",
+        observed:
+          "all writers are in constraint scope: src/equipment-operations/save-equipment.ts (equipment-operations)",
+      }),
+    );
+  });
+
+  it("violates for an out-of-scope writer imported through a path alias", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "rogue-writer.ts"),
+      'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("violations");
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_VIOLATION",
+        observed:
+          "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
+      }),
+    );
+  });
+
+  it.each([
+    [
+      "named",
+      'export { writeEquipmentRecord as persistEquipment } from "@equipment/store";\n',
+      'import { persistEquipment } from "../equipment-write-barrel.js";\n\nexport function saveEquipment(): void {\n  persistEquipment();\n}\n',
+    ],
+    [
+      "star",
+      'export * from "@equipment/store";\n',
+      'import { writeEquipmentRecord as persistEquipment } from "../equipment-write-barrel.js";\n\nexport function saveEquipment(): void {\n  persistEquipment();\n}\n',
+    ],
+  ])(
+    "passes a scoped writer through a static %s re-export",
+    async (_name, barrel, caller) => {
+      const target = await copyTypeScriptTarget();
+      await writeFile(join(target, "src", "equipment-write-barrel.ts"), barrel);
+      await writeFile(
+        join(target, "src", "equipment-operations", "save-equipment.ts"),
+        caller,
+      );
+
+      const verification = await verifyBundle(
+        fixtureDirectory,
+        target,
+        options,
+      );
+
+      expect(verification.status).toBe("passed");
+      expect(verification.checks[0]?.code).toBe("CONSTRAINT_PASSED");
+    },
+  );
+
+  it("keeps an ambiguous star re-export incomplete", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "other-store.ts"),
+      "export function writeEquipmentRecord(): void {}\n",
+    );
+    await writeFile(
+      join(target, "src", "equipment-write-barrel.ts"),
+      'export * from "@equipment/store";\nexport * from "./other-store.js";\n',
+    );
+    await writeFile(
+      join(target, "src", "equipment-operations", "save-equipment.ts"),
+      'import { writeEquipmentRecord } from "../equipment-write-barrel.js";\nwriteEquipmentRecord();\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("incomplete");
+    expect(checkCode(verification)).toBe("SOURCE_GRAPH_COMPILER_DIAGNOSTIC");
   });
 
   it("keeps the source constraint unsupported when no mapping is supplied", async () => {
@@ -131,6 +236,202 @@ describe("TypeScript source verification", () => {
         jsonPointer: "/language",
       }),
     );
+  });
+
+  it("requires an explicit tsconfig path in mapping v0.2", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<SourceMapping>(target, sourceMappingPath, (mapping) => {
+      delete mapping.tsconfigPath;
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_REQUIRED",
+        artifactPath: sourceMappingPath,
+        jsonPointer: "/tsconfigPath",
+      }),
+    );
+  });
+
+  it("returns operational error for a missing tsconfig file", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<SourceMapping>(target, sourceMappingPath, (mapping) => {
+      mapping.tsconfigPath = "missing-tsconfig.json";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SOURCE_TSCONFIG_UNREADABLE",
+        artifactPath: "missing-tsconfig.json",
+      }),
+    );
+  });
+
+  it("retains a source location for malformed tsconfig JSONC", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(join(target, "tsconfig.json"), "{\n");
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SOURCE_TSCONFIG_JSON_MALFORMED",
+        artifactPath: "tsconfig.json",
+        sourceLocation: expect.objectContaining({ line: 2 }),
+      }),
+    );
+  });
+
+  it("rejects invalid compiler options operationally", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      compilerOptions(config).module = "not-a-module";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "SOURCE_TSCONFIG_INVALID" }),
+    );
+  });
+
+  it("rejects non-object compiler options operationally", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      config.compilerOptions = "strict";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SOURCE_TSCONFIG_INVALID",
+        jsonPointer: "/compilerOptions",
+      }),
+    );
+  });
+
+  it.each([
+    [
+      "baseUrl",
+      (config: TypeScriptConfig) => {
+        compilerOptions(config).baseUrl = "../outside";
+      },
+      "/compilerOptions/baseUrl",
+    ],
+    [
+      "path substitution",
+      (config: TypeScriptConfig) => {
+        compilerOptions(config).paths = {
+          "@equipment/store": ["../outside/equipment-store.ts"],
+        };
+      },
+      "/compilerOptions/paths/@equipment~1store/0",
+    ],
+  ])(
+    "rejects escaping tsconfig %s operationally",
+    async (_name, mutate, pointer) => {
+      const target = await copyTypeScriptTarget();
+      await mutateJson<TypeScriptConfig>(target, "tsconfig.json", mutate);
+
+      const verification = await verifyBundle(
+        fixtureDirectory,
+        target,
+        options,
+      );
+
+      expect(verification.status).toBe("operational-error");
+      expect(verification.diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+          artifactPath: "tsconfig.json",
+          jsonPointer: pointer,
+        }),
+      );
+    },
+  );
+
+  it("rejects a symlinked baseUrl operationally", async () => {
+    const target = await copyTypeScriptTarget();
+    await symlink("src", join(target, "source-link"));
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      compilerOptions(config).baseUrl = "./source-link";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+        jsonPointer: "/compilerOptions/baseUrl",
+      }),
+    );
+  });
+
+  it("keeps inherited project configuration unsupported", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      config.extends = "./base.json";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("incomplete");
+    expect(checkCode(verification)).toBe("SOURCE_TSCONFIG_FEATURE_UNSUPPORTED");
+  });
+
+  it("keeps project references unsupported", async () => {
+    const target = await copyTypeScriptTarget();
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      config.references = [{ path: "./other" }];
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("incomplete");
+    expect(checkCode(verification)).toBe("SOURCE_TSCONFIG_FEATURE_UNSUPPORTED");
+  });
+
+  it("rejects a symlinked project configuration", async () => {
+    const target = await copyTypeScriptTarget();
+    await symlink("tsconfig.json", join(target, "tsconfig-link.json"));
+    await mutateJson<SourceMapping>(target, sourceMappingPath, (mapping) => {
+      mapping.tsconfigPath = "tsconfig-link.json";
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "SOURCE_TSCONFIG_UNREADABLE" }),
+    );
+  });
+
+  it("keeps implementation source outside declared roots unsupported", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "shared-write.ts"),
+      'export { writeEquipmentRecord } from "./src/equipment-store.js";\n',
+    );
+    await writeFile(
+      join(target, "src", "equipment-operations", "save-equipment.ts"),
+      'import { writeEquipmentRecord } from "../../shared-write.js";\n\nexport function saveEquipment(): void {\n  writeEquipmentRecord();\n}\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("incomplete");
+    expect(checkCode(verification)).toBe("SOURCE_GRAPH_SOURCE_OUTSIDE_ROOTS");
   });
 
   it("rejects a dangling Architecture element in mapping configuration", async () => {
@@ -204,19 +505,14 @@ describe("TypeScript source verification", () => {
       "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
     ],
     [
-      "path alias",
-      'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
-      "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
-    ],
-    [
       "namespace path alias",
       'import * as store from "@equipment/store";\nstore.writeEquipmentRecord();\n',
-      "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
+      "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
     ],
     [
       "relative unresolved bridge",
       'import { writeEquipmentRecord } from "./write-bridge.js";\nwriteEquipmentRecord();\n',
-      "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
+      "SOURCE_GRAPH_COMPILER_DIAGNOSTIC",
     ],
     [
       "indirect alias",
@@ -224,14 +520,9 @@ describe("TypeScript source verification", () => {
       "SOURCE_GRAPH_ALIAS_UNSUPPORTED",
     ],
     [
-      "re-export",
-      'export { writeEquipmentRecord } from "./equipment-store.js";\n',
-      "SOURCE_GRAPH_REEXPORT_UNSUPPORTED",
-    ],
-    [
       "namespace re-export",
       'export * as store from "./equipment-store.js";\n',
-      "SOURCE_GRAPH_REEXPORT_UNSUPPORTED",
+      "SOURCE_GRAPH_REEXPORT_FORM_UNSUPPORTED",
     ],
     [
       "dynamic import",

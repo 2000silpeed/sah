@@ -399,6 +399,37 @@ describe("sah verify CLI", () => {
     );
   });
 
+  it("returns exit 0 JSON for a tsconfig path-alias writer", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "equipment-operations", "save-equipment.ts"),
+      'import { writeEquipmentRecord } from "@equipment/store";\n\nexport function saveEquipment(): void {\n  writeEquipmentRecord();\n}\n',
+    );
+
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      target,
+      "--mapping",
+      "sah.source-map.json",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      checks: Array<{ code: string; observed?: string }>;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("passed");
+    expect(output.checks).toContainEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_PASSED",
+        observed:
+          "all writers are in constraint scope: src/equipment-operations/save-equipment.ts (equipment-operations)",
+      }),
+    );
+  });
+
   it("returns exit 1 JSON for an out-of-scope TypeScript writer", async () => {
     const target = await copyTypeScriptTarget();
     await writeFile(

@@ -1,4 +1,4 @@
-import { constants, type Dirent } from "node:fs";
+import { constants, lstatSync, realpathSync, type Dirent } from "node:fs";
 import {
   access,
   lstat,
@@ -7,11 +7,19 @@ import {
   realpath,
   stat,
 } from "node:fs/promises";
-import { extname, isAbsolute, posix, relative, resolve, sep } from "node:path";
+import {
+  dirname,
+  extname,
+  isAbsolute,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 
 import ts from "typescript";
 
 import type { SahDiagnostic, SourceLocation } from "./contracts.js";
+import { escapePointer } from "./diagnostics.js";
 import type {
   CodeFactAdapter,
   FactAdapterOutcome,
@@ -22,7 +30,7 @@ import type { SchemaRegistry } from "./schema-validation.js";
 export const typescriptWriteAuthorityCapability =
   "dependency-and-write analysis";
 export const typescriptSourceMappingSchemaId =
-  "https://sah.dev/schemas/typescript-source-mapping/v0.1.0";
+  "https://sah.dev/schemas/typescript-source-mapping/v0.2.0";
 
 type ElementMapping = {
   elementRef: string;
@@ -39,6 +47,7 @@ type TypeScriptSourceMapping = {
   $schema: string;
   schemaVersion: string;
   language: "typescript";
+  tsconfigPath: string;
   sourceRoots: string[];
   elements: ElementMapping[];
   writeTargets: WriteTarget[];
@@ -46,16 +55,32 @@ type TypeScriptSourceMapping = {
 
 type SourceDocument = {
   relativePath: string;
+  physicalPath: string;
   sourceFile: ts.SourceFile;
 };
 
 type SourceInventory =
-  | { kind: "ready"; documents: SourceDocument[] }
+  | {
+      kind: "ready";
+      documents: SourceDocument[];
+      checker: ts.TypeChecker;
+      semanticDiagnostics: ts.Diagnostic[];
+    }
   | Exclude<FactAdapterOutcome, { kind: "observed" }>;
+
+type TypeScriptProjectConfiguration = {
+  physicalPath: string;
+  options: ts.CompilerOptions;
+  unsupportedFeature?: string;
+};
 
 type AdapterPreparation =
   | { ok: true; adapter: CodeFactAdapter; mappingPath: string }
   | { ok: false; diagnostics: SahDiagnostic[]; mappingPath: string };
+
+type ProjectConfigurationLoad =
+  | { ok: true; configuration: TypeScriptProjectConfiguration }
+  | { ok: false; diagnostics: SahDiagnostic[] };
 
 type ConfigurationDiagnosticInput = {
   code: string;
@@ -445,6 +470,253 @@ async function loadMapping(
   return { ok: true, mapping, physicalPath };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function typescriptDiagnosticMessage(diagnostic: ts.Diagnostic): string {
+  return ts.flattenDiagnosticMessageText(diagnostic.messageText, " ");
+}
+
+function typescriptDiagnosticLocation(
+  diagnostic: ts.Diagnostic,
+): SourceLocation | undefined {
+  if (diagnostic.start === undefined) return undefined;
+  if (diagnostic.file !== undefined) {
+    const location = diagnostic.file.getLineAndCharacterOfPosition(
+      diagnostic.start,
+    );
+    return {
+      line: location.line + 1,
+      column: location.character + 1,
+      offset: diagnostic.start,
+    };
+  }
+  return { line: 1, column: diagnostic.start + 1, offset: diagnostic.start };
+}
+
+function unsupportedProjectFeature(
+  raw: Record<string, unknown>,
+): string | undefined {
+  const compilerOptions = isRecord(raw.compilerOptions)
+    ? raw.compilerOptions
+    : {};
+  const features: string[] = [];
+  if (raw.extends !== undefined) features.push("extends");
+  if (raw.references !== undefined) features.push("project references");
+  if (compilerOptions.plugins !== undefined) features.push("compiler plugins");
+  if (compilerOptions.rootDirs !== undefined) features.push("rootDirs");
+  if (compilerOptions.allowJs === true || compilerOptions.checkJs === true)
+    features.push("JavaScript compilation");
+  return features.length === 0 ? undefined : features.join(", ");
+}
+
+function compilerPathDiagnostics(input: {
+  raw: Record<string, unknown>;
+  options: ts.CompilerOptions;
+  targetRoot: string;
+  configPath: string;
+  physicalPath: string;
+}): SahDiagnostic[] {
+  const diagnostics: SahDiagnostic[] = [];
+  const basePath = input.options.baseUrl ?? dirname(input.physicalPath);
+  if (!isWithin(input.targetRoot, resolve(basePath))) {
+    diagnostics.push(
+      configurationDiagnostic({
+        code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+        artifactPath: input.configPath,
+        jsonPointer: "/compilerOptions/baseUrl",
+        reference: String(input.options.baseUrl),
+        message: "TypeScript baseUrl resolves outside the target root.",
+        expected: "compiler resolution paths confined inside the target",
+        repair: "Move baseUrl inside the target or remove it.",
+      }),
+    );
+  }
+
+  const compilerOptions = isRecord(input.raw.compilerOptions)
+    ? input.raw.compilerOptions
+    : undefined;
+  const paths =
+    compilerOptions !== undefined && isRecord(compilerOptions.paths)
+      ? compilerOptions.paths
+      : undefined;
+  if (paths !== undefined) {
+    for (const [alias, substitutions] of Object.entries(paths)) {
+      if (!Array.isArray(substitutions)) continue;
+      substitutions.forEach((substitution, index) => {
+        if (typeof substitution !== "string") return;
+        const probe = substitution.replaceAll("*", "sah-wildcard");
+        if (!isWithin(input.targetRoot, resolve(basePath, probe))) {
+          diagnostics.push(
+            configurationDiagnostic({
+              code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+              artifactPath: input.configPath,
+              jsonPointer: `/compilerOptions/paths/${escapePointer(alias)}/${index}`,
+              reference: substitution,
+              message: `TypeScript path substitution ${substitution} resolves outside the target root.`,
+              expected:
+                "every path alias substitution confined inside the target",
+              repair: "Move the substitution inside the target source roots.",
+            }),
+          );
+        }
+      });
+    }
+  }
+  return diagnostics;
+}
+
+async function loadTypeScriptProjectConfiguration(
+  targetRoot: string,
+  mapping: TypeScriptSourceMapping,
+): Promise<ProjectConfigurationLoad> {
+  let physicalPath: string;
+  let source: string;
+  try {
+    physicalPath = await confinedRegularFile(targetRoot, mapping.tsconfigPath);
+    source = await readFile(physicalPath, "utf8");
+  } catch (error) {
+    return {
+      ok: false,
+      diagnostics: [
+        configurationDiagnostic({
+          code: "SOURCE_TSCONFIG_UNREADABLE",
+          artifactPath: mapping.tsconfigPath,
+          reference: mapping.tsconfigPath,
+          message:
+            error instanceof Error
+              ? error.message
+              : `Cannot read ${mapping.tsconfigPath}.`,
+          expected: "a confined readable TypeScript project configuration",
+          repair: "Restore the tsconfig file or correct tsconfigPath.",
+        }),
+      ],
+    };
+  }
+
+  const parsed = ts.parseConfigFileTextToJson(physicalPath, source);
+  if (parsed.error !== undefined || !isRecord(parsed.config)) {
+    const diagnostic = parsed.error;
+    const location =
+      diagnostic === undefined
+        ? undefined
+        : typescriptDiagnosticLocation(diagnostic);
+    return {
+      ok: false,
+      diagnostics: [
+        configurationDiagnostic({
+          code: "SOURCE_TSCONFIG_JSON_MALFORMED",
+          artifactPath: mapping.tsconfigPath,
+          ...(location === undefined ? {} : { sourceLocation: location }),
+          message:
+            diagnostic === undefined
+              ? `${mapping.tsconfigPath} must contain a JSON object.`
+              : typescriptDiagnosticMessage(diagnostic),
+          expected: "a well-formed JSONC TypeScript project configuration",
+          repair: "Repair the tsconfig syntax and rerun verification.",
+        }),
+      ],
+    };
+  }
+
+  const raw = parsed.config;
+  if (raw.compilerOptions !== undefined && !isRecord(raw.compilerOptions)) {
+    return {
+      ok: false,
+      diagnostics: [
+        configurationDiagnostic({
+          code: "SOURCE_TSCONFIG_INVALID",
+          artifactPath: mapping.tsconfigPath,
+          jsonPointer: "/compilerOptions",
+          message: "TypeScript compilerOptions must be a JSON object.",
+          expected: "compilerOptions represented as an object when present",
+          repair:
+            "Replace compilerOptions with an object and rerun verification.",
+        }),
+      ],
+    };
+  }
+  const compilerOptions = raw.compilerOptions ?? {};
+  const converted = ts.convertCompilerOptionsFromJson(
+    compilerOptions,
+    dirname(physicalPath),
+    physicalPath,
+  );
+  const conversionErrors = converted.errors.filter(
+    ({ category }) => category === ts.DiagnosticCategory.Error,
+  );
+  if (conversionErrors.length > 0) {
+    return {
+      ok: false,
+      diagnostics: conversionErrors.map((diagnostic) =>
+        configurationDiagnostic({
+          code: "SOURCE_TSCONFIG_INVALID",
+          artifactPath: mapping.tsconfigPath,
+          message: typescriptDiagnosticMessage(diagnostic),
+          expected: "valid TypeScript compiler options",
+          repair: "Correct compilerOptions and rerun verification.",
+        }),
+      ),
+    };
+  }
+  const options: ts.CompilerOptions = {
+    ...converted.options,
+    allowJs: false,
+    checkJs: false,
+    noEmit: true,
+  };
+  const pathDiagnostics = compilerPathDiagnostics({
+    raw,
+    options,
+    targetRoot,
+    configPath: mapping.tsconfigPath,
+    physicalPath,
+  });
+  if (pathDiagnostics.length > 0)
+    return { ok: false, diagnostics: pathDiagnostics };
+
+  if (options.baseUrl !== undefined) {
+    const baseUrlPath = targetRelativePath(
+      targetRoot,
+      resolve(options.baseUrl),
+    );
+    try {
+      if (baseUrlPath === undefined)
+        throw new Error("baseUrl resolves outside the target root");
+      if (baseUrlPath !== "") await confinedDirectory(targetRoot, baseUrlPath);
+    } catch (error) {
+      return {
+        ok: false,
+        diagnostics: [
+          configurationDiagnostic({
+            code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+            artifactPath: mapping.tsconfigPath,
+            jsonPointer: "/compilerOptions/baseUrl",
+            reference: options.baseUrl,
+            message:
+              error instanceof Error
+                ? error.message
+                : "TypeScript baseUrl is not a confined readable directory.",
+            expected: "a confined readable baseUrl directory",
+            repair: "Move baseUrl inside the target without symbolic links.",
+          }),
+        ],
+      };
+    }
+  }
+
+  const unsupportedFeature = unsupportedProjectFeature(raw);
+  return {
+    ok: true,
+    configuration: {
+      physicalPath,
+      options,
+      ...(unsupportedFeature === undefined ? {} : { unsupportedFeature }),
+    },
+  };
+}
+
 function unsupported(input: {
   code: string;
   message: string;
@@ -537,10 +809,119 @@ async function walkSourceRoot(
   return undefined;
 }
 
+function compilerPathAllowed(
+  targetRoot: string,
+  defaultLibraryRoot: string,
+  candidate: string,
+): boolean {
+  const absolute = resolve(candidate);
+  if (isWithin(defaultLibraryRoot, absolute)) return true;
+  if (!isWithin(targetRoot, absolute)) return false;
+  let current = targetRoot;
+  const fromRoot = relative(targetRoot, absolute);
+  if (fromRoot === "") return true;
+  for (const segment of fromRoot.split(sep)) {
+    current = resolve(current, segment);
+    try {
+      if (lstatSync(current).isSymbolicLink()) return false;
+    } catch {
+      return true;
+    }
+  }
+  return true;
+}
+
+function createConfinedCompilerHost(
+  targetRoot: string,
+  options: ts.CompilerOptions,
+): ts.CompilerHost {
+  const base = ts.createCompilerHost(options, true);
+  const defaultLibraryRoot = dirname(
+    realpathSync(ts.getDefaultLibFilePath(options)),
+  );
+  const allowed = (path: string): boolean =>
+    compilerPathAllowed(targetRoot, defaultLibraryRoot, path);
+  return {
+    ...base,
+    fileExists: (path) => allowed(path) && base.fileExists(path),
+    readFile: (path) => (allowed(path) ? base.readFile(path) : undefined),
+    getSourceFile: (path, languageVersionOrOptions, onError, shouldCreate) =>
+      allowed(path)
+        ? base.getSourceFile(
+            path,
+            languageVersionOrOptions,
+            onError,
+            shouldCreate,
+          )
+        : undefined,
+    directoryExists: (path) =>
+      allowed(path) && (base.directoryExists?.(path) ?? false),
+    getDirectories: (path) =>
+      allowed(path) ? (base.getDirectories?.(path) ?? []).filter(allowed) : [],
+    readDirectory: (root, extensions, excludes, includes, depth) =>
+      allowed(root)
+        ? (
+            base.readDirectory?.(root, extensions, excludes, includes, depth) ??
+            []
+          ).filter(allowed)
+        : [],
+    realpath: (path) =>
+      allowed(path) ? (base.realpath?.(path) ?? resolve(path)) : resolve(path),
+  };
+}
+
+function programDiagnosticText(
+  diagnostic: ts.Diagnostic,
+  targetRoot: string,
+): string {
+  const message = typescriptDiagnosticMessage(diagnostic);
+  if (diagnostic.file === undefined || diagnostic.start === undefined)
+    return `TS${diagnostic.code}: ${message}`;
+  const location = diagnostic.file.getLineAndCharacterOfPosition(
+    diagnostic.start,
+  );
+  const absolute = resolve(diagnostic.file.fileName);
+  const file = isWithin(targetRoot, absolute)
+    ? relative(targetRoot, absolute).split(sep).join("/")
+    : diagnostic.file.fileName;
+  return `${file}:${location.line + 1}:${location.character + 1} TS${diagnostic.code}: ${message}`;
+}
+
+function programSetupErrors(program: ts.Program): ts.Diagnostic[] {
+  return [
+    ...program.getConfigFileParsingDiagnostics(),
+    ...program.getOptionsDiagnostics(),
+    ...program.getGlobalDiagnostics(),
+  ].filter(({ category }) => category === ts.DiagnosticCategory.Error);
+}
+
+function targetRelativePath(
+  targetRoot: string,
+  physicalPath: string,
+): string | undefined {
+  const fromRoot = relative(targetRoot, physicalPath);
+  return isWithin(targetRoot, physicalPath)
+    ? fromRoot.split(sep).join("/")
+    : undefined;
+}
+
 async function loadSourceInventory(
   targetRoot: string,
   mapping: TypeScriptSourceMapping,
+  configuration: TypeScriptProjectConfiguration,
 ): Promise<SourceInventory> {
+  if (configuration.unsupportedFeature !== undefined) {
+    return unsupported({
+      code: "SOURCE_TSCONFIG_FEATURE_UNSUPPORTED",
+      message: `TypeScript project uses unsupported features: ${configuration.unsupportedFeature}.`,
+      expected:
+        "one standalone TypeScript-only project without config inheritance or plugins",
+      observed: configuration.unsupportedFeature,
+      repair:
+        "Flatten the project config for verification or add bounded support for the feature.",
+    });
+  }
+
   const files: string[] = [];
   for (const root of mapping.sourceRoots) {
     let physicalRoot: string;
@@ -561,12 +942,14 @@ async function loadSourceInventory(
     if (failure !== undefined) return failure;
   }
 
-  const documents: SourceDocument[] = [];
+  const physicalFiles: Array<{ relativePath: string; physicalPath: string }> =
+    [];
   for (const relativePath of files.sort()) {
-    let source: string;
     try {
-      const physicalPath = await confinedRegularFile(targetRoot, relativePath);
-      source = await readFile(physicalPath, "utf8");
+      physicalFiles.push({
+        relativePath,
+        physicalPath: await confinedRegularFile(targetRoot, relativePath),
+      });
     } catch (error) {
       return operational({
         code: "SOURCE_GRAPH_READ_FAILED",
@@ -578,65 +961,109 @@ async function loadSourceInventory(
         repair: "Restore source access and rerun verification.",
       });
     }
-    const transpiled = ts.transpileModule(source, {
-      fileName: relativePath,
-      reportDiagnostics: true,
-      compilerOptions: {
-        module: ts.ModuleKind.ESNext,
-        target: ts.ScriptTarget.ES2022,
-      },
+  }
+
+  let program: ts.Program;
+  try {
+    program = ts.createProgram({
+      rootNames: physicalFiles.map(({ physicalPath }) => physicalPath),
+      options: configuration.options,
+      host: createConfinedCompilerHost(targetRoot, configuration.options),
     });
-    const syntaxErrors = (transpiled.diagnostics ?? []).filter(
-      ({ category }) => category === ts.DiagnosticCategory.Error,
-    );
-    if (syntaxErrors.length > 0) {
+  } catch (error) {
+    return operational({
+      code: "SOURCE_GRAPH_COMPILER_FAILED",
+      message:
+        error instanceof Error ? error.message : "TypeScript Program failed.",
+      expected: "successful local TypeScript Program construction",
+      repair: "Repair project access or report a compiler adapter defect.",
+    });
+  }
+
+  const setupDiagnostics = programSetupErrors(program);
+  if (setupDiagnostics.length > 0) {
+    return unsupported({
+      code: "SOURCE_GRAPH_COMPILER_DIAGNOSTIC",
+      message:
+        "TypeScript project has diagnostics that prevent complete symbol resolution.",
+      expected: "a compiler-clean declared source graph",
+      observed: setupDiagnostics
+        .slice(0, 3)
+        .map((diagnostic) => programDiagnosticText(diagnostic, targetRoot))
+        .join("; "),
+      repair: "Repair the compiler diagnostics and rerun verification.",
+    });
+  }
+  const syntaxDiagnostics = program
+    .getSyntacticDiagnostics()
+    .filter(({ category }) => category === ts.DiagnosticCategory.Error);
+  if (syntaxDiagnostics.length > 0) {
+    return unsupported({
+      code: "SOURCE_GRAPH_SYNTAX_UNSUPPORTED",
+      message: "TypeScript project has syntax diagnostics.",
+      expected: "parseable TypeScript source before symbol verification",
+      observed: syntaxDiagnostics
+        .slice(0, 3)
+        .map((diagnostic) => programDiagnosticText(diagnostic, targetRoot))
+        .join("; "),
+      repair: "Repair the syntax errors and rerun verification.",
+    });
+  }
+
+  const enumerated = new Set(
+    physicalFiles.map(({ physicalPath }) => physicalPath),
+  );
+  for (const sourceFile of program.getSourceFiles()) {
+    let physicalPath: string;
+    try {
+      physicalPath = realpathSync(resolve(sourceFile.fileName));
+    } catch {
       return unsupported({
-        code: "SOURCE_GRAPH_SYNTAX_UNSUPPORTED",
-        message: `TypeScript source ${relativePath} has syntax diagnostics.`,
+        code: "SOURCE_GRAPH_SOURCE_UNRESOLVED",
+        message: `Compiler source ${sourceFile.fileName} cannot be physically resolved.`,
         expected:
-          "parseable TypeScript source before architectural verification",
-        observed: relativePath,
-        repair: "Repair the syntax errors and rerun verification.",
+          "every implementation source to resolve inside declared roots",
+        observed: sourceFile.fileName,
+        repair: "Restore the source or correct the project mapping.",
       });
     }
-    documents.push({
-      relativePath,
-      sourceFile: ts.createSourceFile(
-        relativePath,
-        source,
-        ts.ScriptTarget.ES2022,
-        true,
-        scriptKind(relativePath),
-      ),
-    });
+    const relativePath = targetRelativePath(targetRoot, physicalPath);
+    if (sourceFile.isDeclarationFile && relativePath === undefined) continue;
+    if (relativePath === undefined || !enumerated.has(physicalPath)) {
+      return unsupported({
+        code: "SOURCE_GRAPH_SOURCE_OUTSIDE_ROOTS",
+        message: `Compiler source ${sourceFile.fileName} is outside declared source roots.`,
+        expected:
+          "all implementation sources enumerated by mapping sourceRoots",
+        observed: relativePath ?? sourceFile.fileName,
+        repair:
+          "Declare the complete containing source root or remove the dependency.",
+      });
+    }
   }
-  return { kind: "ready", documents };
-}
 
-function importCandidates(
-  containingPath: string,
-  specifier: string,
-): Set<string> {
-  if (!specifier.startsWith(".")) return new Set();
-  const base = posix.normalize(
-    posix.join(posix.dirname(containingPath), specifier),
-  );
-  const extension = posix.extname(base);
-  const stem = extension === "" ? base : base.slice(0, -extension.length);
-  const candidates = new Set<string>([base]);
-  for (const sourceExtension of supportedExtensions) {
-    candidates.add(`${extension === "" ? base : stem}${sourceExtension}`);
-    candidates.add(`${base}/index${sourceExtension}`);
+  const documents: SourceDocument[] = [];
+  for (const file of physicalFiles) {
+    const sourceFile = program.getSourceFile(file.physicalPath);
+    if (sourceFile === undefined) {
+      return unsupported({
+        code: "SOURCE_GRAPH_SOURCE_UNRESOLVED",
+        message: `Compiler omitted declared source ${file.relativePath}.`,
+        expected: "every enumerated source present in the TypeScript Program",
+        observed: file.relativePath,
+        repair: "Correct compiler options or the source-root declaration.",
+      });
+    }
+    documents.push({ ...file, sourceFile });
   }
-  return candidates;
-}
-
-function resolvesToTarget(
-  containingPath: string,
-  specifier: string,
-  modulePath: string,
-): boolean {
-  return importCandidates(containingPath, specifier).has(modulePath);
+  return {
+    kind: "ready",
+    documents,
+    checker: program.getTypeChecker(),
+    semanticDiagnostics: program
+      .getSemanticDiagnostics()
+      .filter(({ category }) => category === ts.DiagnosticCategory.Error),
+  };
 }
 
 function moduleText(node: ts.Expression | undefined): string | undefined {
@@ -645,19 +1072,7 @@ function moduleText(node: ts.Expression | undefined): string | undefined {
     : undefined;
 }
 
-function isTypeOnlyImport(element: ts.ImportSpecifier): boolean {
-  return element
-    .getChildren()
-    .some(({ kind }) => kind === ts.SyntaxKind.TypeKeyword);
-}
-
-function scriptKind(relativePath: string): ts.ScriptKind {
-  return extname(relativePath).toLowerCase() === ".tsx"
-    ? ts.ScriptKind.TSX
-    : ts.ScriptKind.TS;
-}
-
-function hasExportedSymbol(
+function directCallableExportExists(
   sourceFile: ts.SourceFile,
   exportName: string,
 ): boolean {
@@ -688,27 +1103,6 @@ function hasExportedSymbol(
   });
 }
 
-function importedObjectIsUsed(
-  sourceFile: ts.SourceFile,
-  declarationName: ts.Identifier,
-): boolean {
-  let found = false;
-  function visit(node: ts.Node): void {
-    if (found) return;
-    if (
-      ts.isIdentifier(node) &&
-      node.text === declarationName.text &&
-      node !== declarationName
-    ) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  }
-  visit(sourceFile);
-  return found;
-}
-
 function elementRefsForPath(
   mapping: TypeScriptSourceMapping,
   sourcePath: string,
@@ -720,135 +1114,118 @@ function elementRefsForPath(
     .map(({ elementRef }) => elementRef);
 }
 
-function targetImportDetails(
+function identifierIsUsed(
+  sourceFile: ts.SourceFile,
+  declarationName: ts.Identifier,
+): boolean {
+  let used = false;
+  function visit(node: ts.Node): void {
+    if (used) return;
+    if (
+      ts.isIdentifier(node) &&
+      node.text === declarationName.text &&
+      node !== declarationName
+    ) {
+      used = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return used;
+}
+
+function sourceFormFailure(
   document: SourceDocument,
-  target: WriteTarget,
-):
-  | { ok: true; localNames: Set<string> }
-  | { ok: false; outcome: Exclude<FactAdapterOutcome, { kind: "observed" }> } {
-  const localNames = new Set<string>();
+): Exclude<FactAdapterOutcome, { kind: "observed" }> | undefined {
   for (const statement of document.sourceFile.statements) {
     if (ts.isImportEqualsDeclaration(statement)) {
-      return {
-        ok: false,
-        outcome: unsupported({
-          code: "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
-          message: `TypeScript import assignment occurs in ${document.relativePath}.`,
-          expected: "ECMAScript direct relative named imports",
-          observed: document.relativePath,
-          repair:
-            "Replace the import assignment or provide an import-assignment-aware resolver.",
-        }),
-      };
+      return unsupported({
+        code: "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
+        message: `TypeScript import assignment occurs in ${document.relativePath}.`,
+        expected: "ECMAScript direct named imports",
+        observed: document.relativePath,
+        repair:
+          "Replace the import assignment or provide an import-assignment-aware resolver.",
+      });
     }
     if (ts.isImportDeclaration(statement)) {
-      const specifier = moduleText(statement.moduleSpecifier);
-      if (specifier === undefined) continue;
-      const matches = resolvesToTarget(
-        document.relativePath,
-        specifier,
-        target.modulePath,
-      );
       const clause = statement.importClause;
       const named = clause?.namedBindings;
-      const importsTargetName =
+      const defaultUsed =
+        clause?.name !== undefined &&
+        identifierIsUsed(document.sourceFile, clause.name);
+      const namespaceUsed =
         named !== undefined &&
-        ts.isNamedImports(named) &&
-        named.elements.some(
-          (element) =>
-            !isTypeOnlyImport(element) &&
-            (element.propertyName?.text ?? element.name.text) ===
-              target.exportName,
-        );
-      const indirectObjectUse =
-        (clause?.name !== undefined &&
-          importedObjectIsUsed(document.sourceFile, clause.name)) ||
-        (named !== undefined &&
-          ts.isNamespaceImport(named) &&
-          importedObjectIsUsed(document.sourceFile, named.name));
-      if (!matches && (importsTargetName || indirectObjectUse)) {
-        return {
-          ok: false,
-          outcome: unsupported({
-            code: "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
-            message: `Import ${specifier} in ${document.relativePath} may alias write symbol ${target.exportName}.`,
-            expected:
-              "a direct relative named import resolvable to the mapped module",
-            observed: `${document.relativePath}:${specifier}`,
-            repair:
-              "Replace the path alias or add a tsconfig-aware source adapter.",
-          }),
-        };
+        ts.isNamespaceImport(named) &&
+        identifierIsUsed(document.sourceFile, named.name);
+      if (defaultUsed || namespaceUsed) {
+        return unsupported({
+          code: "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
+          message: `Default or namespace import use occurs in ${document.relativePath}.`,
+          expected: "direct named imports for complete write-symbol analysis",
+          observed: document.relativePath,
+          repair: "Use a named import or provide a stronger symbol resolver.",
+        });
       }
-      if (!matches || clause?.phaseModifier === ts.SyntaxKind.TypeKeyword)
-        continue;
-      if (
-        clause?.name !== undefined ||
-        (named !== undefined && ts.isNamespaceImport(named))
-      ) {
-        return {
-          ok: false,
-          outcome: unsupported({
-            code: "SOURCE_GRAPH_IMPORT_FORM_UNSUPPORTED",
-            message: `Write target ${target.selector} uses a default or namespace import in ${document.relativePath}.`,
-            expected: "a direct named import of the mapped write symbol",
-            observed: document.relativePath,
-            repair: "Use a named import or provide a stronger symbol resolver.",
-          }),
-        };
-      }
-      if (named !== undefined && ts.isNamedImports(named)) {
-        for (const element of named.elements) {
-          if (
-            !isTypeOnlyImport(element) &&
-            (element.propertyName?.text ?? element.name.text) ===
-              target.exportName
-          ) {
-            localNames.add(element.name.text);
-          }
-        }
-      }
-      continue;
     }
-    if (ts.isExportDeclaration(statement)) {
-      const specifier = moduleText(statement.moduleSpecifier);
-      if (specifier === undefined) continue;
-      const matches = resolvesToTarget(
-        document.relativePath,
-        specifier,
-        target.modulePath,
-      );
-      const exportsTarget =
-        statement.exportClause === undefined ||
-        ts.isNamespaceExport(statement.exportClause) ||
-        (ts.isNamedExports(statement.exportClause) &&
-          statement.exportClause.elements.some(
-            (element) =>
-              (element.propertyName?.text ?? element.name.text) ===
-              target.exportName,
-          ));
-      if (exportsTarget) {
-        return {
-          ok: false,
-          outcome: unsupported({
-            code: matches
-              ? "SOURCE_GRAPH_REEXPORT_UNSUPPORTED"
-              : "SOURCE_GRAPH_PATH_ALIAS_UNSUPPORTED",
-            message: `Write symbol ${target.exportName} is re-exported by ${document.relativePath}.`,
-            expected: "direct imports from the declared write target module",
-            observed: document.relativePath,
-            repair:
-              "Import the write symbol directly or provide re-export-aware resolution.",
-          }),
-        };
-      }
+    if (
+      ts.isExportDeclaration(statement) &&
+      statement.exportClause !== undefined &&
+      ts.isNamespaceExport(statement.exportClause)
+    ) {
+      return unsupported({
+        code: "SOURCE_GRAPH_REEXPORT_FORM_UNSUPPORTED",
+        message: `Namespace re-export occurs in ${document.relativePath}.`,
+        expected: "static named or star re-export chains",
+        observed: document.relativePath,
+        repair: "Use a named/star re-export or add namespace-symbol support.",
+      });
     }
   }
-  return { ok: true, localNames };
+  return undefined;
+}
+
+function canonicalSymbol(
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol | undefined,
+): ts.Symbol | undefined {
+  if (symbol === undefined) return undefined;
+  return (symbol.flags & ts.SymbolFlags.Alias) === 0
+    ? symbol
+    : checker.getAliasedSymbol(symbol);
+}
+
+function ignoredSymbolIdentifier(node: ts.Identifier): boolean {
+  const parent = node.parent;
+  return (
+    ts.isImportSpecifier(parent) ||
+    ts.isExportSpecifier(parent) ||
+    (ts.isFunctionDeclaration(parent) && parent.name === node) ||
+    (ts.isVariableDeclaration(parent) && parent.name === node)
+  );
+}
+
+function mappedTargetSymbol(
+  checker: ts.TypeChecker,
+  moduleDocument: SourceDocument,
+  target: WriteTarget,
+): ts.Symbol | undefined {
+  if (!directCallableExportExists(moduleDocument.sourceFile, target.exportName))
+    return undefined;
+  const moduleSymbol = checker.getSymbolAtLocation(moduleDocument.sourceFile);
+  if (moduleSymbol === undefined) return undefined;
+  const exported = checker
+    .getExportsOfModule(moduleSymbol)
+    .find((symbol) => symbol.getName() === target.exportName);
+  return canonicalSymbol(checker, exported);
 }
 
 function writerPaths(
   documents: SourceDocument[],
+  checker: ts.TypeChecker,
+  semanticDiagnostics: ts.Diagnostic[],
+  targetRoot: string,
   target: WriteTarget,
 ):
   | { ok: true; writers: string[] }
@@ -869,7 +1246,8 @@ function writerPaths(
       }),
     };
   }
-  if (!hasExportedSymbol(moduleDocument.sourceFile, target.exportName)) {
+  const targetSymbol = mappedTargetSymbol(checker, moduleDocument, target);
+  if (targetSymbol === undefined) {
     return {
       ok: false,
       outcome: unsupported({
@@ -882,12 +1260,27 @@ function writerPaths(
       }),
     };
   }
+  if (semanticDiagnostics.length > 0) {
+    return {
+      ok: false,
+      outcome: unsupported({
+        code: "SOURCE_GRAPH_COMPILER_DIAGNOSTIC",
+        message:
+          "TypeScript project has diagnostics that prevent complete symbol resolution.",
+        expected: "a compiler-clean declared source graph",
+        observed: semanticDiagnostics
+          .slice(0, 3)
+          .map((diagnostic) => programDiagnosticText(diagnostic, targetRoot))
+          .join("; "),
+        repair: "Repair the compiler diagnostics and rerun verification.",
+      }),
+    };
+  }
 
   const writers = new Set<string>();
   for (const document of documents) {
-    const importDetails = targetImportDetails(document, target);
-    if (!importDetails.ok) return importDetails;
-    const localNames = importDetails.localNames;
+    const formFailure = sourceFormFailure(document);
+    if (formFailure !== undefined) return { ok: false, outcome: formFailure };
 
     let failure: Exclude<FactAdapterOutcome, { kind: "observed" }> | undefined;
     function visit(node: ts.Node): void {
@@ -928,9 +1321,10 @@ function writerPaths(
         }
         if (
           ts.isIdentifier(node.expression) &&
-          (localNames.has(node.expression.text) ||
-            (document.relativePath === target.modulePath &&
-              node.expression.text === target.exportName))
+          canonicalSymbol(
+            checker,
+            checker.getSymbolAtLocation(node.expression),
+          ) === targetSymbol
         ) {
           writers.add(document.relativePath);
         }
@@ -952,15 +1346,16 @@ function writerPaths(
       }
       if (
         ts.isIdentifier(node) &&
-        localNames.has(node.text) &&
-        !ts.isImportSpecifier(node.parent)
+        !ignoredSymbolIdentifier(node) &&
+        canonicalSymbol(checker, checker.getSymbolAtLocation(node)) ===
+          targetSymbol
       ) {
         const directCall =
           ts.isCallExpression(node.parent) && node.parent.expression === node;
         if (!directCall) {
           failure = unsupported({
             code: "SOURCE_GRAPH_ALIAS_UNSUPPORTED",
-            message: `Write symbol ${node.text} is used indirectly in ${document.relativePath}.`,
+            message: `Mapped write symbol is used indirectly in ${document.relativePath}.`,
             expected:
               "the imported write symbol used only as a direct call expression",
             observed: document.relativePath,
@@ -973,7 +1368,7 @@ function writerPaths(
       ts.forEachChild(node, visit);
     }
     for (const statement of document.sourceFile.statements) {
-      if (!ts.isImportDeclaration(statement)) visit(statement);
+      visit(statement);
       if (failure !== undefined) return { ok: false, outcome: failure };
     }
   }
@@ -987,6 +1382,7 @@ class TypeScriptWriteAuthorityAdapter implements CodeFactAdapter {
   constructor(
     private readonly targetRoot: string,
     private readonly mapping: TypeScriptSourceMapping,
+    private readonly configuration: TypeScriptProjectConfiguration,
   ) {}
 
   async observe({
@@ -1022,10 +1418,20 @@ class TypeScriptWriteAuthorityAdapter implements CodeFactAdapter {
       });
     }
 
-    this.inventory ??= loadSourceInventory(this.targetRoot, this.mapping);
+    this.inventory ??= loadSourceInventory(
+      this.targetRoot,
+      this.mapping,
+      this.configuration,
+    );
     const inventory = await this.inventory;
     if (inventory.kind !== "ready") return inventory;
-    const result = writerPaths(inventory.documents, target);
+    const result = writerPaths(
+      inventory.documents,
+      inventory.checker,
+      inventory.semanticDiagnostics,
+      this.targetRoot,
+      target,
+    );
     if (!result.ok) return result.outcome;
 
     const writers = result.writers.map((sourcePath) => ({
@@ -1097,12 +1503,23 @@ export async function prepareTypeScriptSourceAdapter(input: {
       diagnostics: loaded.diagnostics,
       mappingPath: input.mappingPath,
     };
+  const project = await loadTypeScriptProjectConfiguration(
+    input.targetRoot,
+    loaded.mapping,
+  );
+  if (!project.ok)
+    return {
+      ok: false,
+      diagnostics: project.diagnostics,
+      mappingPath: input.mappingPath,
+    };
   return {
     ok: true,
     mappingPath: input.mappingPath,
     adapter: new TypeScriptWriteAuthorityAdapter(
       input.targetRoot,
       loaded.mapping,
+      project.configuration,
     ),
   };
 }
