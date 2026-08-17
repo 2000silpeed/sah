@@ -49,6 +49,28 @@ describe("validateBundle", () => {
     );
   });
 
+  it("treats an unsupported declared schema ID as a manifest failure", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      artifacts: { responsibility: { schemaId: string } };
+    }>(bundle, "sah.bundle.json", (manifest) => {
+      manifest.artifacts.responsibility.schemaId =
+        "https://example.test/schemas/unsupported";
+    });
+
+    const validation = await validateBundle(bundle);
+
+    expect(validation.status).toBe("operational-error");
+    expect(validation.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_CONST",
+        category: "operational",
+        artifactPath: "sah.bundle.json",
+        jsonPointer: "/artifacts/responsibility/schemaId",
+      }),
+    );
+  });
+
   it("requires a root bundle manifest", async () => {
     const bundle = await copyFixture();
     await rm(join(bundle, "sah.bundle.json"));

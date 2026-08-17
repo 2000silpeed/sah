@@ -487,7 +487,9 @@ function evaluatePreparedBundle(
   }
   if (hasErrors(validationDiagnostics)) {
     return result(
-      "violations",
+      validationDiagnostics.some(({ category }) => category === "operational")
+        ? "operational-error"
+        : "violations",
       prepared.bundleRoot,
       validationDiagnostics,
       bundle,
