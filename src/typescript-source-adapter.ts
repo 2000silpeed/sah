@@ -511,6 +511,35 @@ function unsupportedProjectFeature(
   return features.length === 0 ? undefined : features.join(", ");
 }
 
+function portableCompilerPath(value: string): boolean {
+  return (
+    !isAbsolute(value) &&
+    !/^[A-Za-z]:[\\/]/u.test(value) &&
+    !value.includes("\\") &&
+    !hasControlCharacter(value)
+  );
+}
+
+function targetCompilerPathAllowed(
+  targetRoot: string,
+  candidate: string,
+): boolean {
+  const absolute = resolve(candidate);
+  if (!isWithin(targetRoot, absolute)) return false;
+  let current = targetRoot;
+  const fromRoot = relative(targetRoot, absolute);
+  if (fromRoot === "") return true;
+  for (const segment of fromRoot.split(sep)) {
+    current = resolve(current, segment);
+    try {
+      if (lstatSync(current).isSymbolicLink()) return false;
+    } catch {
+      return true;
+    }
+  }
+  return true;
+}
+
 function compilerPathDiagnostics(input: {
   raw: Record<string, unknown>;
   options: ts.CompilerOptions;
@@ -520,23 +549,28 @@ function compilerPathDiagnostics(input: {
 }): SahDiagnostic[] {
   const diagnostics: SahDiagnostic[] = [];
   const basePath = input.options.baseUrl ?? dirname(input.physicalPath);
-  if (!isWithin(input.targetRoot, resolve(basePath))) {
+  const compilerOptions = isRecord(input.raw.compilerOptions)
+    ? input.raw.compilerOptions
+    : undefined;
+  const rawBaseUrl = compilerOptions?.baseUrl;
+  if (
+    !targetCompilerPathAllowed(input.targetRoot, basePath) ||
+    (typeof rawBaseUrl === "string" && !portableCompilerPath(rawBaseUrl))
+  ) {
     diagnostics.push(
       configurationDiagnostic({
         code: "SOURCE_TSCONFIG_PATH_UNSAFE",
         artifactPath: input.configPath,
         jsonPointer: "/compilerOptions/baseUrl",
         reference: String(input.options.baseUrl),
-        message: "TypeScript baseUrl resolves outside the target root.",
+        message:
+          "TypeScript baseUrl resolves outside the target root, crosses a symbolic link, or uses a platform-ambiguous path.",
         expected: "compiler resolution paths confined inside the target",
         repair: "Move baseUrl inside the target or remove it.",
       }),
     );
   }
 
-  const compilerOptions = isRecord(input.raw.compilerOptions)
-    ? input.raw.compilerOptions
-    : undefined;
   const paths =
     compilerOptions !== undefined && isRecord(compilerOptions.paths)
       ? compilerOptions.paths
@@ -547,14 +581,17 @@ function compilerPathDiagnostics(input: {
       substitutions.forEach((substitution, index) => {
         if (typeof substitution !== "string") return;
         const probe = substitution.replaceAll("*", "sah-wildcard");
-        if (!isWithin(input.targetRoot, resolve(basePath, probe))) {
+        if (
+          !portableCompilerPath(substitution) ||
+          !targetCompilerPathAllowed(input.targetRoot, resolve(basePath, probe))
+        ) {
           diagnostics.push(
             configurationDiagnostic({
               code: "SOURCE_TSCONFIG_PATH_UNSAFE",
               artifactPath: input.configPath,
               jsonPointer: `/compilerOptions/paths/${escapePointer(alias)}/${index}`,
               reference: substitution,
-              message: `TypeScript path substitution ${substitution} resolves outside the target root.`,
+              message: `TypeScript path substitution ${substitution} resolves outside the target root, crosses a symbolic link, or uses a platform-ambiguous path.`,
               expected:
                 "every path alias substitution confined inside the target",
               repair: "Move the substitution inside the target source roots.",
@@ -816,19 +853,7 @@ function compilerPathAllowed(
 ): boolean {
   const absolute = resolve(candidate);
   if (isWithin(defaultLibraryRoot, absolute)) return true;
-  if (!isWithin(targetRoot, absolute)) return false;
-  let current = targetRoot;
-  const fromRoot = relative(targetRoot, absolute);
-  if (fromRoot === "") return true;
-  for (const segment of fromRoot.split(sep)) {
-    current = resolve(current, segment);
-    try {
-      if (lstatSync(current).isSymbolicLink()) return false;
-    } catch {
-      return true;
-    }
-  }
-  return true;
+  return targetCompilerPathAllowed(targetRoot, absolute);
 }
 
 function createConfinedCompilerHost(

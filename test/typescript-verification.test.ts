@@ -337,6 +337,15 @@ describe("TypeScript source verification", () => {
       },
       "/compilerOptions/paths/@equipment~1store/0",
     ],
+    [
+      "platform-ambiguous path substitution",
+      (config: TypeScriptConfig) => {
+        compilerOptions(config).paths = {
+          "@equipment/store": ["C:/outside/equipment-store.ts"],
+        };
+      },
+      "/compilerOptions/paths/@equipment~1store/0",
+    ],
   ])(
     "rejects escaping tsconfig %s operationally",
     async (_name, mutate, pointer) => {
@@ -374,6 +383,29 @@ describe("TypeScript source verification", () => {
       expect.objectContaining({
         code: "SOURCE_TSCONFIG_PATH_UNSAFE",
         jsonPointer: "/compilerOptions/baseUrl",
+      }),
+    );
+  });
+
+  it("rejects a symlinked path substitution operationally", async () => {
+    const target = await copyTypeScriptTarget();
+    await symlink(
+      "equipment-store.ts",
+      join(target, "src", "equipment-store-link.ts"),
+    );
+    await mutateJson<TypeScriptConfig>(target, "tsconfig.json", (config) => {
+      compilerOptions(config).paths = {
+        "@equipment/store": ["src/equipment-store-link.ts"],
+      };
+    });
+
+    const verification = await verifyBundle(fixtureDirectory, target, options);
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SOURCE_TSCONFIG_PATH_UNSAFE",
+        jsonPointer: "/compilerOptions/paths/@equipment~1store/0",
       }),
     );
   });

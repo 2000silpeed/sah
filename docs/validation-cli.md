@@ -113,6 +113,7 @@ function aliasing, config inheritance, project references, compiler plugins, and
 are unsupported and produce `incomplete`, never pass. The adapter reads only target-confined
 implementation files plus the TypeScript standard library; target implementation sources
 outside declared mapping roots cannot contribute a pass.
+Declared compiler paths must be portable target-relative paths and cannot cross symlinks.
 
 The [filesystem target](../fixtures/s13-target/checks/equipment-operations.integration.txt)
 supports the first capability. The [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json)

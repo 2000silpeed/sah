@@ -23,8 +23,9 @@ checkout escapes, or turn all TypeScript constructs into supported coverage.
 
 Migrate the non-semantic source-mapping schema to v0.2 and require `tsconfigPath`. Load that
 JSONC file only through the existing target confinement boundary; do not discover a conventional
-filename. Reject escaping compiler paths operationally. Config inheritance, project references,
-compiler plugins, JavaScript, and other unimplemented project forms remain unsupported.
+filename. Reject absolute/drive-qualified/backslash-ambiguous, escaping, or symlink-crossing
+declared compiler paths operationally. Config inheritance, project references, compiler plugins,
+JavaScript, and other unimplemented project forms remain unsupported.
 
 Enumerate every TypeScript file below the mapping's declared roots and pass that complete set as
 Program roots regardless of tsconfig `files`, `include`, or `exclude`. Use compiler options only

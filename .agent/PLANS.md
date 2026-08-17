@@ -181,6 +181,10 @@ exceptions, LLM review, services, and benchmark changes.
 - 2026-08-17: Lexical confinement alone is insufficient for explicit compiler paths. Config,
   source roots, source files, and explicit `baseUrl` are also checked for symbolic-link and
   physical-path escape before they can contribute evidence.
+- 2026-08-17: Final diff review found that an exact `paths` substitution through a symlink was
+  blocked by the compiler host but classified incomplete rather than unsafe configuration.
+  Portable-path and existing-prefix symlink checks now reject that declared configuration
+  operationally; focused drive-qualified and symlink mutations protect the boundary.
 
 ### Verification log
 
@@ -194,6 +198,8 @@ exceptions, LLM review, services, and benchmark changes.
 - 2026-08-17: Updated the CLI contract, component and IR boundaries, S13 reasoning/validation
   scope, dogfood evidence, glossary, index, operating policy, and ADR-0011 supersession note.
   Mapping v0.2 is documented as a hard cut; semantic IR and manifest schemas remain unchanged.
+- 2026-08-17: Post-documentation adversarial review passed 76/76 focused tests after tightening
+  declared compiler-path confinement. The full verification loop must be rerun from this fix.
 
 ### Handoff
 
