@@ -37,8 +37,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   skill/CLI/library delivery and defers a service.
 - [ADR-0002](adr/0002-make-json-ir-the-canonical-model.md) — makes JSON IR canonical and
   Markdown/diagrams views.
-- [ADR-0003](adr/0003-separate-ir-by-reasoning-ownership.md) — chooses six linked IR families
-  and justifies the documentation layout split.
+- [ADR-0003](adr/0003-separate-ir-by-reasoning-ownership.md) — establishes semantic-owner IR
+  separation and justifies the documentation layout split.
 - [ADR-0004](adr/0004-classify-enforcement-by-observability.md) — establishes deterministic,
   assisted, and judgment enforcement.
 - [ADR-0005](adr/0005-use-typescript-node-and-ajv-for-the-local-runtime.md) — selects the
@@ -49,6 +49,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   gate before atomically replacing lifecycle metadata.
 - [ADR-0008](adr/0008-represent-architecture-candidate-sets.md) — migrates Architecture IR to
   an explicit candidate set with topology and single-candidate evidence.
+- [ADR-0009](adr/0009-add-implementation-handoff-ir.md) — adds canonical S12 change slices
+  without mixing semantic handoff facts into the bundle manifest or Architecture IR.
 
 ## JSON Schema contracts
 
@@ -107,16 +109,16 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 
 Each row links the stakeholder problem, hidden expectations, and benchmark-specific scoring.
 
-| Case | Problem | Expectations | Scoring | Why it exists |
-|---|---|---|---|---|
-| simple-crud | [problem](../benchmarks/simple-crud/problem.md) | [expectations](../benchmarks/simple-crud/expectations.md) | [scoring](../benchmarks/simple-crud/scoring.md) | Detects needless rich modeling and services without losing local assurance. |
-| ecommerce | [problem](../benchmarks/ecommerce/problem.md) | [expectations](../benchmarks/ecommerce/expectations.md) | [scoring](../benchmarks/ecommerce/scoring.md) | Tests mixed CRUD, rich rules, state, provider, and read/dataflow strategies. |
-| logistics | [problem](../benchmarks/logistics/problem.md) | [expectations](../benchmarks/logistics/expectations.md) | [scoring](../benchmarks/logistics/scoring.md) | Tests custody, temporal transitions, late events, and carrier translation. |
-| payment | [problem](../benchmarks/payment/problem.md) | [expectations](../benchmarks/payment/expectations.md) | [scoring](../benchmarks/payment/scoring.md) | Tests critical monetary invariants under remote uncertainty and retries. |
-| realtime | [problem](../benchmarks/realtime/problem.md) | [expectations](../benchmarks/realtime/expectations.md) | [scoring](../benchmarks/realtime/scoring.md) | Tests concurrency, convergence, latency, offline work, and ephemeral state. |
-| data-pipeline | [problem](../benchmarks/data-pipeline/problem.md) | [expectations](../benchmarks/data-pipeline/expectations.md) | [scoring](../benchmarks/data-pipeline/scoring.md) | Tests dataflow, lineage, replay, late data, scale, and privacy lifecycle. |
-| ai-agent | [problem](../benchmarks/ai-agent/problem.md) | [expectations](../benchmarks/ai-agent/expectations.md) | [scoring](../benchmarks/ai-agent/scoring.md) | Tests model uncertainty, tools, permission, memory, evaluation, cost, and fallback. |
-| enterprise-integration | [problem](../benchmarks/enterprise-integration/problem.md) | [expectations](../benchmarks/enterprise-integration/expectations.md) | [scoring](../benchmarks/enterprise-integration/scoring.md) | Tests semantic authority, heterogeneous delivery, replay, and phased coexistence. |
+| Case                   | Problem                                                    | Expectations                                                         | Scoring                                                    | Why it exists                                                                       |
+| ---------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| simple-crud            | [problem](../benchmarks/simple-crud/problem.md)            | [expectations](../benchmarks/simple-crud/expectations.md)            | [scoring](../benchmarks/simple-crud/scoring.md)            | Detects needless rich modeling and services without losing local assurance.         |
+| ecommerce              | [problem](../benchmarks/ecommerce/problem.md)              | [expectations](../benchmarks/ecommerce/expectations.md)              | [scoring](../benchmarks/ecommerce/scoring.md)              | Tests mixed CRUD, rich rules, state, provider, and read/dataflow strategies.        |
+| logistics              | [problem](../benchmarks/logistics/problem.md)              | [expectations](../benchmarks/logistics/expectations.md)              | [scoring](../benchmarks/logistics/scoring.md)              | Tests custody, temporal transitions, late events, and carrier translation.          |
+| payment                | [problem](../benchmarks/payment/problem.md)                | [expectations](../benchmarks/payment/expectations.md)                | [scoring](../benchmarks/payment/scoring.md)                | Tests critical monetary invariants under remote uncertainty and retries.            |
+| realtime               | [problem](../benchmarks/realtime/problem.md)               | [expectations](../benchmarks/realtime/expectations.md)               | [scoring](../benchmarks/realtime/scoring.md)               | Tests concurrency, convergence, latency, offline work, and ephemeral state.         |
+| data-pipeline          | [problem](../benchmarks/data-pipeline/problem.md)          | [expectations](../benchmarks/data-pipeline/expectations.md)          | [scoring](../benchmarks/data-pipeline/scoring.md)          | Tests dataflow, lineage, replay, late data, scale, and privacy lifecycle.           |
+| ai-agent               | [problem](../benchmarks/ai-agent/problem.md)               | [expectations](../benchmarks/ai-agent/expectations.md)               | [scoring](../benchmarks/ai-agent/scoring.md)               | Tests model uncertainty, tools, permission, memory, evaluation, cost, and fallback. |
+| enterprise-integration | [problem](../benchmarks/enterprise-integration/problem.md) | [expectations](../benchmarks/enterprise-integration/expectations.md) | [scoring](../benchmarks/enterprise-integration/scoring.md) | Tests semantic authority, heterogeneous delivery, replay, and phased coexistence.   |
 
 ## Provenance
 

@@ -38,12 +38,12 @@ and benchmark scoring. No benchmark IR, expectations, or stakeholder input chang
 
 ### Milestones
 
-| Phase | Milestone | Status | Evidence |
-|---|---|---|---|
-| 0 | Frame canonical migration and S8 contract | complete | `3c9ddd7`; ADR-0008 |
-| 1 | Migrate schemas, fixture, types, and references | complete | v0.2 examples/traces pass |
-| 2 | Implement S8/S10 gates and advance support | complete | 67 library/production CLI tests |
-| 3 | Document, verify, and review | complete | `b1afb00`; full loop and diff audit pass |
+| Phase | Milestone                                       | Status   | Evidence                                 |
+| ----- | ----------------------------------------------- | -------- | ---------------------------------------- |
+| 0     | Frame canonical migration and S8 contract       | complete | `3c9ddd7`; ADR-0008                      |
+| 1     | Migrate schemas, fixture, types, and references | complete | v0.2 examples/traces pass                |
+| 2     | Implement S8/S10 gates and advance support      | complete | 67 library/production CLI tests          |
+| 3     | Document, verify, and review                    | complete | `b1afb00`; full loop and diff audit pass |
 
 ### Decision log
 
@@ -119,12 +119,12 @@ inputs and expectations remain untouched.
 
 ### Milestones
 
-| Phase | Milestone | Status | Evidence |
-|---|---|---|---|
-| 0 | Frame S9 observable predicate and plan | complete | `2c69efb` |
-| 1 | Implement S9 gate, advance, and focused tests | complete | 89 tests pass |
-| 2 | Update affected authority documentation | complete | S9/CLI/runtime authority aligned |
-| 3 | Run full verification and adversarial review | complete | full loop and diff audit pass |
+| Phase | Milestone                                     | Status   | Evidence                         |
+| ----- | --------------------------------------------- | -------- | -------------------------------- |
+| 0     | Frame S9 observable predicate and plan        | complete | `2c69efb`                        |
+| 1     | Implement S9 gate, advance, and focused tests | complete | 89 tests pass                    |
+| 2     | Update affected authority documentation       | complete | S9/CLI/runtime authority aligned |
+| 3     | Run full verification and adversarial review  | complete | full loop and diff audit pass    |
 
 ### Decision log
 
@@ -175,3 +175,75 @@ inputs and expectations remain untouched.
 
 Run 5 is complete. Next, define the canonical S12 implementation-handoff artifact and gate,
 recording the consequential IR/manifest choice before enabling exact S11→S12 advancement.
+
+## Run 6 ExecPlan — 2026-08-17
+
+### Outcome
+
+Implementation Handoff IR canonically assigns selected architecture work to executable slices,
+the Model Repository deterministically validates S12 readiness and blockers, and
+`sah advance <bundle> S12` commits an exact S11→S12 transition only after those rules pass.
+
+### Scope
+
+Included: a seventh semantic IR and schema, manifest v0.3 declaration, fixture migration,
+cross-IR and dependency checks, S12 gates, exact advancement, focused library/CLI tests,
+authority docs, verification, and commits. Excluded: product-code generation, constraint
+execution, source adapters, renderers, LLM reasoning or judging, hosted services, benchmark
+scoring, and a general workflow engine. Benchmark inputs and expectations remain untouched.
+
+### Constraints
+
+- Implementation handoff is semantic S12 output, not lifecycle/storage metadata or an
+  Architecture field; ADR-0009 owns the representation choice.
+- A slice names selected elements, applicable constraints, accepted decisions, proposed
+  blockers, explicit dependencies, acceptance checks, migration, rollback, and ready/blocked
+  state.
+- S12 deterministically checks only serialized identity, status, coverage, references, and
+  dependency graph facts; implementation quality and slicing wisdom remain contextual.
+- Successful advance changes only manifest `lifecycle.completedStage`; retain Run 3 atomicity.
+- Every new property has writer/readers; public types expose no Ajv/fs types; never push.
+
+### Milestones
+
+| Phase | Milestone                                                | Status      | Evidence         |
+| ----- | -------------------------------------------------------- | ----------- | ---------------- |
+| 0     | Frame canonical S12 representation and predicates        | in_progress | ADR-0009 drafted |
+| 1     | Add schema, manifest migration, types, and references    | pending     | —                |
+| 2     | Implement S12 gates, advance, fixture, and focused tests | pending     | —                |
+| 3     | Update authority documentation                           | pending     | —                |
+| 4     | Run full verification and adversarial review             | pending     | —                |
+
+### Decision log
+
+- 2026-08-17: Add Implementation Handoff as a seventh semantic IR. Architecture owns selected
+  structure, while S12 owns change slicing and coding-agent context; the manifest remains
+  non-semantic. See ADR-0009.
+- 2026-08-17: Represent order as explicit slice dependencies. Reject self-dependencies and
+  cycles; do not infer order from array position or add an orchestration engine.
+- 2026-08-17: Treat a constraint as applicable when its scoped elements intersect the selected
+  candidate. Require assignment to a slice covering at least one such scoped element.
+- 2026-08-17: At S12, replace the earlier assisted proposed-decision isolation warning with
+  deterministic blocker coverage because slices make affected elements and blockers observable.
+
+### Discovery log
+
+- 2026-08-17: Run 5 ended clean at `66888bd` with 89 tests and named canonical S12 handoff as
+  the next slice.
+- 2026-08-17: ADR-0003 deliberately permits another IR when a real consumer appears. S12 has a
+  distinct writer, gate, and coding-agent/S13 consumers, while ADR-0006 reserves the manifest
+  for lifecycle and storage metadata.
+- 2026-08-17: Architecture and Decision IR already serialize selected-element, constraint,
+  accepted-decision, and proposed-decision applicability inputs. Only slice ownership,
+  dependency, verification, migration, rollback, and blocker assignment are absent.
+
+### Verification log
+
+- 2026-08-17: Re-read `AGENTS.md`, Run 5 handoff, index, S12 reasoning authority, IR ownership,
+  validation classifications, ADR-0003/0006/0007, schemas, fixture, runtime seams, and tests.
+- 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+
+### Handoff
+
+Run 6 is active. Resume at Phase 0, commit the representation plan, then implement the v0.3
+manifest migration and S12 slice contract without extending into S13 code-fact execution.

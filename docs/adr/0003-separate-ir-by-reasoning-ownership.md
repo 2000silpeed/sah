@@ -1,6 +1,6 @@
 # ADR-0003: Separate IR by reasoning ownership
 
-Status: Accepted · Date: 2026-08-17 · Supersedes: —
+Status: Superseded in part by ADR-0009 · Date: 2026-08-17 · Supersedes: —
 
 ## Context
 
@@ -22,10 +22,10 @@ Decision IRs linked by stable IDs.
 
 ## Trade-offs accepted
 
-+ Preserves responsibility-before-representation and keeps rejected choices outside selected
+- Preserves responsibility-before-representation and keeps rejected choices outside selected
   structure.
-− Cross-file references need validation and atomic bundle updates.
-− Agents must manage partial state and reserved owner identifiers across stages.
+  − Cross-file references need validation and atomic bundle updates.
+  − Agents must manage partial state and reserved owner identifiers across stages.
 
 Mitigation: one Model Repository owns reference integrity, staleness propagation, and atomic
 updates; semantic gates distinguish partial from selected bundles.
@@ -34,4 +34,5 @@ updates; semantic gates distinguish partial from selected bundles.
 
 The bootstrap layout adds `docs/harness-architecture.md` to separate SAH's component design
 from `docs/architecture-model.md`, which owns target-system IR semantics. No common base or
-Methodology IR is added until a real consumer requires it.
+Methodology IR is added until a real consumer requires it. ADR-0009 later adds the S12
+Implementation Handoff IR when its distinct coding-agent consumer appears.
