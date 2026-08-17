@@ -310,13 +310,13 @@ the existing observable contract.
 
 ### Milestones
 
-| Phase | Milestone                                            | Status      | Evidence         |
-| ----- | ---------------------------------------------------- | ----------- | ---------------- |
-| 0     | Frame the first S13 capability and result contract   | in_progress | ADR-0010 drafted |
-| 1     | Implement public verification flow and adapter seam  | pending     | —                |
-| 2     | Add target fixture and focused library/CLI tests     | pending     | —                |
-| 3     | Update affected authority documentation and commands | pending     | —                |
-| 4     | Run full verification and adversarial review         | pending     | —                |
+| Phase | Milestone                                            | Status   | Evidence             |
+| ----- | ---------------------------------------------------- | -------- | -------------------- |
+| 0     | Frame the first S13 capability and result contract   | complete | `d7fb732`; ADR-0010  |
+| 1     | Implement public verification flow and adapter seam  | complete | `c72e093`            |
+| 2     | Add target fixture and focused library/CLI tests     | complete | 138 tests pass       |
+| 3     | Update affected authority documentation and commands | complete | contracts aligned    |
+| 4     | Run full verification and adversarial review         | complete | full loop/audit pass |
 
 ### Decision log
 
@@ -340,14 +340,55 @@ the existing observable contract.
   constraints, so applicability does not require inferred filesystem ownership.
 - 2026-08-17: The existing simple-crud source-graph constraint is the required unsupported
   baseline; tests can mutate its observable to the supported tuple without weakening dogfood.
+- 2026-08-17: The canonical handoff already passed S12, but the checked-in manifest still
+  claimed S11. Aligning only `completedStage` to S12 makes the fixture honest and lets its
+  source-graph constraint prove the unsupported verification boundary.
+- 2026-08-17: Initial lint rejected an internal single-implementation interface under the
+  repository's type-definition rule. Converting the real adapter seam to a structural type
+  preserved substitutability without adding ceremony.
+- 2026-08-17: Diff review found an empty library target would resolve to ambient `cwd`.
+  Rejecting empty targets operationally restores ADR-0010's explicit-context guarantee.
+- 2026-08-17: Path audit found a conservative prefix check treated a confined name beginning
+  with `..` as traversal. Containment now rejects only the parent path itself or a parent-plus-
+  separator prefix, while drive paths, control characters, dot segments, and physical symlink
+  escapes remain unsupported.
 
 ### Verification log
 
 - 2026-08-17: Re-read `AGENTS.md`, Run 6 handoff, S13/constraint/validation authority,
   ADR-0004/0007/0009, current schemas, public contracts, repository/CLI flow, fixture, and tests.
 - 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+- 2026-08-17: Interim format, lint, strict typecheck, production-build-backed tests, 22 focused
+  verification cases, and 20 CLI cases pass; the full suite is 138/138 across eight files.
+  Coverage includes exact tuple dispatch, absent/non-file observations, blocked/contextual
+  pending states, unavailable adapters, unsafe lexical and symlink bindings, empty/missing
+  targets, prevalidation, human output, JSON output, and verify exits 0/1/2.
+- 2026-08-17: Final loop: `npm install` was current (164 packages, 0 vulnerabilities);
+  source/document formatting, lint, strict typecheck, 138/138 tests, standalone production
+  build, and the 4/4 schema contract suite passed.
+- 2026-08-17: Production CLI evidence: a supported present file returned exit 0 and human
+  `CONSTRAINT_PASSED`; a missing file returned exit 1/`CONSTRAINT_VIOLATION` in JSON; the
+  canonical source-graph constraint returned exit 2/`incomplete`/
+  `CONSTRAINT_ADAPTER_UNSUPPORTED`; a missing target returned exit 2/`operational-error`/
+  `VERIFICATION_TARGET_UNREADABLE`; canonical fixture validation returned exit 0.
+- 2026-08-17: All eight Draft 2020-12 schemas and eight embedded examples pass with zero
+  validation or trace errors. The public declaration audit found no Ajv/filesystem types.
+- 2026-08-17: Baseline `1c105a7` review passed `git diff --check`, 55-file/116-link local-link
+  audit, product-document line budgets, and no benchmark, schema, dependency, network/model,
+  or S13-advance changes. The preserved 407-line provenance prompt was already over the
+  generated-document budget at baseline and remains verbatim as required.
+- 2026-08-17: Final adversarial review covered precedence of known violations over unsupported
+  coverage, target and artifact prevalidation order, ready/blocked/contextual selection,
+  lexical/physical traversal, symlink escape, exact tuple dispatch, CLI/library separation,
+  and unsupported source-graph behavior. Filesystem containment is read-only and symlink-aware
+  but does not claim an adversarial race-free snapshot; ADR-0010 records that residual risk.
+- 2026-08-17: No benchmark judge or external model exists or ran. Deterministic fixture
+  validation and fact execution ran locally; assisted and judgment checks remained pending as
+  designed.
 
 ### Handoff
 
-Run 7 is active. Resume at Phase 0, commit the adapter/result decision, then implement the one
-filesystem capability without expanding into source-graph inference or S13 advancement.
+Run 7 is complete. Next, define a schema-validated source-to-element mapping seam and implement
+one TypeScript source-graph write-authority adapter so the canonical simple-crud constraint can
+execute without guessing ownership; keep general predicate compilation and S13 advancement
+outside that slice.

@@ -39,6 +39,10 @@ change the manifest or semantic schemas. Verify constraints assigned by the S12 
 ready-slice deterministic constraints may run; blocked-only or contextual constraints remain
 pending. Keep S13 lifecycle advancement unsupported.
 
+Each check is `pass`, `violation`, `pending`, or `unsupported`; the overall result is `passed`,
+`violations`, `incomplete`, or `operational-error`. A known violation takes precedence over
+incomplete coverage. Operational diagnostics stay separate from constraint checks.
+
 ## Trade-offs accepted
 
 - Proves the complete S13 adapter/result path with a fixed, auditable predicate.
@@ -58,3 +62,7 @@ semantics.
 source-to-element mappings before a TypeScript/source-graph adapter can enforce boundary or
 write-authority constraints. Fact snapshots remain a possible test/import adapter, not a
 substitute for actual extraction in this slice.
+
+Containment resolves each observed symlink before accepting a file, but this local read-only
+check does not claim an adversarial race-free filesystem snapshot. A stronger threat model
+would require descriptor-relative traversal or an isolated immutable checkout.

@@ -113,6 +113,10 @@ function humanCheck(check: VerificationCheck): string {
   return [
     `[${check.status.toUpperCase()}] ${check.code} (${check.classification}) constraint=${check.constraintId}`,
     `  ${check.message}`,
+    `  Decision: ${check.decisionRef}`,
+    `  Capability: ${check.capability}`,
+    `  Scope: ${check.scopeElementRefs.join(", ")}`,
+    `  Invariants: ${check.invariantRefs.join(", ")}`,
     `  Slices: ${check.sliceRefs.join(", ")}`,
     ...(check.blockerDecisionRefs === undefined ||
     check.blockerDecisionRefs.length === 0

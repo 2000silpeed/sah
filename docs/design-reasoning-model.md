@@ -149,6 +149,11 @@ live exceptions and judgment triggers are dispositioned. **Loop-back:** structur
 return to implementation; changed forces or repeated heuristic findings reopen S0–S10 at
 their source.
 
+The executable subset currently runs one target-filesystem presence capability for constraints
+assigned by an S12 handoff. Pending contextual reviews and unsupported adapters keep
+verification incomplete, and the manifest cannot advance to S13 until the full completion gate
+and exception dispositions are implemented.
+
 ## Short path
 
 S0–S2 may declare a low-risk short path when the change is reversible, local, has no critical

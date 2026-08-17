@@ -27,6 +27,7 @@ An installed package exposes:
 ```text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--json]
+sah verify <design-bundle-directory> <target-directory> [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -36,20 +37,25 @@ npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
 npm exec -- sah advance /path/to/disposable-bundle S12
 npm exec -- sah advance /path/to/disposable-bundle S12 --json
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 ```
 
 `advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
-than the checked-in fixture. Default output is human-readable. `--json` writes exactly one
-`ValidationResult` or `AdvanceResult` and no prose. Both formats preserve stable code,
-category, severity, artifact path, JSON Pointer, reference, message, expected condition,
-repair, and owning stage when applicable. Malformed JSON also reports a one-based source line
-and column when the runtime supplies an error offset.
+than the checked-in fixture. `verify` is read-only and requires an explicit target checkout.
+Default output is human-readable. `--json` writes exactly one `ValidationResult`,
+`AdvanceResult`, or `VerificationResult` and no prose. Validation diagnostics preserve stable
+code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
+repair, and owning stage when applicable. Verification checks preserve constraint, decision,
+scope elements, invariants, slices, capability, status, expected/observed facts, blockers, and
+repair. Malformed JSON also reports a one-based source line and column when the runtime
+supplies an error offset.
 
-| Exit | Meaning                                                                                                |
-| ---: | ------------------------------------------------------------------------------------------------------ |
-|    0 | Validation passed, or advancement committed. Assisted warnings may remain.                             |
-|    1 | Valid input has schema/reference/gate errors; advancement is blocked and does not write.               |
-|    2 | Invocation, transition eligibility, loading, configuration, concurrency, or atomic persistence failed. |
+| Exit | Meaning                                                                                                                      |
+| ---: | ---------------------------------------------------------------------------------------------------------------------------- |
+|    0 | Validation passed, advancement committed, or all selected verification checks passed.                                        |
+|    1 | Valid input has validation/gate errors, advancement is blocked, or target facts violate a deterministic constraint.          |
+|    2 | Invocation/operation failed, or verification is incomplete because a review, blocker, unsafe binding, or adapter is pending. |
 
 The root [manifest schema](../schemas/design-bundle-manifest.schema.json) defines lifecycle and
 artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR. Declared
@@ -61,6 +67,30 @@ IR schemas are v0.1.0. The manifest migration is a deliberate hard cut: a v0.2 m
 the canonical Implementation Handoff role and is an operational schema/declaration failure,
 not silently rewritten. ADR-0009 owns this migration; ADR-0008 owns the earlier Architecture
 candidate migration.
+
+## Continuous verification
+
+`verify` first validates the stored bundle at its declared lifecycle stage. S12 must be
+complete because Implementation Handoff supplies constraint-to-slice applicability. A
+constraint assigned only to blocked slices is `pending`; assisted and judgment constraints
+are also `pending`. A ready deterministic constraint runs only when its declared adapter
+capability is available. Missing adapters and unsupported bindings are `unsupported`, never
+pass. Any pending or unsupported check makes the overall result `incomplete`; a known
+violation takes precedence.
+
+The first available capability is `filesystem-artifact-presence`, bound only to
+`factSource=filesystem`, `predicate=regular-file-exists`, and `expected=true`. Its selector is
+a non-empty forward-slash path relative to the explicit target. Missing files and non-file
+entries are deterministic violations. Absolute/drive paths, control characters, parent, dot,
+empty, and backslash segments, or a symlink that resolves outside the real target root, are
+unsafe unsupported bindings.
+An absent or unreadable target root and metadata failures are operational errors. File
+presence proves only presence—not content, test coverage, or architectural adequacy.
+
+The checked-in simple-crud constraint declares a source-graph capability that this slice does
+not implement, so the example `verify` command intentionally returns `incomplete` and exit 2.
+The [S13 target fixture](../fixtures/s13-target/checks/equipment-operations.integration.txt)
+supports focused adapter tests without claiming that benchmark or product code exists.
 
 ## Stage advancement
 
@@ -100,8 +130,10 @@ The package exports the framework-neutral function and result types:
 import {
   advanceBundle,
   validateBundle,
+  verifyBundle,
   type AdvanceResult,
   type ValidationResult,
+  type VerificationResult,
 } from "software-architect-harness";
 
 const validation: ValidationResult = await validateBundle("design/equipment");
@@ -109,14 +141,21 @@ const advancement: AdvanceResult = await advanceBundle(
   "design/equipment",
   "S12",
 );
+const verification: VerificationResult = await verifyBundle(
+  "design/equipment",
+  "target/equipment",
+);
 ```
 
 Validation `status` is `passed`, `violations`, or `operational-error`. Advancement `status` is
 `advanced`, `blocked`, or `operational-error`, and its bundle metadata reports previous,
 target, and actually completed stage. `summary` counts errors and warnings. Expected failures
-are returned rather than thrown. Public declarations contain no Ajv or filesystem types.
+are returned rather than thrown. Verification `status` is `passed`, `violations`,
+`incomplete`, or `operational-error`; each check is `pass`, `violation`, `pending`, or
+`unsupported`. Its summary counts all four check states plus operational diagnostics. Public
+declarations contain no Ajv or filesystem types.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in
-bundle. The library validates declarations only—it does not execute code-fact adapters, LLM
-review, or compiled target-code constraints.
+bundle. `verifyBundle` executes only the exact filesystem capability above; it does not run
+LLM review, infer code ownership, compile general predicates, or mark lifecycle S13 complete.

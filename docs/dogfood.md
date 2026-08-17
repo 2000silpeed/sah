@@ -60,6 +60,12 @@ with its expected result and explicit no-data-migration/rollback plans. It has n
 dependencies. This is a valid structural handoff, not a claim that its slicing or check is
 contextually sufficient.
 
+The checked-in manifest now records S12 completion. Its `source-graph` write-authority
+constraint remains intentionally `unsupported` under the first S13 filesystem-only adapter,
+so verification is incomplete rather than falsely passing. Focused tests substitute the exact
+filesystem presence binding against a separate target fixture; they do not alter the dogfood
+architecture claim or benchmark material.
+
 Post-run comparison matched the benchmark's dominant strategy and fatal-avoidance anchors.
 The remaining uncertainty was preserved rather than scored as an architecture defect.
 

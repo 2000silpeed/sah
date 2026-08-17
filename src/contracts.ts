@@ -92,6 +92,7 @@ export type VerificationCheck = {
   classification: ValidationClassification;
   capability: string;
   scopeElementRefs: string[];
+  invariantRefs: string[];
   sliceRefs: string[];
   blockerDecisionRefs?: string[];
   status: VerificationCheckStatus;

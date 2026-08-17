@@ -83,9 +83,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   — enforce strict checking and emit the distributable library/CLI.
 - [ESLint configuration](../eslint.config.js) — owns typed lint rules for runtime and tests.
 - [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
-  framework-neutral diagnostics, results, stages, `validateBundle`, and `advanceBundle`.
+  framework-neutral diagnostics, results, stages, `validateBundle`, `advanceBundle`, and
+  `verifyBundle`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
-  validation sequencing, stage transition, and operational/violation separation.
+  validation sequencing, stage transition, verification dispatch, and result separation.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Internal model view](../src/internal-model.ts) — gives strict private shapes to already
@@ -98,17 +99,23 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   manifest's completed stage.
 - [Diagnostic helpers](../src/diagnostics.ts) — deterministically order and summarize public
   results; [CLI adapter](../src/cli.ts) owns presentation and exit mapping.
+- [Code-fact adapter seam](../src/code-fact-adapter.ts), [constraint verification](../src/constraint-verification.ts),
+  and [filesystem presence adapter](../src/filesystem-presence-adapter.ts) — isolate S13
+  selection and one confined target-fact capability from canonical semantics and CLI concerns.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
   [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
-  [advance tests](../test/advance-bundle.test.ts), [CLI tests](../test/cli.test.ts), and
-  [schema contract tests](../test/schema-contracts.test.ts) — generate isolated mutations and
-  verify validation, atomic transition, output, and failure families without network use.
+  [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
+  [CLI tests](../test/cli.test.ts), and [schema contract tests](../test/schema-contracts.test.ts)
+  — generate isolated mutations and verify validation, atomic transition, fact execution,
+  output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
   [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
   [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),
   [decisions](../fixtures/simple-crud/architecture-decision.json), and [handoff](../fixtures/simple-crud/implementation-handoff.json)
   — form the valid external equipment-register fixture derived from the dogfood walkthrough,
   outside benchmark inputs.
+- [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —
+  gives filesystem-presence tests one inert target-local regular file outside benchmark data.
 
 ## Benchmark fixtures
 

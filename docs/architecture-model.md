@@ -112,6 +112,11 @@ deterministic. Whether the slices, checks, or operational plans are adequate rem
 schema-valid handoff is not an implementation-quality endorsement. ADR-0009 owns the seventh
 IR decision and the schema owns serialized shape.
 
+At S13, handoff assignment determines which constraints belong to ready or blocked slices.
+Execution results are runtime evidence, not another canonical IR: they retain constraint,
+decision, element, and slice IDs without being written back into Architecture or Handoff.
+ADR-0010 owns the first explicit-target filesystem capability and its no-schema-change choice.
+
 ## Elements and relations
 
 An element is a logical owner before it is a deployment unit. Its `logicalRole`, `authority`,

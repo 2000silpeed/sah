@@ -89,6 +89,7 @@ export async function verifyConstraints(
       classification: constraint.classification,
       capability: constraint.enforcement.adapterCapability,
       scopeElementRefs: constraint.scopeElementRefs,
+      invariantRefs: constraint.invariantRefs,
       sliceRefs: [...new Set(assignment.sliceRefs)],
     };
 

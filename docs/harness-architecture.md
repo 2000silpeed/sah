@@ -66,6 +66,13 @@ The S12 slice loads canonical Implementation Handoff IR and joins it with select
 and Decision facts. The Model Repository owns reference, coverage, blocker, readiness, and
 acyclic-dependency checks. It does not execute handoff checks or judge slice quality.
 
+The first S13 execution slice exposes `verifyBundle(bundleDirectory, targetDirectory)`. The
+Model Repository validates the stored S12 bundle, selects constraints assigned to ready
+slices, dispatches declared adapter capabilities, and aggregates check states. A private
+filesystem adapter implements only regular-file presence under a physically confined explicit
+target root. The CLI owns presentation and exit mapping; adapter outcomes, Ajv errors, and
+terminal formatting do not enter canonical IR. S13 lifecycle advancement remains unsupported.
+
 ### Decision and View Adapters
 
 Render architecture-decision IR as ADR Markdown and architecture IR as C4/other views. They
@@ -131,6 +138,10 @@ The integration adapter maps changed paths/symbols to architecture elements. The
 applicable deterministic checks, emits assisted findings, and schedules judgment reviews from
 decision triggers. Violations point to source decision, affected invariant, owner, and allowed
 exception authority.
+
+The current executable subset does not yet map diffs or symbols. It uses S12 slice assignment
+for applicability and can evaluate only a declared target-relative regular-file presence fact.
+Other capabilities remain explicit unsupported coverage.
 
 ### Benchmark run
 

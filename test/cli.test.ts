@@ -399,6 +399,7 @@ describe("sah verify CLI", () => {
     expect(execution.stdout).toContain(
       "[PASS] CONSTRAINT_PASSED (deterministic) constraint=equipment-owns-writes",
     );
+    expect(execution.stdout).toContain("Invariants: asset-tag-unique");
     expect(execution.stdout).toContain(
       "Summary: 1 passed, 0 violation(s), 0 pending, 0 unsupported",
     );

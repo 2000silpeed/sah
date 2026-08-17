@@ -1,6 +1,6 @@
 import { constants } from "node:fs";
 import { access, lstat, realpath, stat } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 import type {
   CodeFactAdapter,
@@ -27,7 +27,9 @@ function isWithin(root: string, target: string): boolean {
   const pathFromRoot = relative(root, target);
   return (
     pathFromRoot === "" ||
-    (!pathFromRoot.startsWith("..") && !isAbsolute(pathFromRoot))
+    (pathFromRoot !== ".." &&
+      !pathFromRoot.startsWith(`..${sep}`) &&
+      !isAbsolute(pathFromRoot))
   );
 }
 
@@ -38,6 +40,15 @@ function isMissing(error: unknown): boolean {
     "code" in error &&
     (error as { code?: unknown }).code === "ENOENT"
   );
+}
+
+function hasControlCharacter(value: string): boolean {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint !== undefined && (codePoint <= 0x1f || codePoint === 0x7f))
+      return true;
+  }
+  return false;
 }
 
 function unsupportedSelector(
@@ -64,16 +75,18 @@ function unsupportedSelector(
   if (
     observable.selector.trim() === "" ||
     isAbsolute(observable.selector) ||
+    /^[A-Za-z]:/u.test(observable.selector) ||
     observable.selector.includes("\\") ||
+    hasControlCharacter(observable.selector) ||
     segments.some((segment) => ["", ".", ".."].includes(segment))
   ) {
     return {
       kind: "unsupported",
       code: "CONSTRAINT_BINDING_UNSAFE",
-      message: `Filesystem selector ${observable.selector} is not a confined normalized relative path.`,
+      message: `Filesystem selector ${JSON.stringify(observable.selector)} is not a confined normalized relative path.`,
       expected:
-        "a non-empty forward-slash relative path with no empty, dot, parent, or backslash segment",
-      observed: observable.selector,
+        "a non-empty forward-slash relative path with no drive, control character, empty, dot, parent, or backslash segment",
+      observed: JSON.stringify(observable.selector),
       repair:
         "Rewrite the selector in S11 as a normalized path inside the explicit verification target.",
     };

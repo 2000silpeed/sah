@@ -136,15 +136,18 @@ proposed-decision blockers, ready/blocked consistency, and an acyclic slice depe
 The S10 isolation warning applies only through S11; at S12 the required slice facts make
 blocker coverage a deterministic predicate. The runtime supports exact targets S5–S12.
 
-This slice validates constraint declarations but does not bind code-fact adapters or execute
-compiled project constraints. A structurally valid deterministic observable is therefore not
-a claim that target code passes it. [Validation CLI usage](validation-cli.md) owns result and
-exit-code presentation rather than this semantic catalogue.
+Run 7 executes the first S13 fact binding. It selects constraints through canonical S12 slice
+assignment and supports only a confined target-relative regular-file-presence predicate.
+Blocked-only and contextual constraints remain pending; unavailable capabilities and unsafe
+bindings are unsupported; target access failures are operational. The exact capability is
+owned by [Validation CLI usage](validation-cli.md), while ADR-0010 owns its scope decision.
+A structurally valid deterministic observable still is not a claim that target code passes it.
 
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
-`error`), and remediation/exception path. The implementation run may formalize this result
-envelope only when runner consumers are known.
+`error`), and remediation/exception path. Run 7 formalizes the deterministic subset as public
+verification checks with `pass`, `violation`, `pending`, or `unsupported`; operational errors
+remain diagnostics rather than fabricated checks.
 
 ## Exceptions
 

@@ -1,4 +1,4 @@
-import { symlink } from "node:fs/promises";
+import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -141,6 +141,7 @@ describe("verifyBundle", () => {
       expect.objectContaining({
         code: "CONSTRAINT_PASSED",
         status: "pass",
+        invariantRefs: ["asset-tag-unique"],
         expected: "true",
         observed:
           "regular file exists at checks/equipment-operations.integration.txt",
@@ -165,6 +166,54 @@ describe("verifyBundle", () => {
         status: "violation",
         observed: "missing path checks/missing.txt",
       }),
+    );
+  });
+
+  it("keeps a known violation primary when another adapter is unsupported", async () => {
+    const bundle = await copyFixture();
+    await setFilesystemConstraint(bundle, "checks/missing.txt");
+    const secondConstraintId = "equipment-write-path-documented";
+    await mutateJson<{ constraints: Array<Constraint & { id: string }> }>(
+      bundle,
+      "architecture.json",
+      (architecture) => {
+        const source = architecture.constraints[0];
+        if (source === undefined) return;
+        const second = structuredClone(source);
+        second.id = secondConstraintId;
+        second.observable = {
+          factSource: "source-graph",
+          selector: "writes to equipment records",
+          predicate: "origin is equipment-operations",
+          expected: "true",
+        };
+        second.enforcement.adapterCapability = "dependency-and-write analysis";
+        architecture.constraints.push(second);
+      },
+    );
+    await mutateJson<{ decisions: Decision[] }>(
+      bundle,
+      "architecture-decision.json",
+      (model) => {
+        model.decisions[0]?.constraintRefs.push(secondConstraintId);
+      },
+    );
+    await mutateJson<{ slices: Array<{ constraintRefs: string[] }> }>(
+      bundle,
+      "implementation-handoff.json",
+      (handoff) => {
+        handoff.slices[0]?.constraintRefs.push(secondConstraintId);
+      },
+    );
+
+    const verification = await verifyBundle(
+      bundle,
+      verificationTargetDirectory,
+    );
+
+    expect(verification.status).toBe("violations");
+    expect(verification.summary).toEqual(
+      expect.objectContaining({ violations: 1, unsupported: 1 }),
     );
   });
 
@@ -235,7 +284,13 @@ describe("verifyBundle", () => {
     );
   });
 
-  it.each(["../outside.txt", "checks\\file.txt", "/tmp/outside.txt"])(
+  it.each([
+    "../outside.txt",
+    "checks\\file.txt",
+    "/tmp/outside.txt",
+    "C:/outside.txt",
+    "checks/invalid\0name.txt",
+  ])(
     "rejects unsafe selector %s without reading outside the target",
     async (selector) => {
       const bundle = await copyFixture();
@@ -309,6 +364,20 @@ describe("verifyBundle", () => {
         code: "CONSTRAINT_BINDING_UNSAFE",
         status: "unsupported",
       }),
+    );
+  });
+
+  it("allows a confined filename that merely begins with two dots", async () => {
+    const bundle = await copyFixture();
+    const target = await copyVerificationTarget();
+    await writeFile(join(target, "..allowed.txt"), "present\n");
+    await setFilesystemConstraint(bundle, "..allowed.txt");
+
+    const verification = await verifyBundle(bundle, target);
+
+    expect(verification.status).toBe("passed");
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({ status: "pass" }),
     );
   });
 

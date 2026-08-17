@@ -546,7 +546,7 @@ function failedValidationForVerification(
   return verificationResult(
     validation.status === "violations" ? "violations" : "operational-error",
     validation.bundleDirectory,
-    resolve(targetDirectory),
+    targetDirectory.trim() === "" ? targetDirectory : resolve(targetDirectory),
     [],
     validation.diagnostics,
     validation.bundle,
@@ -574,7 +574,9 @@ export async function verifyBundle(
     return verificationResult(
       "operational-error",
       prepared.bundleRoot,
-      resolve(targetDirectory),
+      targetDirectory.trim() === ""
+        ? targetDirectory
+        : resolve(targetDirectory),
       [],
       [
         operationalDiagnostic({
