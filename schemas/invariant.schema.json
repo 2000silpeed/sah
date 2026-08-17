@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/invariant/v0.1.0",
+  "title": "SAH Invariant IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelId", "characterizationRef", "responsibilityRef", "invariants", "unresolvedConflicts"],
+  "properties": {
+    "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["schema-validator", "S13"]}},
+    "modelId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S7", "S13"]}},
+    "characterizationRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
+    "responsibilityRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
+    "invariants": {"type": "array", "items": {"$ref": "#/$defs/invariant"}, "x-sah-trace": {"writtenBy": ["S4", "S5"], "readBy": ["S5", "S6", "S7", "S9", "S11", "coverage-validator", "benchmark-judge"]}},
+    "unresolvedConflicts": {"type": "array", "items": {"$ref": "#/$defs/conflict"}, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S10"]}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["description", "ownershipSpan"],
+      "properties": {
+        "description": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S11"]}},
+        "ownershipSpan": {"enum": ["single-owner", "cross-owner-protocol", "unknown"], "x-sah-trace": {"writtenBy": ["S4", "S5"], "readBy": ["S5", "S6", "ownership-validator"]}}
+      }
+    },
+    "consistency": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode", "stalenessBound", "ordering"],
+      "properties": {
+        "mode": {"enum": ["atomic", "strong", "eventual", "monotonic", "best-effort", "not-applicable", "unknown"], "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S8", "S9"]}},
+        "stalenessBound": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S8", "S9", "S11"]}},
+        "ordering": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S8", "S9", "S11"]}}
+      }
+    },
+    "owner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logicalOwnerRef", "enforcementResponsibilityRef", "authority", "rationale"],
+      "properties": {
+        "logicalOwnerRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S7", "ownership-validator"]}},
+        "enforcementResponsibilityRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["reference-validator", "S6", "S11"]}},
+        "authority": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S11"]}},
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "human-reviewer"]}}
+      }
+    },
+    "invariant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "subsystemRef", "statement", "kind", "evidenceRefs", "responsibilityRefs", "qualityScenarioRefs", "scope", "triggers", "preconditions", "postconditions", "consistency", "criticality", "failureImpact", "detection", "recovery"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6", "S7", "S11"]}},
+        "subsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
+        "statement": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S9", "S11", "benchmark-judge"]}},
+        "kind": {"enum": ["state", "transition", "temporal", "authorization", "consistency", "data-quality", "safety", "quality-threshold"], "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S11"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["trace-validator", "S9"]}},
+        "responsibilityRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
+        "qualityScenarioRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S9", "coverage-validator"]}},
+        "scope": {"$ref": "#/$defs/scope", "x-sah-trace": {"writtenBy": ["S4", "S5"], "readBy": ["S5", "S6", "S11"]}},
+        "triggers": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S11"]}},
+        "preconditions": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "contract-validator"]}},
+        "postconditions": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "contract-validator"]}},
+        "consistency": {"$ref": "#/$defs/consistency", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S8", "S9"]}},
+        "criticality": {"enum": ["low", "medium", "high"], "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S9", "S11"]}},
+        "failureImpact": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S9"]}},
+        "detection": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S11", "S13"]}},
+        "recovery": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S8", "S9", "S12"]}},
+        "owner": {"$ref": "#/$defs/owner", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S7", "S11", "ownership-validator"]}}
+      }
+    },
+    "conflict": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "invariantRefs", "description", "resolutionOwner"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["reference-validator"]}},
+        "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["reference-validator", "S6"]}},
+        "description": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S10"]}},
+        "resolutionOwner": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["human-reviewer"]}}
+      }
+    }
+  },
+  "examples": [{
+    "schemaVersion": "0.1.0",
+    "modelId": "catalog-admin-invariants",
+    "characterizationRef": "catalog-admin-characterization",
+    "responsibilityRef": "catalog-admin-responsibilities",
+    "invariants": [{
+      "id": "product-sku-present",
+      "subsystemRef": "catalog-admin",
+      "statement": "Every accepted product has a non-empty SKU",
+      "kind": "state",
+      "evidenceRefs": ["ev-product-edit"],
+      "responsibilityRefs": ["maintain-product-record"],
+      "qualityScenarioRefs": [],
+      "scope": {"description": "One product record", "ownershipSpan": "single-owner"},
+      "triggers": ["Create or update product"],
+      "preconditions": [],
+      "postconditions": ["Persisted SKU is non-empty"],
+      "consistency": {"mode": "atomic", "stalenessBound": "none", "ordering": "one transaction"},
+      "criticality": "low",
+      "failureImpact": "The product cannot be referenced reliably",
+      "detection": "Validate before commit",
+      "recovery": "Reject the change with a field error",
+      "owner": {"logicalOwnerRef": "catalog-operations", "enforcementResponsibilityRef": "maintain-product-record", "authority": "May reject invalid product writes", "rationale": "The operation controls the record transaction"}
+    }],
+    "unresolvedConflicts": []
+  }]
+}

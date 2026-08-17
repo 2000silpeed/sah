@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/architecture-decision/v0.1.0",
+  "title": "SAH Architecture Decision IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "logId", "decisions"],
+  "properties": {
+    "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["schema-validator", "S13"]}},
+    "logId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "S11", "S13"]}},
+    "decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S9", "S10", "S11"], "readBy": ["S11", "S12", "S13", "decision-trace-validator"]}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "scenarioResult": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarioRef", "result", "evidence"],
+      "properties": {
+        "scenarioRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10"]}},
+        "result": {"enum": ["pass", "risk", "fail", "unknown"], "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "quality-gate-validator"]}},
+        "evidence": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "human-reviewer"]}}
+      }
+    },
+    "option": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "description", "scenarioResults", "benefits", "costs", "risks", "reversalEvidence"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10"]}},
+        "description": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "human-reviewer"]}},
+        "scenarioResults": {"type": "array", "items": {"$ref": "#/$defs/scenarioResult"}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "quality-gate-validator"]}},
+        "benefits": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10"]}},
+        "costs": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "benchmark-judge"]}},
+        "risks": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "S13"]}},
+        "reversalEvidence": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S13"]}}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["decider", "scope"],
+      "properties": {
+        "decider": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S13", "human-reviewer"]}},
+        "scope": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S11", "S13"]}}
+      }
+    },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "status", "decidedAt", "context", "evidenceRefs", "affectedElementRefs", "qualityScenarioRefs", "options", "selectedOptionRef", "decision", "tradeoffsAccepted", "consequences", "supersedes", "constraintRefs", "reviewTriggers", "authority"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10", "S11", "S13"]}},
+        "title": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "S12", "human-reviewer"]}},
+        "status": {"enum": ["proposed", "accepted", "rejected", "superseded"], "x-sah-trace": {"writtenBy": ["S9", "S10"], "readBy": ["S11", "S12", "S13"]}},
+        "decidedAt": {"type": "string", "format": "date", "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S13", "adr-view-adapter"]}},
+        "context": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "S11", "adr-view-adapter"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10", "trace-validator"]}},
+        "affectedElementRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S9", "S10"], "readBy": ["reference-validator", "S11", "S12", "S13"]}},
+        "qualityScenarioRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10", "quality-gate-validator"]}},
+        "options": {"type": "array", "items": {"$ref": "#/$defs/option"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "adr-view-adapter", "benchmark-judge"]}},
+        "selectedOptionRef": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["reference-validator", "S11", "adr-view-adapter"]}},
+        "decision": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S11", "S12", "adr-view-adapter"]}},
+        "tradeoffsAccepted": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S11", "S12", "benchmark-judge"]}},
+        "consequences": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S11", "S12", "adr-view-adapter"]}},
+        "supersedes": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["reference-validator", "S13", "adr-view-adapter"]}},
+        "constraintRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["reference-validator", "decision-trace-validator", "S13"]}},
+        "reviewTriggers": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S13"]}},
+        "authority": {"$ref": "#/$defs/authority", "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["S11", "S13", "human-reviewer"]}}
+      }
+    }
+  },
+  "examples": [{
+    "schemaVersion": "0.1.0",
+    "logId": "catalog-admin-decisions",
+    "decisions": [{
+      "id": "choose-modular-operations",
+      "title": "Use direct modular operations for catalog maintenance",
+      "status": "accepted",
+      "decidedAt": "2026-08-17",
+      "context": "Catalog changes are independent, local, and governed by record-level validation",
+      "evidenceRefs": ["ev-product-edit"],
+      "affectedElementRefs": ["catalog-operations"],
+      "qualityScenarioRefs": [],
+      "options": [
+        {"id": "modular-operations-option", "description": "Plain module with transaction operations", "scenarioResults": [], "benefits": ["Low ceremony"], "costs": ["Rules may scatter if complexity grows"], "risks": ["Late recognition of richer behavior"], "reversalEvidence": "Interacting catalog rules emerge"},
+        {"id": "rich-domain-option", "description": "Rich domain model with aggregate boundaries", "scenarioResults": [], "benefits": ["Explicit domain rule ownership"], "costs": ["Unjustified abstractions and mapping"], "risks": ["Agents cargo-cult repositories and services"], "reversalEvidence": "Multiple interacting invariants emerge"}
+      ],
+      "selectedOptionRef": "modular-operations-option",
+      "decision": "Use a catalog operations module and record-local transaction scripts",
+      "tradeoffsAccepted": ["Revisit the structure if interacting rules emerge"],
+      "consequences": ["Catalog writes remain behind one module boundary"],
+      "supersedes": [],
+      "constraintRefs": ["catalog-owns-writes"],
+      "reviewTriggers": ["A rule coordinates changes across products"],
+      "authority": {"decider": "architecture owner", "scope": "Catalog administration"}
+    }]
+  }]
+}

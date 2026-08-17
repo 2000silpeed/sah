@@ -77,7 +77,7 @@ determinism question.
 | 0 | Initialize Git and define ExecPlans | complete | `.git/`; this planning contract |
 | 1 | Compare five prior-art categories | complete | `docs/prior-art.md`; 12 distinct cited sources |
 | 2 | Define iterative design reasoning | complete | S0–S13 contracts and ten-question map documented |
-| 3 | Define traced IRs and schemas | pending | field traceability; schema compilation |
+| 3 | Define traced IRs and schemas | complete | 6 Draft 2020-12 schemas, examples, and trace audit pass |
 | 4 | Decide SAH architecture and delivery | pending | architecture documents and accepted ADRs |
 | 5 | Specify eight benchmarks | pending | 24 benchmark files; coverage comparison |
 | 6 | Dogfood two contrasting cases | pending | walkthroughs and recorded model repairs |
@@ -95,6 +95,10 @@ determinism question.
   stages. The short path compresses artifacts but cannot silently omit ownership or risk.
 - 2026-08-17: Strategy selection is provisional until responsibility and invariant analysis
   confirm it; representation remains forbidden until ownership and boundary design.
+- 2026-08-17: Use six canonical IRs without a common serialized base or methodology IR.
+  Stable IDs link artifacts; storage revision metadata remains outside semantic IR.
+- 2026-08-17: Make `x-sah-trace.writtenBy/readBy` the authoritative field trace table. A
+  generated audit is safer than duplicating every JSON pointer in prose.
 
 ### Discovery log
 
@@ -109,6 +113,10 @@ determinism question.
   service, module, class, or pipeline during characterization is a gate failure.
 - 2026-08-17: Mixed-method design requires composition contracts; otherwise per-subsystem
   method neutrality merely moves incoherence to the boundaries.
+- 2026-08-17: JSON Schema proves shape, not cross-file references or stage sufficiency. Full
+  verification will need separate reference, semantic-gate, and code-fact validators.
+- 2026-08-17: S5 ownership precedes architecture elements, so it reserves logical owner IDs;
+  S6 must materialize every reserved owner or the bundle fails reference validation.
 
 ### Verification log
 
@@ -117,8 +125,13 @@ determinism question.
   five required categories; unverified details are labeled rather than inferred.
 - 2026-08-17: The reasoning model explicitly maps all ten product questions and gives every
   stage an input, output, completion condition, and causal loop-back.
+- 2026-08-17: Initial Python validation failed verbatim with `ModuleNotFoundError: No module
+  named 'jsonschema'`; `ajv-cli@5` was also rejected because its help listed support only
+  through draft 2019-09.
+- 2026-08-17: An isolated `jsonschema` Draft202012Validator check passed all six schemas,
+  all embedded examples, and the audit that every property has non-empty writer/readers.
 
 ### Handoff
 
-Start Phase 3 by reducing the reasoning state to canonical IR fields, recording a producer
-and consumer for every field, then compile every schema with a draft 2020-12 validator.
+Start Phase 4 by deciding delivery form and component boundaries, then define the validation
+catalogue and record consequential choices as ADRs.

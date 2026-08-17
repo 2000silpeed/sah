@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/responsibility/v0.1.0",
+  "title": "SAH Responsibility IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelId", "characterizationRef", "strategyRef", "responsibilities", "unresolvedConflicts"],
+  "properties": {
+    "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["schema-validator", "S13"]}},
+    "modelId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S4", "S5", "S6", "S13"]}},
+    "characterizationRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["reference-validator", "S4", "S5"]}},
+    "strategyRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["reference-validator", "S4", "S5", "S6"]}},
+    "responsibilities": {"type": "array", "items": {"$ref": "#/$defs/responsibility"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S3", "S5"], "readBy": ["S4", "S5", "S6", "S7", "coverage-validator", "benchmark-judge"]}},
+    "unresolvedConflicts": {"type": "array", "items": {"$ref": "#/$defs/conflict"}, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S10"]}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "owner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["logicalOwnerRef", "authority", "rationale"],
+      "properties": {
+        "logicalOwnerRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S7", "ownership-validator"]}},
+        "authority": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S11"]}},
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "human-reviewer"]}}
+      }
+    },
+    "responsibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "subsystemRef", "statement", "kind", "evidenceRefs", "qualityScenarioRefs", "inputs", "outputs", "trigger", "changeReason", "collaboratorRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["reference-validator", "S4", "S5", "S6", "S7"]}},
+        "subsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["reference-validator", "S5", "S6"]}},
+        "statement": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S4", "S5", "S6", "representation-order-judge"]}},
+        "kind": {"enum": ["outcome", "policy", "decision", "transformation", "coordination", "state", "side-effect", "assurance"], "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S5", "S6", "benchmark-judge"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["trace-validator", "S4", "S9"]}},
+        "qualityScenarioRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["reference-validator", "coverage-validator"]}},
+        "inputs": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S4", "S6"]}},
+        "outputs": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S4", "S6"]}},
+        "trigger": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S4", "S6"]}},
+        "changeReason": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S3"], "readBy": ["S5", "S6", "cohesion-judge"]}},
+        "collaboratorRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "x-sah-trace": {"writtenBy": ["S3", "S5"], "readBy": ["reference-validator", "S6", "coupling-judge"]}},
+        "owner": {"$ref": "#/$defs/owner", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S7", "S11", "ownership-validator"]}}
+      }
+    },
+    "conflict": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "responsibilityRefs", "description", "resolutionOwner"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["reference-validator"]}},
+        "responsibilityRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["reference-validator", "S6"]}},
+        "description": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["S6", "S10"]}},
+        "resolutionOwner": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S5"], "readBy": ["human-reviewer"]}}
+      }
+    }
+  },
+  "examples": [{
+    "schemaVersion": "0.1.0",
+    "modelId": "catalog-admin-responsibilities",
+    "characterizationRef": "catalog-admin-characterization",
+    "strategyRef": "catalog-admin-strategy",
+    "responsibilities": [{
+      "id": "maintain-product-record",
+      "subsystemRef": "catalog-admin",
+      "statement": "Accept or reject a requested product record change",
+      "kind": "outcome",
+      "evidenceRefs": ["ev-product-edit"],
+      "qualityScenarioRefs": [],
+      "inputs": ["current product", "requested fields"],
+      "outputs": ["accepted product or validation errors"],
+      "trigger": "Operator submits a product edit",
+      "changeReason": "Catalog maintenance rules change",
+      "collaboratorRefs": [],
+      "owner": {"logicalOwnerRef": "catalog-operations", "authority": "May accept one product transaction", "rationale": "The operation owns record-local validation and commit"}
+    }],
+    "unresolvedConflicts": []
+  }]
+}

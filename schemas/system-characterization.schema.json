@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/system-characterization/v0.1.0",
+  "title": "SAH System Characterization IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelId", "systemName", "scope", "evidence", "unresolvedQuestions", "subsystems", "qualityScenarios", "hardConstraints"],
+  "properties": {
+    "schemaVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["schema-validator", "S13"]}
+    },
+    "modelId": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S2", "S13"]}
+    },
+    "systemName": {
+      "type": "string", "minLength": 1,
+      "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S12"]}
+    },
+    "scope": {
+      "$ref": "#/$defs/scope",
+      "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S3", "S12"]}
+    },
+    "evidence": {
+      "type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 1,
+      "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S2", "S3", "S4", "S9", "trace-validator"]}
+    },
+    "unresolvedQuestions": {
+      "type": "array", "items": {"$ref": "#/$defs/question"},
+      "x-sah-trace": {"writtenBy": ["S0", "S1"], "readBy": ["S1", "S9", "S10"]}
+    },
+    "subsystems": {
+      "type": "array", "items": {"$ref": "#/$defs/subsystem"}, "minItems": 1,
+      "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S3", "S4", "S6", "benchmark-judge"]}
+    },
+    "qualityScenarios": {
+      "type": "array", "items": {"$ref": "#/$defs/qualityScenario"},
+      "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S3", "S4", "S8", "S9", "benchmark-judge"]}
+    },
+    "hardConstraints": {
+      "type": "array", "items": {"$ref": "#/$defs/hardConstraint"},
+      "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S6", "S7", "S8", "S9"]}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["inScope", "outOfScope", "stakeholders"],
+      "properties": {
+        "inScope": {
+          "type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1,
+          "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S3"]}
+        },
+        "outOfScope": {
+          "type": "array", "items": {"type": "string", "minLength": 1},
+          "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S12"]}
+        },
+        "stakeholders": {
+          "type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1,
+          "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S9", "S10"]}
+        }
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "sourceType", "sourceLocator", "claim", "confidence", "falsifiedBy"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["reference-validator"]}},
+        "sourceType": {
+          "enum": ["stakeholder", "regulation", "observation", "metric", "contract", "existing-system", "assumption"],
+          "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S9"]}
+        },
+        "sourceLocator": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["human-reviewer"]}},
+        "claim": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S2", "S3", "S4", "S9"]}},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1, "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S1", "S9"]}},
+        "falsifiedBy": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["S13"]}}
+      }
+    },
+    "question": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "question", "consequence", "resolutionOwner"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S0", "S1"], "readBy": ["reference-validator"]}},
+        "question": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0", "S1"], "readBy": ["S9", "S10"]}},
+        "consequence": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0", "S1"], "readBy": ["S9", "S10"]}},
+        "resolutionOwner": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S0"], "readBy": ["human-reviewer"]}}
+      }
+    },
+    "rating": {
+      "type": "object", "additionalProperties": false,
+      "required": ["level", "evidenceRefs", "rationale"],
+      "properties": {
+        "level": {"enum": ["low", "medium", "high", "unknown"], "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "benchmark-judge"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["trace-validator", "S2"]}},
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "human-reviewer"]}}
+      }
+    },
+    "dimensions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_change_complexity", "invariant_criticality", "dataflow_orientation", "distribution_consistency", "concurrency_temporality", "autonomy_uncertainty", "integration_volatility", "scale_performance", "assurance_governance", "change_isolation"],
+      "properties": {
+        "rule_change_complexity": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2"]}},
+        "invariant_criticality": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S4"]}},
+        "dataflow_orientation": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2"]}},
+        "distribution_consistency": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S4", "S6"]}},
+        "concurrency_temporality": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S4"]}},
+        "autonomy_uncertainty": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S9"]}},
+        "integration_volatility": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S6"]}},
+        "scale_performance": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S8", "S9"]}},
+        "assurance_governance": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S4", "S10"]}},
+        "change_isolation": {"$ref": "#/$defs/rating", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S6"]}}
+      }
+    },
+    "subsystem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "purpose", "evidenceRefs", "dimensions"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["reference-validator", "S2", "S3", "S4", "S6"]}},
+        "name": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S12"]}},
+        "purpose": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S3"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["trace-validator", "S2", "S3"]}},
+        "dimensions": {"$ref": "#/$defs/dimensions", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "benchmark-judge"]}}
+      }
+    },
+    "qualityScenario": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "sourceEvidenceRefs", "stimulus", "environment", "artifact", "response", "measure", "priority"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["reference-validator", "S8", "S9"]}},
+        "sourceEvidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["trace-validator", "S9"]}},
+        "stimulus": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S8", "S9"]}},
+        "environment": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S8", "S9"]}},
+        "artifact": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S6", "S8"]}},
+        "response": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S3", "S8", "S9"]}},
+        "measure": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S8", "S9", "S13"]}},
+        "priority": {"enum": ["must", "should", "could"], "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S8", "S9", "S10"]}}
+      }
+    },
+    "hardConstraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "statement", "evidenceRefs", "affectedSubsystemRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["reference-validator"]}},
+        "statement": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["S2", "S6", "S7", "S8", "S9"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["trace-validator", "S9"]}},
+        "affectedSubsystemRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S1"], "readBy": ["reference-validator", "S6"]}}
+      }
+    }
+  },
+  "examples": [{
+    "schemaVersion": "0.1.0",
+    "modelId": "catalog-admin-characterization",
+    "systemName": "Catalog Admin",
+    "scope": {"inScope": ["Maintain product records"], "outOfScope": ["Pricing"], "stakeholders": ["Catalog operator"]},
+    "evidence": [{"id": "ev-product-edit", "sourceType": "stakeholder", "sourceLocator": "requirements:1", "claim": "Operators create and edit independent product records", "confidence": 0.9, "falsifiedBy": "A rule coordinating changes across products is discovered"}],
+    "unresolvedQuestions": [],
+    "subsystems": [{
+      "id": "catalog-admin", "name": "Catalog administration", "purpose": "Maintain independent product records", "evidenceRefs": ["ev-product-edit"],
+      "dimensions": {
+        "rule_change_complexity": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "Independent field validation"},
+        "invariant_criticality": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "Record-local validation"},
+        "dataflow_orientation": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No transformation stages"},
+        "distribution_consistency": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "One transactional store"},
+        "concurrency_temporality": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No temporal workflow"},
+        "autonomy_uncertainty": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "Deterministic validation"},
+        "integration_volatility": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No external provider"},
+        "scale_performance": {"level": "unknown", "evidenceRefs": ["ev-product-edit"], "rationale": "No measured load supplied"},
+        "assurance_governance": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No special obligation stated"},
+        "change_isolation": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "One owner and cadence"}
+      }
+    }],
+    "qualityScenarios": [],
+    "hardConstraints": []
+  }]
+}

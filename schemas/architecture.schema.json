@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/architecture/v0.1.0",
+  "title": "SAH Architecture IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelId", "systemRef", "strategyRef", "responsibilityModelRef", "invariantModelRef", "candidate", "elements", "boundaries", "relations", "interfaces", "qualityAssessments", "constraints"],
+  "properties": {
+    "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["schema-validator", "S13"]}},
+    "modelId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "S9", "S10", "S11", "S13"]}},
+    "systemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S8", "S12"]}},
+    "strategyRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "S8", "strategy-conformance-judge"]}},
+    "responsibilityModelRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "responsibility-coverage-validator"]}},
+    "invariantModelRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "invariant-coverage-validator"]}},
+    "candidate": {"$ref": "#/$defs/candidate", "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "S10", "S11", "S12"]}},
+    "elements": {"type": "array", "items": {"$ref": "#/$defs/element"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S6", "S7", "S8"], "readBy": ["S9", "S10", "S11", "S12", "reference-validator"]}},
+    "boundaries": {"type": "array", "items": {"$ref": "#/$defs/boundary"}, "x-sah-trace": {"writtenBy": ["S6", "S8"], "readBy": ["S9", "S10", "S11", "boundary-judge"]}},
+    "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}, "x-sah-trace": {"writtenBy": ["S6", "S8"], "readBy": ["S9", "S10", "S11", "dependency-validator"]}},
+    "interfaces": {"type": "array", "items": {"$ref": "#/$defs/interface"}, "x-sah-trace": {"writtenBy": ["S6", "S8"], "readBy": ["S9", "S10", "S11", "contract-validator"]}},
+    "qualityAssessments": {"type": "array", "items": {"$ref": "#/$defs/qualityAssessment"}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "quality-gate-validator", "benchmark-judge"]}},
+    "constraints": {"type": "array", "items": {"$ref": "#/$defs/constraint"}, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["S12", "S13", "constraint-compiler"]}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "status", "rationale"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["reference-validator", "S9", "S10"]}},
+        "name": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8"], "readBy": ["S9", "S10", "human-reviewer"]}},
+        "status": {"enum": ["proposed", "selected", "rejected"], "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "S11", "S12"]}},
+        "rationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S8", "S10"], "readBy": ["S9", "human-reviewer"]}}
+      }
+    },
+    "element": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "subsystemRef", "logicalRole", "representation", "authority", "responsibilityRefs", "invariantRefs", "decisionRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "S8", "S11"]}},
+        "name": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S12", "human-reviewer"]}},
+        "subsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S7", "strategy-conformance-judge"]}},
+        "parentRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "view-adapter", "boundary-validator"]}},
+        "logicalRole": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "human-reviewer"]}},
+        "representation": {"enum": ["undecided", "function", "immutable-data", "class", "aggregate", "module", "component", "service", "pipeline", "state-machine", "agent", "datastore", "queue", "external-system"], "x-sah-trace": {"writtenBy": ["S7"], "readBy": ["S8", "S9", "representation-order-validator", "view-adapter"]}},
+        "authority": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S11", "ownership-validator"]}},
+        "responsibilityRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "responsibility-coverage-validator", "S7"]}},
+        "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "invariant-coverage-validator", "S7", "S11"]}},
+        "decisionRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S7", "S10"], "readBy": ["reference-validator", "S11", "S13"]}}
+      }
+    },
+    "boundary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "insideElementRefs", "protectedChange", "ownerElementRef", "decisionRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S8", "S11"]}},
+        "name": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["view-adapter", "human-reviewer"]}},
+        "insideElementRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "boundary-validator", "view-adapter"]}},
+        "protectedChange": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S9", "boundary-judge"]}},
+        "ownerElementRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "ownership-validator"]}},
+        "decisionRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["reference-validator", "S11", "S13"]}}
+      }
+    },
+    "relation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "fromRef", "toRef", "kind", "semantics", "invariantRefs", "decisionRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S11"]}},
+        "fromRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "dependency-validator", "view-adapter"]}},
+        "toRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "dependency-validator", "view-adapter"]}},
+        "kind": {"enum": ["contains", "calls", "publishes", "subscribes", "transforms", "reads", "writes", "controls", "uses-tool", "human-approval"], "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "dependency-validator", "view-adapter"]}},
+        "semantics": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S8", "S9", "human-reviewer"]}},
+        "interfaceRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "contract-validator"]}},
+        "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S9", "S11"]}},
+        "decisionRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["reference-validator", "S11", "S13"]}}
+      }
+    },
+    "interface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "ownerElementRef", "consumerElementRefs", "mode", "contract", "versioning", "consistency", "failureSemantics", "decisionRefs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "S8", "S11"]}},
+        "ownerElementRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "ownership-validator"]}},
+        "consumerElementRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["reference-validator", "dependency-validator"]}},
+        "mode": {"enum": ["call", "message", "stream", "batch-transfer", "shared-artifact", "human-handoff"], "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S7", "S8", "contract-validator"]}},
+        "contract": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S8", "S9", "contract-validator"]}},
+        "versioning": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S8", "S9", "S11"]}},
+        "consistency": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S8", "S9", "S11"]}},
+        "failureSemantics": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S6"], "readBy": ["S8", "S9", "S12"]}},
+        "decisionRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S10"], "readBy": ["reference-validator", "S11", "S13"]}}
+      }
+    },
+    "qualityAssessment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scenarioRef", "result", "evidence", "sensitivityPoints", "tradeoffRefs"],
+      "properties": {
+        "scenarioRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "quality-gate-validator"]}},
+        "result": {"enum": ["pass", "risk", "fail", "unknown"], "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "quality-gate-validator"]}},
+        "evidence": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "human-reviewer"]}},
+        "sensitivityPoints": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["S10", "S13"]}},
+        "tradeoffRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S9"], "readBy": ["reference-validator", "S10"]}}
+      }
+    },
+    "observable": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factSource", "selector", "predicate", "expected"],
+      "properties": {
+        "factSource": {"enum": ["source-graph", "symbol-table", "filesystem", "manifest", "api-schema", "test-result", "runtime-telemetry", "architecture-ir"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}},
+        "selector": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler"]}},
+        "predicate": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler"]}},
+        "expected": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}}
+      }
+    },
+    "enforcement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["adapterCapability", "timing", "severity", "failureMessage"],
+      "properties": {
+        "adapterCapability": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}},
+        "timing": {"enum": ["pre-commit", "ci", "runtime", "scheduled-review", "change-triggered-review"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["S12", "S13"]}},
+        "severity": {"enum": ["error", "warning", "advisory"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["S13"]}},
+        "failureMessage": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["S13", "coding-agent-adapter"]}}
+      }
+    },
+    "exceptionPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authority", "expiryRequired", "requiredRationale"],
+      "properties": {
+        "authority": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["S13", "human-reviewer"]}},
+        "expiryRequired": {"type": "boolean", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["exception-validator", "S13"]}},
+        "requiredRationale": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["exception-validator", "human-reviewer"]}}
+      }
+    },
+    "constraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "decisionRef", "statement", "classification", "scopeElementRefs", "invariantRefs", "enforcement", "exceptionPolicy"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["reference-validator", "constraint-compiler", "S13"]}},
+        "decisionRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["reference-validator", "S13"]}},
+        "statement": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "human-reviewer"]}},
+        "classification": {"enum": ["deterministic", "assisted", "judgment"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13", "determinism-audit"]}},
+        "scopeElementRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["reference-validator", "constraint-compiler"]}},
+        "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["reference-validator", "constraint-compiler"]}},
+        "observable": {"$ref": "#/$defs/observable", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}},
+        "enforcement": {"$ref": "#/$defs/enforcement", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S12", "S13"]}},
+        "exceptionPolicy": {"$ref": "#/$defs/exceptionPolicy", "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["exception-validator", "S13"]}}
+      }
+    }
+  },
+  "examples": [{
+    "schemaVersion": "0.1.0",
+    "modelId": "catalog-admin-architecture",
+    "systemRef": "catalog-admin-characterization",
+    "strategyRef": "catalog-admin-strategy",
+    "responsibilityModelRef": "catalog-admin-responsibilities",
+    "invariantModelRef": "catalog-admin-invariants",
+    "candidate": {"id": "modular-operations", "name": "Modular catalog operations", "status": "selected", "rationale": "A local operation satisfies the evidenced forces"},
+    "elements": [{"id": "catalog-operations", "name": "Catalog operations", "subsystemRef": "catalog-admin", "logicalRole": "Own catalog record changes", "representation": "module", "authority": "Controls the catalog transaction", "responsibilityRefs": ["maintain-product-record"], "invariantRefs": ["product-sku-present"], "decisionRefs": ["choose-modular-operations"]}],
+    "boundaries": [{"id": "catalog-boundary", "name": "Catalog boundary", "insideElementRefs": ["catalog-operations"], "protectedChange": "Catalog maintenance rules", "ownerElementRef": "catalog-operations", "decisionRefs": ["choose-modular-operations"]}],
+    "relations": [],
+    "interfaces": [],
+    "qualityAssessments": [],
+    "constraints": [{"id": "catalog-owns-writes", "decisionRef": "choose-modular-operations", "statement": "Only catalog operations may write catalog records", "classification": "deterministic", "scopeElementRefs": ["catalog-operations"], "invariantRefs": ["product-sku-present"], "observable": {"factSource": "source-graph", "selector": "writes to catalog records", "predicate": "origin is catalog-operations", "expected": "true"}, "enforcement": {"adapterCapability": "dependency-and-write analysis", "timing": "ci", "severity": "error", "failureMessage": "Catalog record write bypasses its owner"}, "exceptionPolicy": {"authority": "architecture owner", "expiryRequired": true, "requiredRationale": "Name the incident or migration forcing the bypass"}}]
+  }]
+}
