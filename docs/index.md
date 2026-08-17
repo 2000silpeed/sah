@@ -51,6 +51,8 @@ Start with [vision](vision.md), [principles](principles.md), and the
   an explicit candidate set with topology and single-candidate evidence.
 - [ADR-0009](adr/0009-add-implementation-handoff-ir.md) — adds canonical S12 change slices
   without mixing semantic handoff facts into the bundle manifest or Architecture IR.
+- [ADR-0010](adr/0010-start-s13-with-filesystem-artifact-presence.md) — starts continuous S13
+  verification with one confined filesystem fact adapter and an explicit target root.
 
 ## JSON Schema contracts
 

@@ -277,3 +277,77 @@ scoring, and a general workflow engine. Benchmark inputs and expectations remain
 Run 6 is complete. Next, implement one narrow S13 source-fact adapter and execute one accepted
 deterministic constraint end to end, while reporting missing mappings as `unsupported` rather
 than pass.
+
+## Run 7 ExecPlan — 2026-08-17
+
+### Outcome
+
+The reusable library and `sah verify <bundle> <target>` execute one accepted deterministic
+filesystem artifact-presence constraint end to end, while pending reviews, unavailable
+adapters, invalid bindings, and operational failures remain explicit and can never pass.
+
+### Scope
+
+Included: public verification result/check contracts, S12-ready constraint selection, one
+filesystem adapter for `regular-file-exists`, target containment, human/JSON CLI output, exit
+codes, a target fixture, focused tests, docs, verification, and commits. Excluded: S13 lifecycle
+advancement, TypeScript parsing, source graphs, source-to-element mapping, general predicate
+compilation, LLM review, exceptions, code generation, services, and benchmark judges. Manifest
+v0.3 and all seven semantic IR schemas remain unchanged unless implementation evidence refutes
+the existing observable contract.
+
+### Constraints
+
+- `verifyBundle(bundleDirectory, targetDirectory)` validates the stored bundle before checks.
+- Execute constraints assigned to at least one ready S12 slice; blocked-only and assisted or
+  judgment constraints remain pending.
+- Support only filesystem + `regular-file-exists` + expected `true`; every other binding is
+  unsupported, never pass.
+- The explicit target argument is execution context, not bundle lifecycle or semantic IR.
+- Missing files are observable violations; unreadable target roots are operational failures.
+- Relative selectors cannot traverse, use backslashes, or follow symlinks outside the target.
+- Public types contain no Ajv or Node filesystem objects; the CLI owns no verification meaning.
+
+### Milestones
+
+| Phase | Milestone                                            | Status      | Evidence         |
+| ----- | ---------------------------------------------------- | ----------- | ---------------- |
+| 0     | Frame the first S13 capability and result contract   | in_progress | ADR-0010 drafted |
+| 1     | Implement public verification flow and adapter seam  | pending     | —                |
+| 2     | Add target fixture and focused library/CLI tests     | pending     | —                |
+| 3     | Update affected authority documentation and commands | pending     | —                |
+| 4     | Run full verification and adversarial review         | pending     | —                |
+
+### Decision log
+
+- 2026-08-17: Start with regular-file presence because it has a complete local observable and
+  fixed predicate without inventing source-to-element mappings. See ADR-0010.
+- 2026-08-17: Supply target root explicitly to library/CLI. Do not persist machine-specific
+  execution context in the manifest or infer it from the current working directory.
+- 2026-08-17: Public checks use `pass`, `violation`, `pending`, or `unsupported`; the overall
+  result is `passed`, `violations`, `incomplete`, or `operational-error`. A known violation
+  takes precedence over incompleteness, and neither can pass.
+- 2026-08-17: Keep `sah advance ... S13` unsupported. Continuous verification is executable,
+  but the complete S13 gate, exceptions, and judgment disposition are not.
+
+### Discovery log
+
+- 2026-08-17: Run 6 ended clean at `1c105a7` with 112 tests and explicitly handed off one
+  narrow S13 fact adapter.
+- 2026-08-17: Architecture IR already carries `factSource`, `selector`, `predicate`, and
+  `expected`; no semantic-schema migration is required for one exact adapter tuple.
+- 2026-08-17: Implementation Handoff already identifies ready/blocked slices and assigned
+  constraints, so applicability does not require inferred filesystem ownership.
+- 2026-08-17: The existing simple-crud source-graph constraint is the required unsupported
+  baseline; tests can mutate its observable to the supported tuple without weakening dogfood.
+
+### Verification log
+
+- 2026-08-17: Re-read `AGENTS.md`, Run 6 handoff, S13/constraint/validation authority,
+  ADR-0004/0007/0009, current schemas, public contracts, repository/CLI flow, fixture, and tests.
+- 2026-08-17: Initial `git status --short --branch` reported only `## main`.
+
+### Handoff
+
+Run 7 is active. Resume at Phase 0, commit the adapter/result decision, then implement the one
+filesystem capability without expanding into source-graph inference or S13 advancement.
