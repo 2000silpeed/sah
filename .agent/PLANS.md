@@ -62,9 +62,9 @@ exercise traces `equipment-owns-writes` through decision `choose-equipment-modul
 | 0     | Frame evidence ownership and atomic completion contract | complete    | ADR-0014 |
 | 1     | Add record and manifest schemas plus persistence      | complete    | schema/trace tests |
 | 2     | Implement S13 record gate and atomic advance          | complete    | focused gate tests |
-| 3     | Add library/CLI and adversarial mutations             | complete    | 88 focused tests |
+| 3     | Add library/CLI and adversarial mutations             | complete    | 106 focused tests |
 | 4     | Update authority documentation and operating commands | complete    | authority docs and CLI usage |
-| 5     | Run full verification, diff review, and commits       | in_progress | pending |
+| 5     | Run full verification, diff review, and commits       | complete    | 225 tests; `a3152e5` |
 
 ### Decision log
 
@@ -104,8 +104,26 @@ exercise traces `equipment-owns-writes` through decision `choose-equipment-modul
   focused schema, manifest-migration, verification, advancement, and CLI tests passed. Mutations
   cover full success, both changed modes, incomplete, violation, operational-error, stale
   design, inconsistent status, byte tampering, and atomic pre-commit evidence conflict.
+- 2026-08-18: On Node 24.14.1 and npm 11.11.0, `npm install` audited 164 packages with zero
+  vulnerabilities. `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`,
+  `npm run build`, and `npm run verify:schemas` passed; the full suite was 9 files and 225/225
+  tests, with the schema-specific run at 4/4.
+- 2026-08-18: Production CLI runs proved S11→S12 and full-record S12→S13 success at exit 0;
+  affected and full-fallback changed records, incomplete records, violation records, and
+  operational-error records all left S12 unchanged and returned blocked exit 1. Original
+  verification exits remained 0 for pass, 1 for violation, and 2 for incomplete or operation
+  failure; stored S13 validation and pinned record digest both passed.
+- 2026-08-18: Final audits found 13 schemas, 13 valid examples, 385 serialized properties,
+  zero trace diagnostics, 61 Markdown files, 145 valid local links, zero broken links, and no
+  product-document line-budget failure. The unchanged 407-line provenance prompt remains
+  verbatim by policy. Public declarations had no Ajv, compiler, or filesystem leak; the
+  74-entry package contains all four record schemas and the record runtime. `git diff --check`
+  passed and benchmark diff was empty.
+- 2026-08-18: Planning was committed as `4b46dde`; implementation, tests, schemas, and authority
+  documentation were committed as `a3152e5`. No push was performed.
 
 ### Handoff
 
-Run 11 is in progress. Resume at Phase 1 using ADR-0014; do not broaden the record descriptor
-into a generic evidence registry or make changed-scoped verification eligible for completion.
+Run 11 is complete. The next run should select a bounded S13 capability or exception-disposition
+slice from accepted constraint evidence; do not broaden the record descriptor into hosted
+coordination or a general evidence registry without measured multi-writer or retention need.
