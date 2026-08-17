@@ -76,7 +76,7 @@ determinism question.
 |---|---|---|---|
 | 0 | Initialize Git and define ExecPlans | complete | `.git/`; this planning contract |
 | 1 | Compare five prior-art categories | complete | `docs/prior-art.md`; 12 distinct cited sources |
-| 2 | Define iterative design reasoning | pending | step I/O, gates, and loop-backs documented |
+| 2 | Define iterative design reasoning | complete | S0–S13 contracts and ten-question map documented |
 | 3 | Define traced IRs and schemas | pending | field traceability; schema compilation |
 | 4 | Decide SAH architecture and delivery | pending | architecture documents and accepted ADRs |
 | 5 | Specify eight benchmarks | pending | 24 benchmark files; coverage comparison |
@@ -91,6 +91,10 @@ determinism question.
   acceptance boundary. Phase commits are recovery points, not separate plans.
 - 2026-08-17: Treat SAH's novelty as the traced method-selection-to-enforcement chain, not as
   a new specification workflow, architecture notation, ADR format, validator, or agent loop.
+- 2026-08-17: Use mandatory reasoning questions with risk-scaled evidence, not optional
+  stages. The short path compresses artifacts but cannot silently omit ownership or risk.
+- 2026-08-17: Strategy selection is provisional until responsibility and invariant analysis
+  confirm it; representation remains forbidden until ownership and boundary design.
 
 ### Discovery log
 
@@ -101,14 +105,20 @@ determinism question.
   first-class contract. Reassess extension-over-product if that changes.
 - 2026-08-17: Current behavior of ts-arch, Deptrac, and NetArchTest was not verified within
   the stopped-early research pass; adapters must not be designed from recall.
+- 2026-08-17: A subsystem must remain a problem-reasoning scope until S6/S7. Naming it a
+  service, module, class, or pipeline during characterization is a gate failure.
+- 2026-08-17: Mixed-method design requires composition contracts; otherwise per-subsystem
+  method neutrality merely moves incoherence to the boundaries.
 
 ### Verification log
 
 - 2026-08-17: `git init` succeeded and the initial branch was renamed to `main`.
 - 2026-08-17: Prior-art research stopped after more than eight distinct sources covered all
   five required categories; unverified details are labeled rather than inferred.
+- 2026-08-17: The reasoning model explicitly maps all ten product questions and gives every
+  stage an input, output, completion condition, and causal loop-back.
 
 ### Handoff
 
-Start Phase 2 by specifying the iterative reasoning contracts and characterization model;
-use the prior-art constraints as inputs rather than copying tool-specific structures.
+Start Phase 3 by reducing the reasoning state to canonical IR fields, recording a producer
+and consumer for every field, then compile every schema with a draft 2020-12 validator.
