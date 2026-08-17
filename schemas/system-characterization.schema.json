@@ -154,7 +154,10 @@
     "modelId": "catalog-admin-characterization",
     "systemName": "Catalog Admin",
     "scope": {"inScope": ["Maintain product records"], "outOfScope": ["Pricing"], "stakeholders": ["Catalog operator"]},
-    "evidence": [{"id": "ev-product-edit", "sourceType": "stakeholder", "sourceLocator": "requirements:1", "claim": "Operators create and edit independent product records", "confidence": 0.9, "falsifiedBy": "A rule coordinating changes across products is discovered"}],
+    "evidence": [
+      {"id": "ev-product-edit", "sourceType": "stakeholder", "sourceLocator": "requirements:1", "claim": "Operators create and edit independent product records", "confidence": 0.9, "falsifiedBy": "A rule coordinating changes across products is discovered"},
+      {"id": "ev-load-unknown", "sourceType": "assumption", "sourceLocator": "requirements:all", "claim": "The supplied requirements contain no load or latency target", "confidence": 1, "falsifiedBy": "A measured or committed performance target is supplied"}
+    ],
     "unresolvedQuestions": [],
     "subsystems": [{
       "id": "catalog-admin", "name": "Catalog administration", "purpose": "Maintain independent product records", "evidenceRefs": ["ev-product-edit"],
@@ -166,7 +169,7 @@
         "concurrency_temporality": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No temporal workflow"},
         "autonomy_uncertainty": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "Deterministic validation"},
         "integration_volatility": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No external provider"},
-        "scale_performance": {"level": "unknown", "evidenceRefs": ["ev-product-edit"], "rationale": "No measured load supplied"},
+        "scale_performance": {"level": "unknown", "evidenceRefs": ["ev-load-unknown"], "rationale": "No measured load supplied"},
         "assurance_governance": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "No special obligation stated"},
         "change_isolation": {"level": "low", "evidenceRefs": ["ev-product-edit"], "rationale": "One owner and cadence"}
       }

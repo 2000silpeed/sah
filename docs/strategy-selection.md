@@ -72,20 +72,20 @@ decision is contextual LLM judgment reviewed against explicit evidence.
 
 ## Mixed-strategy composition
 
-A system strategy is a map, not a winner. For every edge between differently designed
-subsystems, record a composition contract with:
+A system strategy is a map, not a winner. At S2, record a representation-free **composition
+seam** for every edge between differently designed subsystems: participating subsystem IDs,
+why they must collaborate, relevant concerns and evidence, and questions that ownership or
+boundary work must resolve. Do not choose a call, message, stream, batch transfer, or shared
+artifact before responsibilities and ownership.
 
-- producer and consumer subsystem identifiers;
-- interaction mode: call, message, stream, batch transfer, shared artifact, or human handoff;
-- semantic contract and authoritative owner of each exchanged fact;
-- timing, ordering, consistency, idempotency, and retry semantics where relevant;
-- failure containment and fallback;
-- translation location and versioning responsibility;
-- the quality scenario or invariant that constrains the edge.
+At S6, turn every seam into owned Architecture IR relations/interfaces that name interaction
+mode, semantic contract, authoritative fact owner, timing, ordering, consistency, idempotency,
+retry, failure containment, fallback, translation/versioning responsibility, and constraining
+quality scenarios or invariants.
 
-The boundary uses the consumer's terms internally and translates at the owning edge. Do not
-leak an aggregate, pipeline record, provider DTO, or model prompt across a boundary merely
-because both sides can serialize it.
+The resulting boundary uses the consumer's terms internally and translates at the owning
+edge. Do not leak an aggregate, pipeline record, provider DTO, or model prompt across a
+boundary merely because both sides can serialize it.
 
 ## Common mappings and their escape hatches
 
@@ -105,15 +105,15 @@ is a valid strategy decision.
 ## Completion gate and loop-backs
 
 Proceed when every subsystem has a dominant strategy, supporting strategies are justified,
-a simpler alternative and costs are recorded, and every mixed edge has a provisional
-composition contract. Return to characterization when the justification cites a force that
-was not rated. Return to subsystem decomposition when composition contracts are denser than
-internal collaboration or no authoritative owner can be named. Return here from ownership
-analysis when invariants expose a different dominant force.
+a simpler alternative and costs are recorded, and every mixed edge has a composition seam.
+Return to characterization when the justification cites a force that was not rated. Return to
+subsystem decomposition when later S6 contracts are denser than internal collaboration or no
+authoritative owner can be named. Return here from ownership analysis when invariants expose
+a different dominant force.
 
 ## Downstream consumers
 
 Responsibility and invariant analysis use the selected reasoning emphasis. Boundary design
-uses composition contracts. Candidate evaluation checks whether representations preserve
+resolves composition seams. Candidate evaluation checks whether representations preserve
 the strategy. Benchmark scoring compares a proposed map with acceptable strategies and
 penalizes unsupported complexity.

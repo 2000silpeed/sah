@@ -4,13 +4,13 @@
   "title": "SAH Design Strategy IR",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "modelId", "characterizationRef", "selections", "compositionContracts", "shortPath"],
+  "required": ["schemaVersion", "modelId", "characterizationRef", "selections", "compositionSeams", "shortPath"],
   "properties": {
     "schemaVersion": {"const": "0.1.0", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["schema-validator", "S13"]}},
     "modelId": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S4", "S6", "S13"]}},
     "characterizationRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S3", "S4"]}},
     "selections": {"type": "array", "items": {"$ref": "#/$defs/selection"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S4", "S6", "S7", "benchmark-judge"]}},
-    "compositionContracts": {"type": "array", "items": {"$ref": "#/$defs/compositionContract"}, "x-sah-trace": {"writtenBy": ["S2", "S5", "S6"], "readBy": ["S5", "S6", "S8", "S9"]}},
+    "compositionSeams": {"type": "array", "items": {"$ref": "#/$defs/compositionSeam"}, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S4", "S5", "S6"]}},
     "shortPath": {"$ref": "#/$defs/shortPath", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S8", "ceremony-validator"]}}
   },
   "$defs": {
@@ -50,22 +50,17 @@
         "confidence": {"type": "number", "minimum": 0, "maximum": 1, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S9", "S10"]}}
       }
     },
-    "compositionContract": {
+    "compositionSeam": {
       "type": "object", "additionalProperties": false,
-      "required": ["id", "fromSubsystemRef", "toSubsystemRef", "interactionMode", "semanticContract", "factOwner", "timing", "consistency", "failureHandling", "translationOwner", "qualityScenarioRefs", "invariantRefs"],
+      "required": ["id", "fromSubsystemRef", "toSubsystemRef", "reason", "concerns", "evidenceRefs", "unresolvedQuestions"],
       "properties": {
         "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S6"]}},
-        "fromSubsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S6"]}},
-        "toSubsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S6"]}},
-        "interactionMode": {"enum": ["call", "message", "stream", "batch-transfer", "shared-artifact", "human-handoff"], "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S6", "S7", "S8"]}},
-        "semanticContract": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S6"], "readBy": ["S6", "S8", "S11"]}},
-        "factOwner": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S5"], "readBy": ["S6", "S11"]}},
-        "timing": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S6"], "readBy": ["S8", "S9"]}},
-        "consistency": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S5", "S6"], "readBy": ["S8", "S9", "S11"]}},
-        "failureHandling": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S6"], "readBy": ["S8", "S9", "S12"]}},
-        "translationOwner": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2", "S5"], "readBy": ["S6", "S12"]}},
-        "qualityScenarioRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S8", "S9"]}},
-        "invariantRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S5", "S6"], "readBy": ["reference-validator", "S8", "S11"]}}
+        "fromSubsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S3", "S5", "S6"]}},
+        "toSubsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["reference-validator", "S3", "S5", "S6"]}},
+        "reason": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S5", "S6"]}},
+        "concerns": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S4", "S6"]}},
+        "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["trace-validator", "S3", "S4"]}},
+        "unresolvedQuestions": {"type": "array", "items": {"type": "string", "minLength": 1}, "x-sah-trace": {"writtenBy": ["S2"], "readBy": ["S3", "S4", "S5", "S6"]}}
       }
     },
     "shortPath": {
@@ -92,7 +87,7 @@
       "costs": ["Behavior may scatter if rules grow"],
       "confidence": 0.9
     }],
-    "compositionContracts": [],
+    "compositionSeams": [],
     "shortPath": {"eligible": true, "rationale": "Local reversible CRUD with no critical invariant", "disqualifyingForces": ["Distribution", "cross-record invariant", "probabilistic autonomy"]}
   }]
 }

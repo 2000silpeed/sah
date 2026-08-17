@@ -44,12 +44,13 @@
     },
     "invariant": {
       "type": "object", "additionalProperties": false,
-      "required": ["id", "subsystemRef", "statement", "kind", "evidenceRefs", "responsibilityRefs", "qualityScenarioRefs", "scope", "triggers", "preconditions", "postconditions", "consistency", "criticality", "failureImpact", "detection", "recovery"],
+      "required": ["id", "subsystemRef", "statement", "kind", "applicability", "evidenceRefs", "responsibilityRefs", "qualityScenarioRefs", "scope", "triggers", "preconditions", "postconditions", "consistency", "criticality", "failureImpact", "detection", "recovery"],
       "properties": {
         "id": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6", "S7", "S11"]}},
         "subsystemRef": {"$ref": "#/$defs/id", "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
         "statement": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S9", "S11", "benchmark-judge"]}},
         "kind": {"enum": ["state", "transition", "temporal", "authorization", "consistency", "data-quality", "safety", "quality-threshold"], "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S5", "S6", "S11"]}},
+        "applicability": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["S6", "S11", "contract-validator"]}},
         "evidenceRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["trace-validator", "S9"]}},
         "responsibilityRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S5", "S6"]}},
         "qualityScenarioRefs": {"type": "array", "items": {"$ref": "#/$defs/id"}, "x-sah-trace": {"writtenBy": ["S4"], "readBy": ["reference-validator", "S9", "coverage-validator"]}},
@@ -86,6 +87,7 @@
       "subsystemRef": "catalog-admin",
       "statement": "Every accepted product has a non-empty SKU",
       "kind": "state",
+      "applicability": "From acceptance until the product record is deleted",
       "evidenceRefs": ["ev-product-edit"],
       "responsibilityRefs": ["maintain-product-record"],
       "qualityScenarioRefs": [],

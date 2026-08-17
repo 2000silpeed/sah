@@ -27,6 +27,10 @@ source locator, claim, confidence, and which assumption would falsify it.
 Examples and architectural intuition may suggest a question but do not count as evidence.
 Framework conventions never count as problem evidence.
 
+For an `unknown` rating, the evidence reference identifies the source that was inspected and
+the rationale names the absent fact. Do not cite an unrelated positive claim merely to
+satisfy the reference shape. Its falsification condition is the missing fact becoming known.
+
 ## Dimensions
 
 ### `rule_change_complexity`

@@ -46,7 +46,7 @@ has no complete observable specification.
 | Boundary quality | J | Judge semantic cohesion, change isolation, and whether translation belongs there. |
 | Representation ordering | D | Reject accepted representation whose responsibility/owner/boundary traces are absent. |
 | Representation proportionality | J | Judge whether function/module/service/agent complexity is warranted. |
-| Candidate count or forced-option evidence | D | Require two options or one option plus a hard forcing constraint. |
+| Candidate count or single-option evidence | D | Require two options, a hard forcing constraint, or eligible short-path proportionality evidence linked to S2 alternatives. |
 | Candidate coherence and material difference | J | Judge whether options are viable and differ in a real trade-off. |
 | Quality-scenario assessment coverage | D | Every must scenario has a result for every candidate. |
 | Quality-scenario satisfaction | A | Verify measures where test/telemetry exists; judge projections and causal claims. |

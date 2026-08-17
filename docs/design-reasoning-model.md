@@ -36,7 +36,7 @@ with conflicting forces splits; missing measurable quality evidence returns to S
 
 **Consumes:** complete System Characterization IR. **Produces:** Design Strategy IR with a
 dominant and supporting strategy per subsystem, alternatives, disqualifiers, costs, and
-mixed-edge composition contracts. **Complete when:** the gate in `strategy-selection.md`
+representation-free mixed-edge composition seams. **Complete when:** the gate in `strategy-selection.md`
 passes. **Loop-back:** an unrated force returns to S1; unsupported complexity is simplified
 here; ownership analysis can reopen the selection.
 
@@ -52,15 +52,15 @@ returns to S1 decomposition; missing outcomes return to S0.
 ### S4 — Discover invariants and failure obligations
 
 **Consumes:** evidence, quality scenarios, strategies, and responsibilities. **Produces:**
-unowned Invariant IR entries: precise predicate or obligation, scope, trigger, consistency,
-failure impact, detection/recovery, and evidence. **Complete when:** critical state changes
+unowned Invariant IR entries: precise predicate or obligation, applicability/lifetime, scope,
+trigger, consistency, failure impact, detection/recovery, and evidence. **Complete when:** critical state changes
 name what must be true before/after and distributed or probabilistic regions name tolerated
 failure. **Loop-back:** an invariant based on a new force returns to S1; an unexpressible rule
 returns to S0 for evidence.
 
 ### S5 — Assign ownership and collaboration
 
-**Consumes:** Responsibility and Invariant IRs plus composition contracts. **Produces:** owner
+**Consumes:** Responsibility and Invariant IRs plus composition seams. **Produces:** owner
 and collaborator references, enforcement responsibility, authority, and unresolved ownership
 conflicts in both IRs. **Complete when:** each entry has one accountable logical owner or an
 explicit coordination protocol; owners are cohesive by change reason; no critical invariant
@@ -69,7 +69,7 @@ S1/S2 if the boundary is wrong, or to S4 if consistency semantics were missing.
 
 ### S6 — Design boundaries and contracts
 
-**Consumes:** owned responsibilities/invariants, strategies, and composition contracts.
+**Consumes:** owned responsibilities/invariants, strategies, and composition seams.
 **Produces:** a draft Architecture IR with logical elements, boundaries, interfaces,
 collaborations, authority, and dependency direction; representation remains undecided.
 **Complete when:** every boundary hides a named change or risk, each cross-boundary relation
@@ -91,10 +91,11 @@ to S6; hidden methodology assumptions return to S2.
 
 **Consumes:** the represented architecture basis and quality scenarios. **Produces:** at
 least two materially different Architecture IR candidates for consequential choices, or one
-candidate plus evidence that constraints force it. **Complete when:** candidates are
-internally coherent, make topology and operational consequences explicit, and vary a real
-trade-off rather than names. **Loop-back:** no credible alternative returns to S6/S7 or
-records the forcing constraint.
+candidate plus forcing evidence. An eligible short path may instead produce one candidate
+when S2 alternatives and proportionality evidence show that another architecture is ceremony.
+**Complete when:** candidates are internally coherent, make topology and operational
+consequences explicit, and vary a real trade-off rather than names. **Loop-back:** no credible
+alternative outside the short path returns to S6/S7 or records the forcing constraint.
 
 ### S9 — Evaluate quality and trade-offs
 
@@ -109,8 +110,10 @@ that cannot discriminate returns to S1; a hidden responsibility returns to S3.
 **Consumes:** S9 assessments and human risk decisions. **Produces:** selected Architecture IR
 and accepted/rejected Architecture Decision IR records with affected elements and
 supersession. **Complete when:** one coherent candidate is selected, every consequential
-choice has a record, and rejected options and costs remain visible. **Loop-back:** unresolved
-authority blocks selection; new evidence reopens the earliest affected stage.
+choice has a record, and rejected options and costs remain visible. An unresolved choice may
+remain `proposed` only when its uncertainty is isolated behind an owned boundary and every
+dependent implementation slice is blocked. **Loop-back:** unresolved authority over a
+non-isolatable choice blocks selection; new evidence reopens the earliest affected stage.
 
 ### S11 — Compile executable constraints
 
@@ -126,8 +129,9 @@ rewording or is downgraded; a missing code fact becomes adapter backlog, not inv
 **Consumes:** all selected IRs, decisions, and constraints. **Produces:** an implementation
 plan outside this run: ordered change slices, acceptance checks, migration/rollback needs,
 and coding-agent context. **Complete when:** each slice names affected architecture elements,
-constraints, and verification. **Loop-back:** an unimplementable boundary returns to S6/S7;
-no product code begins before this gate for a full-path run.
+constraints, verification, and proposed decisions that block it; unaffected slices may
+proceed. **Loop-back:** an unimplementable boundary returns to S6/S7; no product code begins
+before this gate for a full-path run.
 
 ### S13 — Verify continuously
 

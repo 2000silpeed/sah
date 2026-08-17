@@ -80,7 +80,7 @@ determinism question.
 | 3 | Define traced IRs and schemas | complete | 6 Draft 2020-12 schemas, examples, and trace audit pass |
 | 4 | Decide SAH architecture and delivery | complete | component contracts, validator catalogue, ADR-0001–0004 |
 | 5 | Specify eight benchmarks | complete | 8 directories × 3 files; distinct coverage vectors |
-| 6 | Dogfood two contrasting cases | pending | walkthroughs and recorded model repairs |
+| 6 | Dogfood two contrasting cases | complete | `docs/dogfood.md`; five model repairs; schemas revalidated |
 | 7 | Evaluate and verify the foundation | pending | rubric scores ≥4; definition-of-done evidence |
 
 ### Decision log
@@ -109,6 +109,12 @@ determinism question.
   and an explicit over-engineering penalty up to 20 points.
 - 2026-08-17: Use two independent LLM judges for contextual categories and human arbitration
   for disagreement/fixture changes; deterministic checks own structural evidence only.
+- 2026-08-17: S2 records representation-free composition seams; only S6 may decide owned
+  interaction mechanisms, consistency, failure, and translation contracts.
+- 2026-08-17: Short-path S8 may keep one architecture candidate when S2 alternatives and
+  proportionality evidence show that a second candidate would be ceremony.
+- 2026-08-17: Unresolved policy blocks only dependent implementation slices when isolated
+  behind an owned seam; non-isolatable authority still blocks architecture selection.
 
 ### Discovery log
 
@@ -132,6 +138,11 @@ determinism question.
 - 2026-08-17: Similar distribution ratings are deliberate across logistics, payment,
   realtime, and enterprise integration; their discriminators are custody/time, atomic value,
   convergence/latency, and semantic translation respectively.
+- 2026-08-17: Simple CRUD exposed invalid negative evidence and a short-path/candidate-count
+  contradiction. Data processing exposed premature composition, temporal invariant, and
+  global-readiness defects. Expectations were not weakened.
+- 2026-08-17: Time-bounded invariants need structured `applicability`; otherwise source
+  immutability and mandated privacy deletion look irreconcilable.
 
 ### Verification log
 
@@ -150,8 +161,10 @@ determinism question.
 - 2026-08-17: Structural verification found exactly eight benchmark directories and 24 files;
   every case has problem/expectations/scoring, failure and MUST anchors, all scorer roles,
   and no prohibited design-leading terms in stakeholder problem text.
+- 2026-08-17: After dogfood repairs, Draft 2020-12 schema checks, embedded examples, field
+  trace audit, and whitespace validation passed again for all six schemas.
 
 ### Handoff
 
-Start Phase 6 by manually executing S0–S11 for simple-crud and data-pipeline, repairing the
-reasoning model wherever the walkthrough exposes ambiguity or a wrong strategy.
+Start Phase 7 by adding repository navigation and permanent agent rules, completing the
+bilingual glossary, then run the rubric and full definition-of-done audit and fix every gap.

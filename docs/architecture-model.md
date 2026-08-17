@@ -8,7 +8,7 @@ and ADRs. JSON Schemas own serialized shape. The reasoning model owns stage gate
 | IR | Owns | Deliberately excludes |
 |---|---|---|
 | System Characterization | scope, evidence, uncertainty, problem regions, force ratings, quality scenarios | methods and implementation forms |
-| Design Strategy | per-subsystem strategy, alternatives, costs, mixed-edge contracts, short-path decision | responsibilities and architecture elements |
+| Design Strategy | per-subsystem strategy, alternatives, costs, mixed-edge seams, short-path decision | ownership, interaction mechanisms, and architecture elements |
 | Responsibility | required outcomes, inputs/outputs, triggers, change reasons, collaborators, logical ownership | classes, services, and technology |
 | Invariant | precise obligations, consistency, failure, detection/recovery, enforcement ownership | generic “business rules” with no trigger or failure meaning |
 | Architecture | candidate/selected elements, boundaries, relations, interfaces, scenario assessments, constraints | requirement prose and unstructured ADR text |
@@ -56,7 +56,8 @@ stronger conditions:
 - after S7, no architecture element remains `undecided`;
 - after S9, must-priority scenarios have an assessment for every candidate;
 - after S10, exactly one coherent candidate is `selected`, accepted decisions have a selected
-  option and authority, and rejected alternatives remain in the log;
+  option and authority, and rejected alternatives remain in the log; proposed decisions may
+  remain only behind an owned seam and block every dependent S12 slice;
 - after S11, each accepted decision is classified into deterministic, assisted, or judgment
   enforcement, even when it generates no hard rule.
 
