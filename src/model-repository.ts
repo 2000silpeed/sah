@@ -10,6 +10,7 @@ import type {
   ValidationResult,
   VerificationOptions,
   VerificationResult,
+  VerificationSelection,
 } from "./contracts.js";
 import { stages } from "./contracts.js";
 import {
@@ -599,6 +600,33 @@ export async function verifyBundle(
     );
   }
 
+  if (
+    options.changedPaths !== undefined &&
+    options.sourceMappingPath === undefined
+  ) {
+    return verificationResult(
+      "operational-error",
+      prepared.bundleRoot,
+      targetDirectory.trim() === ""
+        ? targetDirectory
+        : resolve(targetDirectory),
+      [],
+      [
+        operationalDiagnostic({
+          code: "VERIFICATION_CHANGE_MAPPING_REQUIRED",
+          capability: "Change-scoped verification",
+          message:
+            "Changed paths require an explicit source mapping for Architecture element resolution.",
+          expected:
+            "sourceMappingPath supplied whenever changedPaths is present",
+          repair:
+            "Supply the target-relative source mapping or omit changedPaths for full verification.",
+        }),
+      ],
+      validation.bundle,
+    );
+  }
+
   const target = await prepareFilesystemPresenceAdapter(targetDirectory);
   if (!target.ok) {
     return verificationResult(
@@ -619,6 +647,7 @@ export async function verifyBundle(
 
   const models = toModels(prepared.artifacts);
   const adapters: CodeFactAdapter[] = [target.adapter];
+  let selection: VerificationSelection | undefined;
   if (options.sourceMappingPath !== undefined) {
     const sourceAdapter = await prepareTypeScriptSourceAdapter({
       targetRoot: target.targetRoot,
@@ -627,6 +656,9 @@ export async function verifyBundle(
       architectureElementRefs: new Set(
         models.architecture?.elements.map(({ id }) => id) ?? [],
       ),
+      ...(options.changedPaths === undefined
+        ? {}
+        : { changedPaths: options.changedPaths }),
     });
     if (!sourceAdapter.ok) {
       return verificationResult(
@@ -639,8 +671,17 @@ export async function verifyBundle(
       );
     }
     adapters.push(sourceAdapter.adapter);
+    selection = sourceAdapter.selection;
   }
-  const execution = await verifyConstraints(models, adapters);
+  const affectedElementRefs =
+    selection?.mode === "affected"
+      ? new Set(selection.affectedElementRefs)
+      : undefined;
+  const execution = await verifyConstraints(
+    models,
+    adapters,
+    affectedElementRefs,
+  );
   const executionDiagnostics = execution.failures.map((failure) => {
     const constraintIndex =
       failure.constraintId === undefined
@@ -672,6 +713,7 @@ export async function verifyBundle(
     execution.checks,
     executionDiagnostics,
     validation.bundle,
+    selection,
   );
 }
 

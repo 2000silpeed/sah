@@ -17,6 +17,9 @@ export type {
   VerificationCheckStatus,
   VerificationOptions,
   VerificationResult,
+  VerificationSelection,
+  VerificationSelectionIssue,
+  VerificationSelectionIssueCode,
   VerificationStatus,
   VerificationSummary,
 } from "./contracts.js";

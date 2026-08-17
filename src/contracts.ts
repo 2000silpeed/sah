@@ -109,11 +109,31 @@ export type VerificationSummary = ValidationSummary & {
   unsupported: number;
 };
 
+export type VerificationSelectionIssueCode =
+  | "CHANGE_PATH_OUTSIDE_SOURCE_ROOTS"
+  | "CHANGE_PATH_UNMAPPED"
+  | "CHANGE_PATH_AMBIGUOUS";
+
+export type VerificationSelectionIssue = {
+  code: VerificationSelectionIssueCode;
+  path: string;
+  elementRefs?: string[];
+  message: string;
+};
+
+export type VerificationSelection = {
+  mode: "affected" | "full-fallback";
+  requestedPaths: string[];
+  affectedElementRefs: string[];
+  issues: VerificationSelectionIssue[];
+};
+
 export type VerificationResult = {
   status: VerificationStatus;
   bundleDirectory: string;
   targetDirectory: string;
   bundle?: ValidatedBundle;
+  selection?: VerificationSelection;
   checks: VerificationCheck[];
   diagnostics: SahDiagnostic[];
   summary: VerificationSummary;
@@ -121,4 +141,5 @@ export type VerificationResult = {
 
 export type VerificationOptions = {
   sourceMappingPath?: string;
+  changedPaths?: readonly string[];
 };

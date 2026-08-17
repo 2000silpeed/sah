@@ -21,6 +21,7 @@ type Assignment = {
   sliceRefs: string[];
   readySliceRefs: string[];
   blockerDecisionRefs: string[];
+  elementRefs: string[];
 };
 
 function aggregateStatus(
@@ -41,6 +42,7 @@ function aggregateStatus(
 export async function verifyConstraints(
   models: LoadedModels,
   adapters: readonly CodeFactAdapter[],
+  affectedElementRefs?: ReadonlySet<string>,
 ): Promise<ConstraintVerification> {
   const architecture = models.architecture;
   const handoff = models.implementationHandoff;
@@ -70,8 +72,10 @@ export async function verifyConstraints(
         sliceRefs: [],
         readySliceRefs: [],
         blockerDecisionRefs: [],
+        elementRefs: [],
       };
       assignment.sliceRefs.push(slice.id);
+      assignment.elementRefs.push(...slice.elementRefs);
       if (slice.status === "ready") assignment.readySliceRefs.push(slice.id);
       else assignment.blockerDecisionRefs.push(...slice.blockedByDecisionRefs);
       assignments.set(constraintRef, assignment);
@@ -83,6 +87,13 @@ export async function verifyConstraints(
   for (const constraint of architecture.constraints) {
     const assignment = assignments.get(constraint.id);
     if (assignment === undefined) continue;
+    if (
+      affectedElementRefs !== undefined &&
+      !assignment.elementRefs.some((elementRef) =>
+        affectedElementRefs.has(elementRef),
+      )
+    )
+      continue;
     const common = {
       constraintId: constraint.id,
       decisionRef: constraint.decisionRef,

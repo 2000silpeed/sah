@@ -257,10 +257,10 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 
 | Phase | Milestone                                               | Status      | Evidence |
 | ----- | ------------------------------------------------------- | ----------- | -------- |
-| 0     | Frame explicit input, selection, and fallback contract | in_progress | ADR-0013 |
-| 1     | Add public selection result and source mapping join    | pending     | —        |
-| 2     | Filter constraints through assigned S12 slices        | pending     | —        |
-| 3     | Add library/CLI selection and fallback mutations      | pending     | —        |
+| 0     | Frame explicit input, selection, and fallback contract | complete    | `0437633`, ADR-0013 |
+| 1     | Add public selection result and source mapping join    | complete    | strict typecheck |
+| 2     | Filter constraints through assigned S12 slices        | complete    | focused slice tests |
+| 3     | Add library/CLI selection and fallback mutations      | complete    | 118 focused tests |
 | 4     | Update authority docs, index, glossary, and commands  | pending     | —        |
 | 5     | Run full verification and adversarial diff review     | pending     | —        |
 
@@ -281,6 +281,12 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
 - 2026-08-17: Mapping prefixes are directory prefixes inside declared source roots. They can
   select a deleted file lexically, but write-target modules outside an element prefix correctly
   force full fallback rather than implied ownership.
+- 2026-08-17: The existing verification result had no global unsupported-selection envelope.
+  Full fallback is both simpler and stronger: selection issues remain explicit metadata while
+  ordinary check status and exit precedence continue to describe the complete execution.
+- 2026-08-17: Constraint filtering belongs after S12 assignments are built. Intersecting the
+  changed element set with assigned slice elements keeps blocked-only constraints visible as
+  pending and does not ask adapters to understand change selection.
 
 ### Verification log
 
@@ -288,6 +294,13 @@ new adapters or dependencies, semantic schema changes, LLM review, and benchmark
   Repository dispatch, constraint assignment, TypeScript mapping loader, CLI parsing/output,
   focused tests, and affected authority documents. Initial status was clean `main` at
   `e7c60d4`.
+- 2026-08-17: Formatting, lint, strict typecheck, production build, and 118/118 focused
+  verification, TypeScript, CLI, and schema tests passed. The initial CLI-only failure used a
+  stale `dist/cli.js`; rebuilding before integration execution resolved all five failures
+  without a source change.
+- 2026-08-17: Mutations prove affected-only constraint selection, full-root evidence after
+  selection, deleted-path mapping, blocked pending state, repeatable CLI input, deterministic
+  human/JSON metadata, safe full fallback, rogue-writer exit 1, and operational input failures.
 
 ### Handoff
 

@@ -430,6 +430,97 @@ describe("sah verify CLI", () => {
     );
   });
 
+  it("accepts repeatable changed paths and reports affected selection as JSON", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "sah.source-map.json",
+      "--changed",
+      "src/equipment-operations/save-equipment.ts",
+      "--changed",
+      "src/equipment-operations/deleted.ts",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      selection?: {
+        mode: string;
+        requestedPaths: string[];
+        affectedElementRefs: string[];
+      };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("passed");
+    expect(output.selection).toEqual(
+      expect.objectContaining({
+        mode: "affected",
+        requestedPaths: [
+          "src/equipment-operations/deleted.ts",
+          "src/equipment-operations/save-equipment.ts",
+        ],
+        affectedElementRefs: ["equipment-operations"],
+      }),
+    );
+  });
+
+  it("prints changed-path selection in human output", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "sah.source-map.json",
+      "--changed",
+      "src/equipment-operations/save-equipment.ts",
+    ]);
+
+    expect(execution.code).toBe(0);
+    expect(execution.stdout).toContain("Selection: affected");
+    expect(execution.stdout).toContain(
+      "Changed: src/equipment-operations/save-equipment.ts",
+    );
+    expect(execution.stdout).toContain("Elements: equipment-operations");
+  });
+
+  it("falls back to full verification and returns exit 1 for an unmapped changed writer", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "rogue-writer.ts"),
+      'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
+    );
+
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      target,
+      "--mapping",
+      "sah.source-map.json",
+      "--changed",
+      "src/rogue-writer.ts",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      selection?: { mode: string; issues: Array<{ code: string }> };
+      checks: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("violations");
+    expect(output.selection).toEqual(
+      expect.objectContaining({
+        mode: "full-fallback",
+        issues: [expect.objectContaining({ code: "CHANGE_PATH_UNMAPPED" })],
+      }),
+    );
+    expect(output.checks).toContainEqual(
+      expect.objectContaining({ code: "CONSTRAINT_VIOLATION" }),
+    );
+  });
+
   it("returns exit 1 JSON for an out-of-scope TypeScript writer", async () => {
     const target = await copyTypeScriptTarget();
     await writeFile(
@@ -496,6 +587,47 @@ describe("sah verify CLI", () => {
     expect(execution.stdout).toContain("CLI_INVALID_INVOCATION");
     expect(execution.stdout).toContain(
       "--mapping requires one target-relative path.",
+    );
+  });
+
+  it("returns exit 2 when --changed has no value", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--mapping",
+      "sah.source-map.json",
+      "--changed",
+      "--json",
+    ]);
+
+    expect(execution.code).toBe(2);
+    expect(execution.stdout).toContain("CLI_INVALID_INVOCATION");
+    expect(execution.stdout).toContain(
+      "--changed requires one target-relative file path.",
+    );
+  });
+
+  it("returns exit 2 when changed paths omit explicit mapping", async () => {
+    const execution = await runCli([
+      "verify",
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      "--changed",
+      "src/equipment-operations/save-equipment.ts",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("operational-error");
+    expect(output.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VERIFICATION_CHANGE_MAPPING_REQUIRED",
+      }),
     );
   });
 

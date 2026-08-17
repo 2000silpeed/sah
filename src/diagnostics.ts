@@ -8,6 +8,7 @@ import type {
   ValidatedBundle,
   VerificationCheck,
   VerificationResult,
+  VerificationSelection,
   VerificationStatus,
 } from "./contracts.js";
 
@@ -82,6 +83,7 @@ export function verificationResult(
   checks: VerificationCheck[],
   diagnostics: SahDiagnostic[],
   bundle?: ValidatedBundle,
+  selection?: VerificationSelection,
 ): VerificationResult {
   const orderedDiagnostics = orderDiagnostics(diagnostics);
   const orderedChecks = [...checks].sort((left, right) =>
@@ -94,6 +96,7 @@ export function verificationResult(
     bundleDirectory,
     targetDirectory,
     ...(bundle === undefined ? {} : { bundle }),
+    ...(selection === undefined ? {} : { selection }),
     checks: orderedChecks,
     diagnostics: orderedDiagnostics,
     summary: {

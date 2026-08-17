@@ -11,6 +11,7 @@ import {
   type VerificationCheck,
   type VerificationOptions,
   type VerificationResult,
+  type VerificationSelection,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -22,13 +23,14 @@ import {
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--json]",
-  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--json]",
+  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--json]",
 ].join("\n");
 
 type ParsedArguments = {
   positional: string[];
   json: boolean;
   sourceMappingPath?: string;
+  changedPaths?: string[];
   error?: string;
 };
 
@@ -36,6 +38,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   const positional: string[] = [];
   let json = false;
   let sourceMappingPath: string | undefined;
+  const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     if (argument === "--json") {
@@ -64,12 +67,26 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       index += 1;
       continue;
     }
+    if (argument === "--changed") {
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--changed requires one target-relative file path.",
+        };
+      }
+      changedPaths.push(value);
+      index += 1;
+      continue;
+    }
     if (argument !== undefined) positional.push(argument);
   }
   return {
     positional,
     json,
     ...(sourceMappingPath === undefined ? {} : { sourceMappingPath }),
+    ...(changedPaths.length === 0 ? {} : { changedPaths }),
   };
 }
 
@@ -177,6 +194,22 @@ function humanCheck(check: VerificationCheck): string {
   ].join("\n");
 }
 
+function humanSelection(selection: VerificationSelection): string {
+  return [
+    `Selection: ${selection.mode}`,
+    `  Changed: ${selection.requestedPaths.join(", ")}`,
+    `  Elements: ${selection.affectedElementRefs.join(", ") || "(none)"}`,
+    ...selection.issues.map(
+      (issue) =>
+        `  Fallback: ${issue.code} path=${issue.path}${
+          issue.elementRefs === undefined
+            ? ""
+            : ` elements=${issue.elementRefs.join(",")}`
+        }`,
+    ),
+  ].join("\n");
+}
+
 export function formatVerificationHuman(
   verification: VerificationResult,
 ): string {
@@ -198,6 +231,9 @@ export function formatVerificationHuman(
     title,
     ...bundle,
     `Target: ${verification.targetDirectory}`,
+    ...(verification.selection === undefined
+      ? []
+      : [humanSelection(verification.selection)]),
     ...verification.checks.map(humanCheck),
     ...verification.diagnostics.map(humanDiagnostic),
     `Summary: ${verification.summary.passed} passed, ${verification.summary.violations} violation(s), ${verification.summary.pending} pending, ${verification.summary.unsupported} unsupported, ${verification.summary.errors} error(s), ${verification.summary.warnings} warning(s)`,
@@ -245,7 +281,8 @@ async function main(arguments_: string[]): Promise<number> {
   if (
     positional.length === 2 &&
     positional[0] === "validate" &&
-    parsed.sourceMappingPath === undefined
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined
   ) {
     const validation = await validateBundle(positional[1] ?? "");
     process.stdout.write(
@@ -257,7 +294,8 @@ async function main(arguments_: string[]): Promise<number> {
   if (
     positional.length === 3 &&
     positional[0] === "advance" &&
-    parsed.sourceMappingPath === undefined
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined
   ) {
     if (!isStage(positional[2])) {
       const invalid = invocationError(
@@ -276,10 +314,14 @@ async function main(arguments_: string[]): Promise<number> {
   }
 
   if (positional.length === 3 && positional[0] === "verify") {
-    const options: VerificationOptions =
-      parsed.sourceMappingPath === undefined
+    const options: VerificationOptions = {
+      ...(parsed.sourceMappingPath === undefined
         ? {}
-        : { sourceMappingPath: parsed.sourceMappingPath };
+        : { sourceMappingPath: parsed.sourceMappingPath }),
+      ...(parsed.changedPaths === undefined
+        ? {}
+        : { changedPaths: parsed.changedPaths }),
+    };
     const verification = await verifyBundle(
       positional[1] ?? "",
       positional[2] ?? "",

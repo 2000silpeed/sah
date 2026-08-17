@@ -18,7 +18,12 @@ import {
 
 import ts from "typescript";
 
-import type { SahDiagnostic, SourceLocation } from "./contracts.js";
+import type {
+  SahDiagnostic,
+  SourceLocation,
+  VerificationSelection,
+  VerificationSelectionIssue,
+} from "./contracts.js";
 import { escapePointer } from "./diagnostics.js";
 import type {
   CodeFactAdapter,
@@ -75,7 +80,12 @@ type TypeScriptProjectConfiguration = {
 };
 
 type AdapterPreparation =
-  | { ok: true; adapter: CodeFactAdapter; mappingPath: string }
+  | {
+      ok: true;
+      adapter: CodeFactAdapter;
+      mappingPath: string;
+      selection?: VerificationSelection;
+    }
   | { ok: false; diagnostics: SahDiagnostic[]; mappingPath: string };
 
 type ProjectConfigurationLoad =
@@ -1139,6 +1149,96 @@ function elementRefsForPath(
     .map(({ elementRef }) => elementRef);
 }
 
+function changedPathSelection(
+  mapping: TypeScriptSourceMapping,
+  changedPaths: readonly string[],
+):
+  | { ok: true; selection: VerificationSelection }
+  | { ok: false; diagnostics: SahDiagnostic[] } {
+  const requestedPaths = [...new Set(changedPaths)].sort();
+  if (requestedPaths.length === 0) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          code: "VERIFICATION_CHANGED_PATHS_EMPTY",
+          category: "operational",
+          capability: "Change-scoped verification",
+          severity: "error",
+          message: "changedPaths was supplied without any target paths.",
+          expected: "at least one explicit target-relative changed-file path",
+          repair:
+            "Add a changed path or omit changedPaths for full verification.",
+        },
+      ],
+    };
+  }
+
+  const unsafe = requestedPaths.filter((path) => !isSafeRelativePath(path));
+  if (unsafe.length > 0) {
+    return {
+      ok: false,
+      diagnostics: unsafe.map((path) => ({
+        code: "VERIFICATION_CHANGED_PATH_UNSAFE",
+        category: "operational",
+        capability: "Change-scoped verification",
+        severity: "error",
+        artifactPath: path,
+        reference: path,
+        message: `Changed path ${JSON.stringify(path)} is not a normalized target-relative file path.`,
+        expected:
+          "a forward-slash relative path with no traversal, trailing slash, or control character",
+        repair:
+          "Pass the target-relative changed-file path or omit change scoping.",
+      })),
+    };
+  }
+
+  const affectedElementRefs = new Set<string>();
+  const issues: VerificationSelectionIssue[] = [];
+  for (const path of requestedPaths) {
+    const insideRoots = mapping.sourceRoots.some((root) =>
+      path.startsWith(`${root}/`),
+    );
+    if (!insideRoots) {
+      issues.push({
+        code: "CHANGE_PATH_OUTSIDE_SOURCE_ROOTS",
+        path,
+        message: `Changed path ${path} is outside every declared source root.`,
+      });
+      continue;
+    }
+    const elementRefs = [...new Set(elementRefsForPath(mapping, path))].sort();
+    if (elementRefs.length === 0) {
+      issues.push({
+        code: "CHANGE_PATH_UNMAPPED",
+        path,
+        message: `Changed path ${path} has no Architecture element mapping.`,
+      });
+      continue;
+    }
+    elementRefs.forEach((elementRef) => affectedElementRefs.add(elementRef));
+    if (elementRefs.length > 1) {
+      issues.push({
+        code: "CHANGE_PATH_AMBIGUOUS",
+        path,
+        elementRefs,
+        message: `Changed path ${path} maps to multiple Architecture elements.`,
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    selection: {
+      mode: issues.length === 0 ? "affected" : "full-fallback",
+      requestedPaths,
+      affectedElementRefs: [...affectedElementRefs].sort(),
+      issues,
+    },
+  };
+}
+
 function identifierIsUsed(
   sourceFile: ts.SourceFile,
   declarationName: ts.Identifier,
@@ -1515,6 +1615,7 @@ export async function prepareTypeScriptSourceAdapter(input: {
   mappingPath: string;
   registry: SchemaRegistry;
   architectureElementRefs: ReadonlySet<string>;
+  changedPaths?: readonly string[];
 }): Promise<AdapterPreparation> {
   const loaded = await loadMapping(
     input.targetRoot,
@@ -1526,6 +1627,16 @@ export async function prepareTypeScriptSourceAdapter(input: {
     return {
       ok: false,
       diagnostics: loaded.diagnostics,
+      mappingPath: input.mappingPath,
+    };
+  const selected =
+    input.changedPaths === undefined
+      ? undefined
+      : changedPathSelection(loaded.mapping, input.changedPaths);
+  if (selected !== undefined && !selected.ok)
+    return {
+      ok: false,
+      diagnostics: selected.diagnostics,
       mappingPath: input.mappingPath,
     };
   const project = await loadTypeScriptProjectConfiguration(
@@ -1541,6 +1652,7 @@ export async function prepareTypeScriptSourceAdapter(input: {
   return {
     ok: true,
     mappingPath: input.mappingPath,
+    ...(selected === undefined ? {} : { selection: selected.selection }),
     adapter: new TypeScriptWriteAuthorityAdapter(
       input.targetRoot,
       loaded.mapping,

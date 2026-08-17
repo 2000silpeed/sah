@@ -1,4 +1,4 @@
-import { symlink, writeFile } from "node:fs/promises";
+import { symlink, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -49,6 +49,104 @@ function checkCode(
   return verification.checks[0]?.code;
 }
 
+async function addSecondReadyConstraint(
+  bundle: string,
+  target: string,
+  secondPrefix = "src/other/",
+): Promise<void> {
+  const elementId = "equipment-other";
+  const constraintId = "equipment-other-write-authority";
+  await mutateJson<{
+    candidates: Array<{ elementRefs: string[] }>;
+    elements: Array<Record<string, unknown> & { id: string }>;
+    constraints: Array<
+      Record<string, unknown> & { id: string; scopeElementRefs: string[] }
+    >;
+  }>(bundle, "architecture.json", (architecture) => {
+    const sourceElement = architecture.elements[0];
+    const sourceConstraint = architecture.constraints[0];
+    if (sourceElement === undefined || sourceConstraint === undefined) return;
+    architecture.elements.push({
+      ...structuredClone(sourceElement),
+      id: elementId,
+    });
+    architecture.constraints.push({
+      ...structuredClone(sourceConstraint),
+      id: constraintId,
+      scopeElementRefs: [elementId],
+    });
+    architecture.candidates[0]?.elementRefs.push(elementId);
+  });
+  await mutateJson<{
+    decisions: Array<{
+      affectedElementRefs: string[];
+      constraintRefs: string[];
+    }>;
+  }>(bundle, "architecture-decision.json", (decisions) => {
+    decisions.decisions[0]?.affectedElementRefs.push(elementId);
+    decisions.decisions[0]?.constraintRefs.push(constraintId);
+  });
+  await mutateJson<{
+    slices: Array<
+      Record<string, unknown> & {
+        id: string;
+        elementRefs: string[];
+        constraintRefs: string[];
+      }
+    >;
+  }>(bundle, "implementation-handoff.json", (handoff) => {
+    const source = handoff.slices[0];
+    if (source === undefined) return;
+    handoff.slices.push({
+      ...structuredClone(source),
+      id: "implement-equipment-other",
+      elementRefs: [elementId],
+      constraintRefs: [constraintId],
+    });
+  });
+  await mutateJson<SourceMapping>(target, sourceMappingPath, (mapping) => {
+    mapping.elements.push({
+      elementRef: elementId,
+      pathPrefixes: [secondPrefix],
+    });
+  });
+}
+
+async function blockCanonicalSlice(bundle: string): Promise<void> {
+  const blockerId = "choose-equipment-export-boundary";
+  await mutateJson<{
+    decisions: Array<{
+      id: string;
+      title: string;
+      status: string;
+      selectedOptionRef: string | null;
+      constraintRefs: string[];
+      options: Array<{ id: string }>;
+    }>;
+  }>(bundle, "architecture-decision.json", (model) => {
+    const source = model.decisions[0];
+    if (source === undefined) return;
+    const proposed = structuredClone(source);
+    proposed.id = blockerId;
+    proposed.title = "Choose an export boundary";
+    proposed.status = "proposed";
+    proposed.selectedOptionRef = null;
+    proposed.constraintRefs = [];
+    proposed.options.forEach((option, index) => {
+      option.id = `export-boundary-option-${String(index + 1)}`;
+    });
+    model.decisions.push(proposed);
+  });
+  await mutateJson<{
+    slices: Array<{ status: string; blockedByDecisionRefs: string[] }>;
+  }>(bundle, "implementation-handoff.json", (handoff) => {
+    const slice = handoff.slices[0];
+    if (slice === undefined) return;
+    slice.status = "blocked";
+    slice.blockedByDecisionRefs = [blockerId];
+  });
+}
+
 describe("TypeScript source verification", () => {
   it("passes the canonical write-authority constraint with a named import alias", async () => {
     const verification = await verifyBundle(
@@ -58,6 +156,7 @@ describe("TypeScript source verification", () => {
     );
 
     expect(verification.status).toBe("passed");
+    expect(verification.selection).toBeUndefined();
     expect(verification.checks).toEqual([
       expect.objectContaining({
         code: "CONSTRAINT_PASSED",
@@ -85,6 +184,223 @@ describe("TypeScript source verification", () => {
         status: "violation",
         observed:
           "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
+      }),
+    );
+  });
+
+  it("selects only constraints assigned to slices containing changed elements", async () => {
+    const bundle = await copyFixture();
+    const target = await copyTypeScriptTarget();
+    await addSecondReadyConstraint(bundle, target);
+
+    const verification = await verifyBundle(bundle, target, {
+      sourceMappingPath,
+      changedPaths: ["src/equipment-operations/save-equipment.ts"],
+    });
+
+    expect(verification.status).toBe("passed");
+    expect(verification.selection).toEqual({
+      mode: "affected",
+      requestedPaths: ["src/equipment-operations/save-equipment.ts"],
+      affectedElementRefs: ["equipment-operations"],
+      issues: [],
+    });
+    expect(verification.checks).toHaveLength(1);
+    expect(verification.checks[0]?.constraintId).toBe("equipment-owns-writes");
+  });
+
+  it("keeps full-root evidence after affected constraint selection", async () => {
+    const target = await copyTypeScriptTarget();
+    await writeFile(
+      join(target, "src", "rogue-writer.ts"),
+      'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, {
+      sourceMappingPath,
+      changedPaths: ["src/equipment-operations/save-equipment.ts"],
+    });
+
+    expect(verification.selection?.mode).toBe("affected");
+    expect(verification.status).toBe("violations");
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_VIOLATION",
+        observed:
+          "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
+      }),
+    );
+  });
+
+  it("selects a lexically mapped deleted path without requiring file existence", async () => {
+    const target = await copyTypeScriptTarget();
+    const changedPath = "src/equipment-operations/save-equipment.ts";
+    await unlink(join(target, changedPath));
+
+    const verification = await verifyBundle(fixtureDirectory, target, {
+      sourceMappingPath,
+      changedPaths: [changedPath],
+    });
+
+    expect(verification.status).toBe("passed");
+    expect(verification.selection).toEqual(
+      expect.objectContaining({
+        mode: "affected",
+        requestedPaths: [changedPath],
+        affectedElementRefs: ["equipment-operations"],
+      }),
+    );
+  });
+
+  it("keeps an affected blocked slice pending", async () => {
+    const bundle = await copyFixture();
+    const target = await copyTypeScriptTarget();
+    await blockCanonicalSlice(bundle);
+
+    const verification = await verifyBundle(bundle, target, {
+      sourceMappingPath,
+      changedPaths: ["src/equipment-operations/save-equipment.ts"],
+    });
+
+    expect(verification.status).toBe("incomplete");
+    expect(verification.selection?.mode).toBe("affected");
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_SLICE_BLOCKED",
+        status: "pending",
+      }),
+    );
+  });
+
+  it("falls back to full verification and detects an unmapped changed writer", async () => {
+    const target = await copyTypeScriptTarget();
+    const changedPath = "src/rogue-writer.ts";
+    await writeFile(
+      join(target, changedPath),
+      'import { writeEquipmentRecord } from "@equipment/store";\nwriteEquipmentRecord();\n',
+    );
+
+    const verification = await verifyBundle(fixtureDirectory, target, {
+      sourceMappingPath,
+      changedPaths: [changedPath],
+    });
+
+    expect(verification.status).toBe("violations");
+    expect(verification.selection).toEqual({
+      mode: "full-fallback",
+      requestedPaths: [changedPath],
+      affectedElementRefs: [],
+      issues: [
+        expect.objectContaining({
+          code: "CHANGE_PATH_UNMAPPED",
+          path: changedPath,
+        }),
+      ],
+    });
+    expect(verification.checks[0]).toEqual(
+      expect.objectContaining({
+        code: "CONSTRAINT_VIOLATION",
+        observed:
+          "writers outside constraint scope: src/rogue-writer.ts (unmapped)",
+      }),
+    );
+  });
+
+  it("falls back to full verification for a changed path outside source roots", async () => {
+    const verification = await verifyBundle(
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      {
+        sourceMappingPath,
+        changedPaths: ["README.md"],
+      },
+    );
+
+    expect(verification.status).toBe("passed");
+    expect(verification.selection).toEqual(
+      expect.objectContaining({
+        mode: "full-fallback",
+        issues: [
+          expect.objectContaining({
+            code: "CHANGE_PATH_OUTSIDE_SOURCE_ROOTS",
+            path: "README.md",
+          }),
+        ],
+      }),
+    );
+    expect(verification.checks).toHaveLength(1);
+  });
+
+  it("falls back to full verification for ambiguous changed ownership", async () => {
+    const bundle = await copyFixture();
+    const target = await copyTypeScriptTarget();
+    await addSecondReadyConstraint(bundle, target, "src/equipment-operations/");
+
+    const verification = await verifyBundle(bundle, target, {
+      sourceMappingPath,
+      changedPaths: ["src/equipment-operations/save-equipment.ts"],
+    });
+
+    expect(verification.selection).toEqual(
+      expect.objectContaining({
+        mode: "full-fallback",
+        affectedElementRefs: ["equipment-operations", "equipment-other"],
+        issues: [expect.objectContaining({ code: "CHANGE_PATH_AMBIGUOUS" })],
+      }),
+    );
+    expect(verification.status).toBe("incomplete");
+    expect(verification.checks).toContainEqual(
+      expect.objectContaining({ code: "SOURCE_MAPPING_AMBIGUOUS" }),
+    );
+  });
+
+  it("requires explicit mapping for changed-path verification", async () => {
+    const verification = await verifyBundle(
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      { changedPaths: ["src/equipment-operations/save-equipment.ts"] },
+    );
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VERIFICATION_CHANGE_MAPPING_REQUIRED",
+      }),
+    );
+  });
+
+  it("rejects an explicitly empty changed-path set", async () => {
+    const verification = await verifyBundle(
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      { sourceMappingPath, changedPaths: [] },
+    );
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "VERIFICATION_CHANGED_PATHS_EMPTY" }),
+    );
+  });
+
+  it.each([
+    "../outside.ts",
+    "/tmp/outside.ts",
+    "C:/outside.ts",
+    "src\\outside.ts",
+    "src/invalid\0name.ts",
+    "src/equipment-operations/",
+  ])("rejects unsafe changed path %s operationally", async (changedPath) => {
+    const verification = await verifyBundle(
+      fixtureDirectory,
+      typescriptTargetDirectory,
+      { sourceMappingPath, changedPaths: [changedPath] },
+    );
+
+    expect(verification.status).toBe("operational-error");
+    expect(verification.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VERIFICATION_CHANGED_PATH_UNSAFE",
+        reference: changedPath,
       }),
     );
   });
