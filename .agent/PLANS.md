@@ -253,7 +253,7 @@ architecture changes and translation of normative product documents.
 | 1     | Record beginner-documentation plan            | complete    | this ExecPlan |
 | 2     | Expand English guide and add Korean guide      | complete    | 391-line paired guides and index links |
 | 3     | Exercise examples and run full verification   | complete    | 225 tests; 64-file link audit; CLI evidence |
-| 4     | Commit the documentation milestone            | in_progress | local commit evidence |
+| 4     | Commit the documentation milestone            | complete    | `8cae9b4` |
 
 ### Decision log
 
@@ -290,8 +290,11 @@ architecture changes and translation of normative product documents.
   the handoff. Final wording distinguishes authored design evidence from validation, states
   current generation limits, preserves exact exit and lifecycle authority, and uses disposable
   mutation examples. `git diff --check` passed.
+- 2026-08-18: Planning was committed as `6eec1c1` and the bilingual beginner guides as
+  `8cae9b4`. No push was performed because this request did not authorize a new external write.
 
 ### Handoff
 
-Run 13 is active. Write both entry points, execute every copied workflow, run the full repository
-slice and document audits, review for beginner ambiguity and authority drift, then commit locally.
+Run 13 is complete. English and Korean readers now have equivalent, executable onboarding;
+normative product authority remains in the indexed English documents. The verified local
+commits may be pushed when explicitly requested.
