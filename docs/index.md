@@ -6,8 +6,9 @@ read [vision](vision.md), [principles](principles.md), and the
 [design reasoning model](design-reasoning-model.md). Terms are canonical in the
 [glossary](glossary.md). The root [AGENTS.md](../AGENTS.md) is the permanent operating policy;
 [the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks;
-[Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md), and
-[Runs 8–10](../.agent/plans/run-8-10.md) preserve completed execution history.
+[Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md),
+[Runs 8–10](../.agent/plans/run-8-10.md), and
+[Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history.
 
 ## Product and reasoning authority
 

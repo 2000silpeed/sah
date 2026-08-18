@@ -2,7 +2,8 @@
 
 An ExecPlan is a durable handoff: another agent must be able to resume from repository facts
 alone. Completed history is preserved in [Runs 1–3](plans/run-1-3.md),
-[Runs 4–7](plans/run-4-7.md), and [Runs 8–10](plans/run-8-10.md).
+[Runs 4–7](plans/run-4-7.md), [Runs 8–10](plans/run-8-10.md), and
+[Runs 11–14](plans/run-11-14.md).
 
 ## Planning contract
 
@@ -12,386 +13,84 @@ discoveries, exact verification, and handoff. Use `pending`, `in_progress`, `blo
 progress, failure, discovery, decision, and verification. Preserve history, and supersede when
 the outcome changes or more than half of remaining work must be reframed.
 
-## Run 11 ExecPlan — 2026-08-18
+## Run 15 ExecPlan — 2026-08-18
 
 ### Outcome
 
-A caller can persist a schema-validated verification record. An eligible full record is bound
-to the current design snapshot and becomes the sole evidence for an atomic S12→S13 manifest
-transition; changed-scoped, incomplete, violating, or operational-error records cannot pass.
+A first-time Codex or Claude Code user can clone SAH once, install the portable skill without
+separating it from its schemas and CLI, verify discovery, start a natural-language project run,
+understand the resulting conversation and artifacts, and recover from common installation errors.
 
 ### Scope
 
-Included: one bundle-local verification-record schema, opt-in CLI/library record persistence,
-design and record fingerprints, one exact manifest evidence descriptor, S13 gate evaluation,
-atomic descriptor-plus-stage replacement, focused mutations, authority documentation, full
-verification, diff review, and commits. Excluded: hosted coordination, a general evidence
-database, LLM or human judge execution, exceptions, new fact adapters, benchmark changes, and
-semantic IR changes.
+Included: current official Codex skill-location verification, Codex user/repository installation,
+existing Claude Code installation, safe symlink checks, explicit SAH/target checkout separation,
+bilingual README walkthroughs, the detailed agent-skill guide, contract tests, local Codex
+installation, removal of the observed untracked recursive symlink, full validation, diff review,
+commits, and the explicitly requested push. Excluded: runtime, schema, CLI, library, lifecycle,
+exit-code, benchmark, npm publication, plugin packaging, hosted coordination, or model behavior
+changes.
 
 ### Constraints
 
-- Runtime evidence stays outside the seven semantic IRs; the manifest names exactly one S13
-  completion record without becoming a general evidence catalogue.
-- `verifyBundle` retains result/status precedence and gains only opt-in bundle-local record
-  publication; ordinary verification remains read-only.
-- `advanceBundle` keeps exact-next semantics. S13 requires an explicit record path; earlier
-  transitions retain their existing call shape and gate behavior.
-- Only `scope=full`, `status=passed`, all-pass checks with complete S12 assignment coverage,
-  matching bundle metadata, and a current design fingerprint can satisfy the S13 gate.
-- Changed-scoped includes affected and full-fallback selection; neither can satisfy completion.
-- Malformed, unreadable, unsafe, or concurrently changed evidence is operational. A valid but
-  stale or non-passing record is a deterministic S13 gate error and blocks advancement.
-- The manifest pins record path, schema ID, and byte digest in the same atomic replacement as
-  `completedStage=S13`; semantic artifacts and target code are never written.
-- Preserve CLI exit 0/1/2 meanings, public implementation-type isolation, and local-only
-  lifecycle authority. Never push.
+- Treat the [Agent Skill guide](../docs/agent-skill.md) as installation authority and keep the
+  English and Korean READMEs equivalent beginner-facing entry points.
+- Use the official Codex user path `$HOME/.agents/skills` and repository path `.agents/skills`;
+  preserve one canonical `skills/sah` package and use symlinks instead of detached copies.
+- Never overwrite an existing skill path. Inspect it first, and warn that rerunning `ln -s` against
+  a directory symlink can create a nested self-reference.
+- Keep every governed document within 400 lines and link the archived Run 11–14 history.
+- Preserve all runtime contracts and benchmark expectations. No ADR is needed because this corrects
+  reversible installation/documentation details without changing the accepted delivery topology.
 
 ### Affected authority and evidence
 
-Authoritative documents: `design-reasoning-model.md`, `validation-cli.md`,
-`harness-architecture.md`, `architecture-model.md`, and `validation-model.md`. Runtime owners:
-Model Repository, verification adapters, atomic manifest replacement, and thin CLI. The fixture
-exercise traces `equipment-owns-writes` through decision `choose-equipment-module` and slice
-`implement-equipment-operations`; benchmark inputs and expectations remain untouched.
-
-### Milestones
-
-| Phase | Milestone                                              | Status      | Evidence |
-| ----- | ------------------------------------------------------ | ----------- | -------- |
-| 0     | Frame evidence ownership and atomic completion contract | complete    | ADR-0014 |
-| 1     | Add record and manifest schemas plus persistence      | complete    | schema/trace tests |
-| 2     | Implement S13 record gate and atomic advance          | complete    | focused gate tests |
-| 3     | Add library/CLI and adversarial mutations             | complete    | 106 focused tests |
-| 4     | Update authority documentation and operating commands | complete    | authority docs and CLI usage |
-| 5     | Run full verification, diff review, and commits       | complete    | 225 tests; `a3152e5` |
-
-### Decision log
-
-- 2026-08-18: Select a dedicated bundle-local record and an exact manifest descriptor over
-  embedding results or introducing a general store. See ADR-0014.
-- 2026-08-18: Bind eligibility to explicit invocation scope, not selection outcome; a changed
-  full-fallback run is still change-scoped evidence.
-- 2026-08-18: Pin both the semantic design snapshot and exact record bytes. The manifest commit
-  grants lifecycle authority; record publication alone does not.
-
-### Discovery log
-
-- 2026-08-18: Run 10 ended clean at `56c4cab` with 211 tests and intentionally left persisted
-  results and S13 advancement unsupported.
-- 2026-08-18: Current verification already emits one check per assigned constraint and status
-  precedence distinguishes violation, incomplete coverage, and operation failure. The S13 gate
-  can validate recorded evidence without rerunning adapters or adding a compiler.
-- 2026-08-18: Updating only `completedStage` would leave no durable evidence locator. Adding the
-  record descriptor and stage in one manifest replacement preserves manifest authority without
-  a multi-file transaction.
-- 2026-08-18: A monolithic result schema exceeded the repository line budget. Split the exact
-  public envelope into record, result, check, and diagnostic schemas; the record remains the
-  sole lifecycle evidence artifact and the split introduces no storage abstraction.
-- 2026-08-18: Typed lint rejected both a control-character regex and string spreading in the
-  path guard. An indexed UTF-16 code-unit scan now expresses the ASCII control predicate
-  without suppressing either rule.
-
-### Verification log
-
-- 2026-08-18: Re-read `AGENTS.md`, `docs/index.md`, the Run 10 handoff, lifecycle/verification
-  authorities, schemas, repository/adapter/atomic seams, fixtures, and focused tests. Initial
-  status was clean `main` at `56c4cab`.
-- 2026-08-18: The first record-schema run exposed one trace omission and two strict-Ajv
-  composition errors; all were repaired before runtime work, and 13 schemas/examples now
-  compile with complete traces.
-- 2026-08-18: After repairing two lint findings, formatting, lint, strict typecheck, and 106/106
-  focused schema, manifest-migration, verification, advancement, and CLI tests passed. Mutations
-  cover full success, both changed modes, incomplete, violation, operational-error, stale
-  design, inconsistent status, byte tampering, and atomic pre-commit evidence conflict.
-- 2026-08-18: On Node 24.14.1 and npm 11.11.0, `npm install` audited 164 packages with zero
-  vulnerabilities. `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`,
-  `npm run build`, and `npm run verify:schemas` passed; the full suite was 9 files and 225/225
-  tests, with the schema-specific run at 4/4.
-- 2026-08-18: Production CLI runs proved S11→S12 and full-record S12→S13 success at exit 0;
-  affected and full-fallback changed records, incomplete records, violation records, and
-  operational-error records all left S12 unchanged and returned blocked exit 1. Original
-  verification exits remained 0 for pass, 1 for violation, and 2 for incomplete or operation
-  failure; stored S13 validation and pinned record digest both passed.
-- 2026-08-18: Final audits found 13 schemas, 13 valid examples, 385 serialized properties,
-  zero trace diagnostics, 61 Markdown files, 145 valid local links, zero broken links, and no
-  product-document line-budget failure. The unchanged 407-line provenance prompt remains
-  verbatim by policy. Public declarations had no Ajv, compiler, or filesystem leak; the
-  74-entry package contains all four record schemas and the record runtime. `git diff --check`
-  passed and benchmark diff was empty.
-- 2026-08-18: Planning was committed as `4b46dde`; implementation, tests, schemas, and authority
-  documentation were committed as `a3152e5`. No push was performed.
-
-### Handoff
-
-Run 11 is complete. The next run should select a bounded S13 capability or exception-disposition
-slice from accepted constraint evidence; do not broaden the record descriptor into hosted
-coordination or a general evidence registry without measured multi-writer or retention need.
-
-## Run 12 ExecPlan — 2026-08-18
-
-### Outcome
-
-The repository has a concise root `README.md` that routes users to the executable entry points
-and authoritative documents. Confirmed Finder metadata is removed, and the documentation-only
-milestone is verified, committed, and published in the public repository.
-
-### Scope
-
-Included: repository inventory, exact removal of ignored `.DS_Store` files, a root README,
-documentation-index linkage, full validation, diff review, a meaningful commit, and push.
-Excluded: runtime behavior, schemas, fixtures, dependencies, generated build directories,
-benchmark content, provenance prompt changes, lifecycle authority, and architecture decisions.
-
-### Constraints
-
-- Delete only files whose generated, ignored, non-product status is observable; do not infer
-  that a linked document, fixture, or provenance input is obsolete.
-- Keep the README English, under the document line budget, and navigational. Normative details
-  remain owned by the linked documentation.
-- Preserve CLI/library contracts, exit meanings, lifecycle authority, benchmark expectations,
-  and the completed Run 11 evidence.
-- Do not invent a Git remote or destination. Push only through an already configured remote or
-  an unambiguous repository association discovered read-only.
-- No ADR is required because cleanup and navigation are reversible and make no architecture
-  decision.
+The earliest invalid premise is the Codex user installation path in `docs/agent-skill.md`; current
+official OpenAI documentation names `$HOME/.agents/skills`, repository `.agents/skills`, automatic
+change detection, `$`/`/skills` invocation, and symlink support. Affected files are the paired
+READMEs, Agent Skill guide, documentation index, and skill contract test. No semantic IR IDs,
+architecture decisions, schemas, fixtures, or benchmarks are affected.
 
 ### Milestones
 
 | Phase | Milestone                                      | Status      | Evidence |
 | ----- | ---------------------------------------------- | ----------- | -------- |
-| 0     | Inventory files, links, package, and Git state | complete    | clean `main`; four ignored `.DS_Store` files |
-| 1     | Record cleanup and README plan                 | complete    | this ExecPlan |
-| 2     | Remove confirmed metadata and author README   | complete    | four removals; `README.md`; index backlink |
-| 3     | Run full validation and adversarial diff review | complete  | 225 tests; CLI and document audits |
-| 4     | Commit and push the milestone                 | complete    | `2000silpeed/sah`; local and remote `main` synchronized |
+| 0     | Inspect authority, installation, and Git state | complete    | official docs; local paths; clean tracked tree |
+| 1     | Record Run 15 and archive completed history    | complete    | this ExecPlan; Runs 11–14 archive |
+| 2     | Correct and expand installation/use guidance  | in_progress | pending |
+| 3     | Verify local install, docs, tests, and diff    | pending     | pending |
+| 4     | Commit and push the verified milestone        | pending     | pending |
 
 ### Decision log
 
-- 2026-08-18: Limit deletion to the four observed `.DS_Store` files. Ignored `dist/` and
-  `node_modules/` remain because they are current build and verification inputs, not unexplained
-  repository content.
-- 2026-08-18: Add one conventional `README.md` as a reader-oriented map; keep definitions and
-  contracts in `docs/` rather than restating their authority.
+- 2026-08-18: Use the current official Codex discovery locations rather than retain the historical
+  `~/.codex/skills` example. Keep Claude Code paths separate and labeled.
+- 2026-08-18: Put the complete first-run path in both root READMEs and keep troubleshooting detail
+  in the indexed Agent Skill guide. Compress lower-priority library prose instead of exceeding the
+  document line budget.
 
 ### Discovery log
 
-- 2026-08-18: The initial worktree was clean at `8cb44ce`. No tracked editor backups, logs,
-  temporary files, or Finder metadata were found.
-- 2026-08-18: Four ignored `.DS_Store` files exist at the repository root and below `fixtures/`.
-  The existing `.gitignore` already prevents recurrence in Git.
-- 2026-08-18: `main` has no displayed upstream and `git remote -v` returned no configured
-  remote. Push must remain pending unless a destination can be resolved without guessing.
-- 2026-08-18: The authenticated GitHub account is `2000silpeed`, but repository and code
-  searches found no matching SAH remote. The similarly named `design-ontology-harness` has a
-  different product description and history, so it is not a safe destination.
-- 2026-08-18: The user authorized creating a new public repository. The available conventional
-  destination `2000silpeed/sah` resolved the publication blocker without repurposing another
-  repository.
+- 2026-08-18: Both READMEs are already 398 lines, so adding onboarding verbatim would violate the
+  400-line budget. The existing library example can route to its normative guide without reducing
+  the natural-language product walkthrough.
+- 2026-08-18: The SAH runtime is built in `/Users/sungwoon/ai-projects/sah`, while the current
+  Codex link uses the older `~/.codex/skills` location. No `~/.agents/skills/sah` entry exists.
+- 2026-08-18: An untracked `skills/sah/sah` symlink points back to its own parent. This is consistent
+  with rerunning `ln -s SOURCE DEST` when `DEST` already resolves to a directory and must not be
+  committed.
 
 ### Verification log
 
-- 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the completed Run 11 handoff, `.gitignore`,
-  `package.json`, tracked paths, ignored cleanup candidates, branch state, and remote state.
-- 2026-08-18: Removed exactly the four observed `.DS_Store` files. Added the root README and
-  linked it from the documentation index without changing runtime, schema, fixture, benchmark,
-  or provenance content.
-- 2026-08-18: `npm install` audited 164 packages with zero vulnerabilities. Formatting, lint,
-  strict typecheck, production build, 225/225 tests, and the 4/4 schema/trace audit passed.
-- 2026-08-18: CLI validation passed; disposable S11→S12 advancement passed; the filesystem-only
-  target returned its expected incomplete/exit-2 result; full and changed TypeScript checks
-  passed; and the README's full-record S12→S13 flow advanced and revalidated at exit 0.
-- 2026-08-18: Final document audits found 63 Markdown files with zero broken local links,
-  all governed documents within line budgets, no remaining `.DS_Store`, no runtime/schema/test/
-  fixture/benchmark/provenance diff, and a clean `git diff --check`. Diff review found no
-  unsupported README claim or authority duplication.
-- 2026-08-18: Planning was committed as `e6f1c24` and the README milestone as `5acb61a`.
-  `git push` returned exit 128 with `No configured push destination`; no external state changed.
-- 2026-08-18: Created public `https://github.com/2000silpeed/sah`, configured its HTTPS URL as
-  `origin`, pushed `main`, and confirmed local and remote at `ec809b6` before this closure update.
+- 2026-08-18: Read repository policy, documentation index, Run 14 handoff, the complete SAH and
+  meta-prompt skill contracts, paired READMEs, Agent Skill guide, package scripts, focused contract
+  test, Git state, and current local skill links.
+- 2026-08-18: OpenAI Docs confirms standalone skills, explicit `$` or `/skills` invocation,
+  automatic change detection with restart fallback, user/repository discovery locations, and
+  symlink support.
 
 ### Handoff
 
-Run 12 is complete. The repository cleanup, reader entry point, verification evidence, and
-public `main` history are current; no product, benchmark, schema, or provenance content changed.
-
-## Run 13 ExecPlan — 2026-08-18
-
-### Outcome
-
-A first-time user can understand why SAH exists, how its S0–S13 reasoning and evidence flow
-works, how to run the fixture safely, how full and changed verification differ, and how to
-integrate the CLI or library. Equivalent English and Korean entry points route details to the
-existing authority documents.
-
-### Scope
-
-Included: expand `README.md`, add `README.ko.md`, language navigation, beginner-oriented
-concepts and walkthroughs, CLI/exit/library reference, self-project adoption guidance,
-documentation-index linkage, executable example checks, full verification, diff review, and
-a milestone commit. Excluded: runtime, schema, fixture, benchmark, package, lifecycle, or
-architecture changes and translation of normative product documents.
-
-### Constraints
-
-- Each README stays below 400 lines and uses progressive disclosure: purpose, mental model,
-  first success, deeper operation, adoption, reference, then contributor details.
-- Examples use the source checkout and disposable bundles. They must not imply that a
-  changed-scoped pass can authorize S13 or that unsupported coverage is a pass.
-- JSON IR and the existing English authority documents remain normative. The Korean README is
-  an explicitly requested explanatory translation, not a second contract.
-- English and Korean versions carry equivalent commands and safety notes, with natural wording
-  rather than line-for-line mechanical translation.
-- No ADR is required because documentation presentation is reversible and changes no product
-  decision. Do not push without a new explicit request.
-
-### Milestones
-
-| Phase | Milestone                                      | Status      | Evidence |
-| ----- | ---------------------------------------------- | ----------- | -------- |
-| 0     | Reconfirm reader gaps and current contracts    | complete    | clean `main` at `0770103`; authority reread |
-| 1     | Record beginner-documentation plan            | complete    | this ExecPlan |
-| 2     | Expand English guide and add Korean guide      | complete    | 391-line paired guides and index links |
-| 3     | Exercise examples and run full verification   | complete    | 225 tests; 64-file link audit; CLI evidence |
-| 4     | Commit the documentation milestone            | complete    | `8cae9b4` |
-
-### Decision log
-
-- 2026-08-18: Keep `README.md` as the default English landing page and add conventional
-  `README.ko.md` with reciprocal language links. This preserves repository conventions while
-  satisfying the explicit Korean guide request.
-- 2026-08-18: Group fourteen stages into five beginner-facing phases, while linking the exact
-  stage-by-stage contract instead of duplicating it.
-
-### Discovery log
-
-- 2026-08-18: The 126-line README proves commands but assumes readers already understand IR,
-  lifecycle gates, verification scope, and how the fixture maps to a real project.
-- 2026-08-18: The public repository is synchronized and clean. The package remains private,
-  so onboarding must begin with cloning the source checkout rather than npm publication.
-- 2026-08-18: Paired 391-line guides fit the document budget while covering the mental model,
-  grouped stages, IR roles, enforcement honesty, first success, S13 evidence, changed scope,
-  CLI/library integration, self-project adoption, failure reading, and current boundaries.
-
-### Verification log
-
-- 2026-08-18: Re-read the README, documentation index, Run 12 handoff, vision, reasoning model,
-  architecture/validation models, CLI/library contract, public types, manifest schema, and
-  canonical fixture before drafting.
-- 2026-08-18: `npm install` audited 164 packages with zero vulnerabilities. Formatting, lint,
-  strict typecheck, production build, 225/225 tests, and the 4/4 schema/trace audit passed.
-- 2026-08-18: Both guides' validate, full TypeScript verify, changed verify, record publication,
-  S12→S13 advance, and stored S13 validation commands passed. Disposable S11→S12 also passed;
-  the unsupported filesystem-only target returned its expected incomplete/exit-2 result.
-- 2026-08-18: Audited 64 Markdown files with zero broken local links and balanced fences. The
-  two guides have ten identical executable/reference blocks, remain at 392 lines each, and
-  introduce no runtime, test, schema, fixture, benchmark, package, or provenance diff.
-- 2026-08-18: Adversarial review corrected a flow diagram that could imply validation creates
-  the handoff. Final wording distinguishes authored design evidence from validation, states
-  current generation limits, preserves exact exit and lifecycle authority, and uses disposable
-  mutation examples. `git diff --check` passed.
-- 2026-08-18: Planning was committed as `6eec1c1` and the bilingual beginner guides as
-  `8cae9b4`. No push was performed because this request did not authorize a new external write.
-- 2026-08-18: A subsequent explicit request authorized publication. Pushed the Run 13 planning,
-  guide, and closure commits through `1dde464` to public `origin/main`; this publication note is
-  included in the final follow-up push.
-
-### Handoff
-
-Run 13 is complete. English and Korean readers now have equivalent, executable onboarding;
-normative product authority remains in the indexed English documents. The verified local
-commits and publication evidence are current on public `origin/main`.
-
-## Run 14 ExecPlan — 2026-08-18
-
-### Outcome
-
-A user can invoke one repository-owned `sah` Agent Skill from Codex or Claude Code, describe a
-software change in natural language, and have the host agent carry a proportionate SAH workflow
-through evidence-backed architecture, actual implementation, tests, and honest S13 verification.
-
-### Scope
-
-Included: correct the product boundary, record ADR-0015, package a portable Agent Skill and its
-focused references, document Codex and Claude Code installation/use, add deterministic skill
-contract tests, forward-test one isolated natural-language-to-working-code task, update both
-READMEs and product authority, run full validation and diff review, and create meaningful local
-milestone commits. Excluded: hosted coordination, an embedded or paid LLM/API, a general evidence
-database, an LLM judge, benchmark expectation changes, schema redesign, and new S13 fact adapters.
-
-### Constraints
-
-- The host coding agent owns dialogue and code edits; SAH owns the staged reasoning protocol,
-  canonical JSON evidence, lifecycle gates, and deterministic verification kernel.
-- Elicit missing evidence conversationally: ask one or two highest-impact questions at a time,
-  use repository facts before asking, and continue until the next decision is supported. Record
-  unknown answers honestly; block only the dependent slice when an unresolved choice is material.
-- Preserve existing CLI/library boundaries, exit meanings, lifecycle authority, record
-  eligibility, and validation-honesty rules. The skill must call public surfaces, not bypass them.
-- Use the least elaborate workflow per target: short, reversible changes may take an explicit
-  short path; unresolved consequential decisions block dependent implementation.
-- Keep one canonical `skills/sah` package portable across Agent Skills hosts. Host-specific
-  installation is a link or copy of that package, not duplicated methodology.
-- Forward testing uses an isolated disposable target and no benchmark expectations. No push is
-  authorized by this request.
-
-### Affected authority and evidence
-
-- Earliest premise: `docs/vision.md` currently ends SAH at implementation planning even though
-  ADR-0001 and `docs/harness-architecture.md` already promise a host skill and coding-agent loop.
-- Affected product authority: vision, harness architecture, design reasoning model, documentation
-  index, ADR-0001 relationship, README guides, and the new skill contract.
-- Affected target IR IDs: none; this run changes the SAH delivery/integration surface, not a
-  fixture design decision or semantic schema. Benchmarks remain unchanged.
-
-### Milestones
-
-| Phase | Milestone                                           | Status      | Evidence |
-| ----- | --------------------------------------------------- | ----------- | -------- |
-| 0     | Reconfirm gap and compile the execution prompt      | complete    | authority and runtime inventory |
-| 1     | Record Run 14 plan and product-boundary ADR         | complete    | `d5e2eb2`; ADR-0015 |
-| 2     | Build portable skill and installation surface      | complete    | `skills/sah`; focused checks pass |
-| 3     | Add contract tests and isolated forward test        | complete    | 3 contract tests; disposable S13 target |
-| 4     | Update bilingual guides and product authority       | complete    | paired READMEs; indexed authority |
-| 5     | Run full verification, diff review, and commits     | complete    | 228 tests; `2313c9d` |
-
-### Decision log
-
-- 2026-08-18: Select a skill-first host integration instead of an in-product chat CLI. Codex and
-  Claude Code already provide conversation, tools, and code mutation; duplicating those would add
-  model/provider coupling without protecting a new SAH responsibility.
-- 2026-08-18: Keep the TypeScript runtime as the deterministic kernel rather than presenting it as
-  the whole product. The skill composes methodology, artifact authoring, implementation, and that
-  kernel into the end-to-end user workflow.
-- 2026-08-18: Make progressive elicitation part of the workflow contract. A static questionnaire
-  cannot adapt follow-up questions to repository evidence or expose contradictions in user answers.
-
-### Discovery log
-
-- 2026-08-18: The architecture names Method Library, Reasoning Orchestrator, and Coding-Agent
-  Integration, but the repository ships only Model Repository/validation slices. Both READMEs
-  therefore accurately describe a manual authoring gap that conflicts with the intended experience.
-- 2026-08-18: Codex skill tooling and Claude Code both consume `SKILL.md` packages with supporting
-  files, so one canonical Agent Skill can serve both without a hosted coordinator.
-- 2026-08-18: The isolated host asked three adaptive policy questions, built real TypeScript code,
-  and reached S13. Its first broad-project verification was honestly incomplete, motivating a
-  dedicated confined mapping-config note rather than weakening source-root coverage.
-
-### Verification log
-
-- 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the Run 13 handoff, Git state, vision, harness
-  architecture, reasoning/methodology authority, package/test surfaces, and the skill-creator and
-  meta-prompt instructions. Worktree started clean at `24c3600`, synchronized with `origin/main`.
-- 2026-08-18: The first focused skill-contract run exposed an over-specific test phrase for the
-  public `full-fallback` status; the first full lint then caught a local `match` style violation.
-  Corrected both assertions/implementation to the public contract and repository lint policy.
-- 2026-08-18: Full verification passed: install/audit, format, lint, typecheck, build, 228/228 tests,
-  schema/trace 4/4, skill validation, all documented CLI paths including full-record S13, 70-file
-  link/fence and line-budget audits, and `git diff --check`. A cleanup-bearing CLI wrapper was
-  rejected before execution; the same checks passed when rerun as bounded non-destructive steps.
-
-### Handoff
-
-Run 14 is complete. Codex and Claude Code now share one tested conversational skill that carries
-natural-language requirements through architecture, real code, and honest S13 evidence. Planning
-is `d5e2eb2`, implementation is `2313c9d`, and no push was performed.
+Run 15 is active. Finish the paired onboarding update, install and verify the official Codex link,
+run the full repository validation slice and adversarial diff review, then commit and push only the
+verified files to `origin/main`.
