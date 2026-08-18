@@ -353,7 +353,7 @@ database, an LLM judge, benchmark expectation changes, schema redesign, and new 
 | 2     | Build portable skill and installation surface      | complete    | `skills/sah`; focused checks pass |
 | 3     | Add contract tests and isolated forward test        | complete    | 3 contract tests; disposable S13 target |
 | 4     | Update bilingual guides and product authority       | complete    | paired READMEs; indexed authority |
-| 5     | Run full verification, diff review, and commits     | in_progress | pending |
+| 5     | Run full verification, diff review, and commits     | complete    | 228 tests; `2313c9d` |
 
 ### Decision log
 
@@ -392,5 +392,6 @@ database, an LLM judge, benchmark expectation changes, schema redesign, and new 
 
 ### Handoff
 
-Run 14 is active. Planning and ADR must be committed before implementation; the next milestone is
-the canonical Agent Skill plus its public-host installation and invocation contract.
+Run 14 is complete. Codex and Claude Code now share one tested conversational skill that carries
+natural-language requirements through architecture, real code, and honest S13 evidence. Planning
+is `d5e2eb2`, implementation is `2313c9d`, and no push was performed.
