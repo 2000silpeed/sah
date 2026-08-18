@@ -214,3 +214,69 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 
 Run 12 is complete. The repository cleanup, reader entry point, verification evidence, and
 public `main` history are current; no product, benchmark, schema, or provenance content changed.
+
+## Run 13 ExecPlan — 2026-08-18
+
+### Outcome
+
+A first-time user can understand why SAH exists, how its S0–S13 reasoning and evidence flow
+works, how to run the fixture safely, how full and changed verification differ, and how to
+integrate the CLI or library. Equivalent English and Korean entry points route details to the
+existing authority documents.
+
+### Scope
+
+Included: expand `README.md`, add `README.ko.md`, language navigation, beginner-oriented
+concepts and walkthroughs, CLI/exit/library reference, self-project adoption guidance,
+documentation-index linkage, executable example checks, full verification, diff review, and
+a milestone commit. Excluded: runtime, schema, fixture, benchmark, package, lifecycle, or
+architecture changes and translation of normative product documents.
+
+### Constraints
+
+- Each README stays below 400 lines and uses progressive disclosure: purpose, mental model,
+  first success, deeper operation, adoption, reference, then contributor details.
+- Examples use the source checkout and disposable bundles. They must not imply that a
+  changed-scoped pass can authorize S13 or that unsupported coverage is a pass.
+- JSON IR and the existing English authority documents remain normative. The Korean README is
+  an explicitly requested explanatory translation, not a second contract.
+- English and Korean versions carry equivalent commands and safety notes, with natural wording
+  rather than line-for-line mechanical translation.
+- No ADR is required because documentation presentation is reversible and changes no product
+  decision. Do not push without a new explicit request.
+
+### Milestones
+
+| Phase | Milestone                                      | Status      | Evidence |
+| ----- | ---------------------------------------------- | ----------- | -------- |
+| 0     | Reconfirm reader gaps and current contracts    | complete    | clean `main` at `0770103`; authority reread |
+| 1     | Record beginner-documentation plan            | complete    | this ExecPlan |
+| 2     | Expand English guide and add Korean guide      | in_progress | both README files and index links |
+| 3     | Exercise examples and run full verification   | pending     | CLI, tests, links, budgets, diff review |
+| 4     | Commit the documentation milestone            | pending     | local commit evidence |
+
+### Decision log
+
+- 2026-08-18: Keep `README.md` as the default English landing page and add conventional
+  `README.ko.md` with reciprocal language links. This preserves repository conventions while
+  satisfying the explicit Korean guide request.
+- 2026-08-18: Group fourteen stages into five beginner-facing phases, while linking the exact
+  stage-by-stage contract instead of duplicating it.
+
+### Discovery log
+
+- 2026-08-18: The 126-line README proves commands but assumes readers already understand IR,
+  lifecycle gates, verification scope, and how the fixture maps to a real project.
+- 2026-08-18: The public repository is synchronized and clean. The package remains private,
+  so onboarding must begin with cloning the source checkout rather than npm publication.
+
+### Verification log
+
+- 2026-08-18: Re-read the README, documentation index, Run 12 handoff, vision, reasoning model,
+  architecture/validation models, CLI/library contract, public types, manifest schema, and
+  canonical fixture before drafting.
+
+### Handoff
+
+Run 13 is active. Write both entry points, execute every copied workflow, run the full repository
+slice and document audits, review for beginner ambiguity and authority drift, then commit locally.
