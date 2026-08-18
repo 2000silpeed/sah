@@ -164,7 +164,7 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 | 1     | Record cleanup and README plan                 | complete    | this ExecPlan |
 | 2     | Remove confirmed metadata and author README   | complete    | four removals; `README.md`; index backlink |
 | 3     | Run full validation and adversarial diff review | complete  | 225 tests; CLI and document audits |
-| 4     | Commit and push the milestone                 | in_progress | commit and remote evidence |
+| 4     | Commit and push the milestone                 | blocked     | `e6f1c24`, `5acb61a`; no push destination |
 
 ### Decision log
 
@@ -182,6 +182,9 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
   The existing `.gitignore` already prevents recurrence in Git.
 - 2026-08-18: `main` has no displayed upstream and `git remote -v` returned no configured
   remote. Push must remain pending unless a destination can be resolved without guessing.
+- 2026-08-18: The authenticated GitHub account is `2000silpeed`, but repository and code
+  searches found no matching SAH remote. The similarly named `design-ontology-harness` has a
+  different product description and history, so it is not a safe destination.
 
 ### Verification log
 
@@ -199,8 +202,11 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
   all governed documents within line budgets, no remaining `.DS_Store`, no runtime/schema/test/
   fixture/benchmark/provenance diff, and a clean `git diff --check`. Diff review found no
   unsupported README claim or authority duplication.
+- 2026-08-18: Planning was committed as `e6f1c24` and the README milestone as `5acb61a`.
+  `git push` returned exit 128 with `No configured push destination`; no external state changed.
 
 ### Handoff
 
-Run 12 is active. Complete the documented cleanup and README, run the repository's full
-validation slice, review the final diff, then commit and push only to a resolved remote.
+Run 12 implementation and verification are complete. Push is blocked only by the missing
+remote; obtain the intended repository URL, add it explicitly, then push `main` without
+rewriting the verified commits.
