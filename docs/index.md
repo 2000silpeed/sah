@@ -28,9 +28,12 @@ read [vision](vision.md), [principles](principles.md), and the
   continuous enforcement, and exceptions.
 - [Validation CLI and library](validation-cli.md) — owns install, invocation, output, public
   result types, and exit codes for the executable structural slice.
+- [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
+  progressive questioning, and the natural-language-to-implementation experience.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
-- [Dogfood](dogfood.md) — owns the two manual walkthroughs and five model repairs they forced.
+- [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
+  harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,
   and document ownership.
 - [Verification](verification.md) — owns the final rubric scores and Definition-of-Done audit.
@@ -98,6 +101,12 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 
 ## Runtime implementation and executable fixture
 
+- [Portable SAH skill](../skills/sah/SKILL.md), [host metadata](../skills/sah/agents/openai.yaml),
+  and its [elicitation](../skills/sah/references/elicitation-and-method-selection.md),
+  [artifact lifecycle](../skills/sah/references/artifacts-and-lifecycle.md), and
+  [implementation/verification](../skills/sah/references/implementation-and-verification.md)
+  references — form the shared Codex/Claude Code orchestration package.
+
 - [Package manifest](../package.json) and [lockfile](../package-lock.json) — own exact npm
   scripts, binary/export surfaces, supported Node range, and resolved dependency versions.
 - [TypeScript configuration](../tsconfig.json) and [production build configuration](../tsconfig.build.json)
@@ -131,9 +140,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
   [TypeScript verification tests](../test/typescript-verification.test.ts),
-  [CLI tests](../test/cli.test.ts), and [schema contract tests](../test/schema-contracts.test.ts)
+  [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
+  [skill contract tests](../test/skill-contracts.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
-  output, and failure families without network use.
+  host-workflow packaging, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
   [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
   [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),

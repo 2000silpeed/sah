@@ -349,11 +349,11 @@ database, an LLM judge, benchmark expectation changes, schema redesign, and new 
 | Phase | Milestone                                           | Status      | Evidence |
 | ----- | --------------------------------------------------- | ----------- | -------- |
 | 0     | Reconfirm gap and compile the execution prompt      | complete    | authority and runtime inventory |
-| 1     | Record Run 14 plan and product-boundary ADR         | in_progress | this ExecPlan; ADR-0015 draft |
-| 2     | Build portable skill and installation surface      | pending     | `skills/sah` |
-| 3     | Add contract tests and isolated forward test        | pending     | pending |
-| 4     | Update bilingual guides and product authority       | pending     | pending |
-| 5     | Run full verification, diff review, and commits     | pending     | pending |
+| 1     | Record Run 14 plan and product-boundary ADR         | complete    | `d5e2eb2`; ADR-0015 |
+| 2     | Build portable skill and installation surface      | complete    | `skills/sah`; focused checks pass |
+| 3     | Add contract tests and isolated forward test        | complete    | 3 contract tests; disposable S13 target |
+| 4     | Update bilingual guides and product authority       | complete    | paired READMEs; indexed authority |
+| 5     | Run full verification, diff review, and commits     | in_progress | pending |
 
 ### Decision log
 
@@ -373,12 +373,22 @@ database, an LLM judge, benchmark expectation changes, schema redesign, and new 
   therefore accurately describe a manual authoring gap that conflicts with the intended experience.
 - 2026-08-18: Codex skill tooling and Claude Code both consume `SKILL.md` packages with supporting
   files, so one canonical Agent Skill can serve both without a hosted coordinator.
+- 2026-08-18: The isolated host asked three adaptive policy questions, built real TypeScript code,
+  and reached S13. Its first broad-project verification was honestly incomplete, motivating a
+  dedicated confined mapping-config note rather than weakening source-root coverage.
 
 ### Verification log
 
 - 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the Run 13 handoff, Git state, vision, harness
   architecture, reasoning/methodology authority, package/test surfaces, and the skill-creator and
   meta-prompt instructions. Worktree started clean at `24c3600`, synchronized with `origin/main`.
+- 2026-08-18: The first focused skill-contract run exposed an over-specific test phrase for the
+  public `full-fallback` status; the first full lint then caught a local `match` style violation.
+  Corrected both assertions/implementation to the public contract and repository lint policy.
+- 2026-08-18: Full verification passed: install/audit, format, lint, typecheck, build, 228/228 tests,
+  schema/trace 4/4, skill validation, all documented CLI paths including full-record S13, 70-file
+  link/fence and line-budget audits, and `git diff --check`. A cleanup-bearing CLI wrapper was
+  rejected before execution; the same checks passed when rerun as bounded non-destructive steps.
 
 ### Handoff
 

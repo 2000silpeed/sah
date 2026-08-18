@@ -8,12 +8,12 @@ documents.
 
 SAH ships as a **hybrid local toolkit**:
 
-1. an agent-neutral skill/prompt package presents stages, gates, and review interactions to
-   a host coding agent;
+1. the portable [`sah` Agent Skill](../skills/sah/SKILL.md) elicits evidence and orchestrates
+   stages, gates, implementation, and review interactions through a host coding agent;
 2. a local CLI drives artifact lifecycle, schema/reference checks, constraint compilation,
    validator execution, and implementation handoff;
-3. a reusable library contains the semantic model and orchestration so the CLI is not the
-   only integration surface;
+3. a reusable library contains deterministic model operations so the CLI is not the only
+   integration surface;
 4. target repositories keep JSON IR, rendered Markdown views, decisions, constraints, and
    exceptions under source control.
 
@@ -27,13 +27,17 @@ artifacts. ADR-0001 records the choice and costs.
 
 Owns strategy definitions, characterization questions, method verdicts, and weighted
 heuristics. It returns candidates and warnings; it cannot select a strategy, mutate IR, or
-emit a hard constraint. New method packs depend only on public model identifiers.
+emit a hard constraint. The first executable delivery is the skill's focused method-selection
+reference backed by the canonical methodology documents. New method packs depend only on public
+model identifiers.
 
 ### Reasoning Orchestrator
 
 Owns S0–S13 state transitions, gate evaluation, loop-back/staleness propagation, LLM request
 contracts, retries, and human decision gates. It asks the Model Repository to persist facts;
-it does not embed a language validator or host-agent API.
+it does not embed a language validator or host-agent API. The first executable orchestrator is the
+portable skill protocol interpreted by Codex or Claude Code. It progressively elicits missing
+evidence, bootstraps a new canonical bundle after S0–S4, and uses public CLI gates from S5 onward.
 
 ### Model Repository
 
@@ -104,7 +108,9 @@ use separate result types. Unsupported extraction is `unsupported`, never `pass`
 
 Owns thin adapters for skills, commands, `AGENTS.md` fragments, context budgeting, progress
 messages, implementation handoff, and change-triggered verification. It translates host
-events into orchestrator operations but contains no design-method logic.
+events into orchestrator operations but contains no design-method logic. The canonical
+`skills/sah` package is the first shared Codex/Claude Code adapter; host installation metadata does
+not duplicate the method authority.
 
 ### Evaluation and Benchmarks
 
@@ -132,13 +138,13 @@ does not become a shared utility imported by production components.
 
 ### Reasoning pass
 
-The host adapter starts or resumes a bundle. The orchestrator reads the active stage, asks the
-Method Library for relevant questions, obtains LLM/human output, validates shape through the
-Model Repository, runs the semantic gate, and either advances or records the causal
-loop-back. Only a successful atomic update makes downstream artifacts current. The current
-runtime can advance targets with implemented S5–S13 gates. S13 additionally requires explicit
-eligible record evidence; other exact-next stages remain unsupported rather than manufacturing
-a pass.
+The host adapter starts or resumes a bundle, inspects available repository evidence, and asks one
+or two highest-impact questions at a time. The next question depends on the answer. The orchestrator
+normalizes LLM/human output, validates shape through the Model Repository, runs the semantic gate,
+and either advances or records the causal loop-back. Unknown consequential answers remain explicit
+and block only dependent work when an owned seam isolates them. The current runtime can advance
+targets with implemented S5–S13 gates. S13 additionally requires explicit eligible record evidence;
+other exact-next stages remain unsupported rather than manufacturing a pass.
 
 ### Constraint compilation
 

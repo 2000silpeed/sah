@@ -2,17 +2,18 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스입니다. 모호한 요구사항을
-구현 전에 검토 가능한 아키텍처 근거로 바꾸고, 선택한 아키텍처 제약이 실제 코드에서도
-지켜지는지 확인하도록 돕습니다.
+SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스입니다. 자연어로 만들
+소프트웨어를 설명하면 설치된 host skill이 저장소를 살피고 필요한 질문을 이어가며,
+검토 가능한 아키텍처 근거를 기록하고 준비된 작업을 실제로 구현한 뒤 선택한 제약을
+코드에서 확인합니다.
 
 한 문장으로 요약하면:
 
 > SAH는 왜 이 설계를 선택했는지, 각 규칙의 책임자는 누구인지, 구현이 무엇을 해야
 > 하는지, 그중 무엇을 관찰 가능한 사실로 검증할 수 있는지를 기록합니다.
 
-현재 SAH는 1.0 이전의 로컬 우선 TypeScript 프로젝트입니다. GitHub 저장소는
-공개되어 있지만 npm 패키지는 private이므로 소스 체크아웃에서 실행해야 합니다.
+현재 SAH는 1.0 이전의 로컬 우선 Agent Skill과 TypeScript 검증 커널입니다. GitHub
+저장소는 공개되어 있지만 npm 패키지는 private이므로 소스 체크아웃에서 실행합니다.
 
 ## 왜 SAH가 필요한가요?
 
@@ -33,20 +34,23 @@ SAH는 요구사항과 구현 사이에 근거의 연결 고리를 만듭니다.
 보존해야 할 때 SAH가 유용합니다. 작고 되돌리기 쉬운 저위험 변경에는 short profile을
 사용해 문서화 비용을 줄일 수 있습니다.
 
-## 먼저 이해할 세 가지
+## 먼저 이해할 네 가지
 
-SAH는 세 가지 대상을 중심으로 작동합니다.
+SAH는 네 가지 대상을 중심으로 작동합니다.
 
-1. **설계 번들** — 근거, 책임, 불변조건, 아키텍처, 결정, 구현 인수인계를 담은
+1. **Host Agent Skill** — Codex 또는 Claude Code가 질문·추론·구현·검증에 사용하는
+   대화형 workflow입니다.
+2. **설계 번들** — 근거, 책임, 불변조건, 아키텍처, 결정, 구현 인수인계를 담은
    스키마 검증 JSON 파일 묶음입니다.
-2. **대상 체크아웃** — 검증할 코드 또는 산출물이 있는 디렉터리입니다.
-3. **라이프사이클** — S0부터 S13까지의 단계입니다. 각 gate가 잘못된 근거가 완료
+3. **대상 체크아웃** — host agent가 변경하고 검사할 코드가 있는 디렉터리입니다.
+4. **라이프사이클** — S0부터 S13까지의 단계입니다. 각 gate가 잘못된 근거가 완료
    상태로 넘어가지 못하게 막습니다.
 
 ~~~mermaid
 flowchart LR
-    A[요구사항과 저장소 근거] --> B[설계 추론 S0-S12]
-    B --> C[설계 번들과 구현 인수인계]
+    A[자연어 요청] --> B[Host skill: 조사하고 질문]
+    B --> C0[설계 추론 S0-S12]
+    C0 --> C[설계 번들과 구현 인수인계]
     C --> D[sah validate]
     C --> E[대상 구현]
     C --> F[sah verify]
@@ -116,7 +120,9 @@ Adapter가 없으면 **unsupported**이며 pass가 아닙니다. 이름 냄새, 
 
 전체 분류 계약과 한계는 [검증 모델](docs/validation-model.md)에 있습니다.
 
-## 5분 만에 실행해 보기
+## 5분 만에 CLI 커널 확인하기
+
+실제 프로젝트에는 아래 대화형 skill을 설치하세요. 이 fixture는 커널 동작만 확인합니다.
 
 ### 1. Clone과 설치
 
@@ -258,23 +264,20 @@ Result envelope, 전이 규칙, 경로 제한, adapter 범위, 원자성의 기�
 
 ## 내 프로젝트에 적용하기
 
-현재 runtime은 설계 근거를 validate, advance, verify하지만 S0–S12 번들을 자동으로
-scaffold하거나 작성하지는 않습니다. Schema와 예제에서 시작하세요.
+[Codex·Claude Code 설치 가이드](docs/agent-skill.md)에 따라 portable skill을 설치하고,
+대상 저장소를 host agent에서 연 뒤 다음처럼 자연어로 시작하세요.
 
-1. 프로젝트 안에 별도의 design 디렉터리를 만듭니다.
-2. sah.bundle.json과 현재 stage에 필요한 의미론적 IR 파일을 추가합니다.
-   [fixtures/simple-crud](fixtures/simple-crud/)는 파일 형태의 예제로만 사용하고 그
-   아키텍처를 정답처럼 복사하지 마세요.
-3. [설계 추론 모델](docs/design-reasoning-model.md)의 S0–S12를 따라 주장보다 근거를 먼저
-   기록하고, 해결되지 않은 decision은 proposed로 유지합니다.
-4. 중요한 편집마다 sah validate를 실행합니다. 마지막 문서만 고치지 말고 가장 이른
-   잘못된 전제로 돌아가세요.
-5. implementation-handoff.json의 의존 순서에 따라 slice를 구현합니다.
-6. TypeScript 검증을 사용한다면 대상 내부 mapping에 tsconfig, 전체 source root,
-   path-to-element ownership, write target symbol을 명시합니다.
-   [Mapping schema](schemas/typescript-source-mapping.schema.json)를 따르세요.
-7. Full verification 결과를 기록하고, 자격이 있는 check가 모두 통과했을 때만 S13으로
-   advance합니다.
+~~~text
+Use $sah to build this feature. 저장소부터 조사하고 중요한 정보가 없으면 한 번에 한두
+가지씩 계속 질문한 다음 실제 구현과 검증까지 진행해줘.
+~~~
+
+에이전트는 질문하기 전에 기존 근거를 읽습니다. 고정 설문 대신 답변에 따라 다음 질문을
+고르고, 모르는 답을 추측하지 않고 기록하며, subsystem마다 맞는 방법을 선택합니다.
+이후 `.sah/design`을 만들고 의존 순서상 ready인 slice만 구현하며 대상 test와 정직한
+S13 검증을 실행합니다. 중요한 미해결 항목은 owned seam으로 격리할 수 있을 때만 관련
+slice에 한정해 막습니다. CLI만 따로 사용하면 번들을 수동 검증할 수 있지만 대화나 제품
+코드 편집은 하지 않습니다.
 
 중요한 아키텍처 작업에는 full profile을 사용하세요. Short profile은 되돌리기 쉽고,
 로컬이며, critical invariant·분산·확률적 자율성·중요한 품질 시나리오가 없는 저위험
@@ -340,6 +343,7 @@ Ajv, TypeScript compiler, filesystem, Git, CLI parser type을 노출하지 않�
 ## 저장소 구조
 
 - [schemas](schemas/) — canonical JSON IR과 verification contract
+- [skills/sah](skills/sah/) — Codex/Claude Code 공용 대화·구현 workflow
 - [src](src/) — CLI/library runtime, gate, atomic manifest update, fact adapter
 - [test](test/) — schema, stage, CLI, atomicity, adversarial verification test
 - [fixtures](fixtures/) — benchmark 입력과 분리된 안전한 실행 예제
@@ -365,13 +369,15 @@ npm run build
 npm run verify:schemas
 ~~~
 
-현재 suite는 225개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
+현재 suite는 228개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
 변경 workflow는 [AGENTS.md](AGENTS.md)가 소유합니다.
 
 ## 현재 범위와 한계
 
-SAH는 범용 방법론, 코드 생성기, source-code reverse-engineering 제품, diagram editor,
-일반 project-management 시스템이 아닙니다. 현재 다음 기능은 제공하지 않습니다.
+SAH는 범용 방법론, 자체 foundation model이나 hosted chat service, source-code
+reverse-engineering 제품, diagram editor, 일반 project-management 시스템이 아닙니다.
+제품 코드는 사용자의 host agent가 기존 권한 안에서 편집합니다. 현재 다음 기능은
+제공하지 않습니다.
 
 - Hosted coordination
 - 범용 evidence database

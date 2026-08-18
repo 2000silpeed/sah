@@ -1,9 +1,10 @@
 # Dogfood Walkthroughs and Model Repairs
 
-This document owns the Phase 6 manual trials and the changes they forced. The trial was not
-blind—the same run authored the fixtures—but reasoning began from each `problem.md`; hidden
-expectations were used only for the final comparison. This limits evaluation strength but does
-not remove the value of finding internal contract contradictions.
+This document owns the Phase 6 manual trials, the Run 14 skill forward test, and the changes they
+forced. The manual trials were not blind—the same run authored the fixtures—but reasoning began
+from each `problem.md`; hidden expectations were used only for the final comparison. The isolated
+skill test had no benchmark expectations. These limits reduce evaluation strength but do not remove
+the value of finding internal contract contradictions.
 
 ## Trial A: simple-crud equipment register
 
@@ -137,7 +138,39 @@ deterministic. Failure-isolation and idempotency adequacy are assisted; correcti
 and closure policy remain pending judgment. Post-run comparison matched the expected mixed
 strategy and all fatal-avoidance anchors.
 
-## Repairs forced into the model
+## Trial C: conversational study-room library
+
+Run 14 placed only `AGENTS.md` and a natural-language `problem.md` in a disposable Git repository.
+The request specified a dependency-free TypeScript reservation library but deliberately omitted the
+overlap policy. A fresh host agent loaded the canonical `sah` skill and never read benchmark
+expectations.
+
+The agent inspected first, then asked three questions one at a time. It asked whether same-room
+intervals may overlap and proposed half-open semantics; whether caller IDs may be reused after
+cancellation; and whether repeat cancellation is idempotent success or a distinct typed result.
+Each question named the invariant or transition decision affected. After answers established
+same-room exclusion, lifetime ID uniqueness, and an `already-canceled` result, the agent stopped
+asking rather than continuing into low-impact preferences.
+
+Those interacting policies disqualified the short path. The agent selected one cohesive
+responsibility-centered reservation owner and compared it with a split operations/store candidate.
+The split could meet the scenarios but added an unjustified state-access abstraction and atomicity
+contract. Reversal triggers preserved the case for external persistence, independent ownership, or
+measured scale. Finite epoch-millisecond timestamps remained a labeled reversible assumption.
+
+The host published a valid S0–S4 bundle, then used exact-next CLI gates through S12 before editing
+product code. It implemented a reusable `ReservationBook`, typed results, immutable ordered
+listings, an example, and four focused tests. Typecheck, tests, and build passed. Full SAH
+verification produced one deterministic write-authority pass; its schema-validated record advanced
+the bundle atomically to S13, and stored-S13 validation passed.
+
+The first full verification was correctly `incomplete`: the target's broad build config admitted
+ambient Node declarations outside the mapping's source roots. A dedicated source-only
+`tsconfig.sah.json` made the compiler input match the declared fact boundary without narrowing
+mapped roots. This forced R6 into the skill's mapping guidance and contract tests. The temporary
+target was not committed; available Node was v26.4.0, so exact Node 22 execution remains untested.
+
+## Repairs forced into the harness
 
 | ID  | Broken contract                                                          | Model repair                                                                                                       | Files changed                                               |
 | --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
@@ -146,6 +179,7 @@ strategy and all fatal-avoidance anchors.
 | R3  | S2 composition contracts decided ownership and interaction before S3–S6. | Replace them with representation-free composition seams; S6 owns full interfaces/relations.                        | strategy, reasoning, architecture-model, Strategy schema    |
 | R4  | Time-bounded or superseding obligations existed only inside prose.       | Add required invariant `applicability`, read by boundary and constraint work.                                      | reasoning and Invariant schema                              |
 | R5  | One unresolved policy blocked selection of the whole architecture.       | Allow scoped readiness: isolate proposed decisions and block only dependent S12 slices.                            | reasoning and architecture-model                            |
+| R6  | Broad target config admitted unrelated TypeScript compiler inputs.        | Use a dedicated confined mapping config while keeping declared product roots exhaustive.                           | skill mapping reference and contract test                   |
 
-These are reasoning-model changes, not relaxed benchmark expectations. Both benchmark files
-remain unchanged.
+These are harness/model changes, not relaxed benchmark expectations. All benchmark files remain
+unchanged.

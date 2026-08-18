@@ -2,17 +2,18 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-SAH is a methodology-neutral design reasoning harness for coding agents. It helps an agent
-turn ambiguous requirements into reviewable architecture evidence before implementation, then
-checks selected architectural constraints against the resulting code.
+SAH is a methodology-neutral design reasoning harness for coding agents. You describe software in
+natural language; an installed host skill inspects the repository, asks focused follow-up questions,
+records reviewable architecture evidence, implements ready work, and checks selected constraints
+against the resulting code.
 
 The short version:
 
 > SAH records why a design was chosen, who owns each rule, what an implementation must do, and
 > which of those claims can be verified from observable facts.
 
-SAH is currently a pre-1.0, local-first TypeScript project. The repository is public, but the
-npm package is private and is meant to run from a source checkout.
+SAH is currently a pre-1.0, local-first Agent Skill plus a TypeScript validation kernel. The
+repository is public, but the npm package is private and runs from a source checkout.
 
 ## Why SAH exists
 
@@ -34,18 +35,21 @@ short profile so the documentation cost stays proportional.
 
 ## The mental model
 
-SAH works with three things:
+SAH works with four things:
 
-1. **A design bundle** — schema-validated JSON files containing evidence, responsibilities,
+1. **A host Agent Skill** — the conversational workflow used by Codex or Claude Code to ask,
+   reason, implement, and verify.
+2. **A design bundle** — schema-validated JSON files containing evidence, responsibilities,
    invariants, architecture, decisions, and an implementation handoff.
-2. **A target checkout** — the code or artifacts being checked.
-3. **A lifecycle** — stages S0 through S13, with gates that stop invalid evidence from becoming
+3. **A target checkout** — the code the host agent changes and checks.
+4. **A lifecycle** — stages S0 through S13, with gates that stop invalid evidence from becoming
    accepted progress.
 
 ~~~mermaid
 flowchart LR
-    A[Requirements and repository evidence] --> B[Reasoning S0-S12]
-    B --> C[Design bundle and implementation handoff]
+    A[Natural-language request] --> B[Host skill: inspect and ask]
+    B --> C0[Reasoning S0-S12]
+    C0 --> C[Design bundle and implementation handoff]
     C --> D[sah validate]
     C --> E[Target implementation]
     C --> F[sah verify]
@@ -116,7 +120,9 @@ The current executable adapters check:
 The [validation model](docs/validation-model.md) explains the full deterministic/assisted/
 judgment contract and current limitations.
 
-## Five-minute quick start
+## Five-minute CLI kernel check
+
+For a real project, install the conversational skill below; this fixture only proves the kernel.
 
 ### 1. Clone and install
 
@@ -257,22 +263,20 @@ transition rules, path confinement, adapter coverage, and atomicity guarantees.
 
 ## Use SAH with your own project
 
-The current runtime validates, advances, and verifies design evidence; it does **not** scaffold
-or autonomously author an S0–S12 bundle. Start from the schemas and the example:
+Install the portable skill using the [Codex and Claude Code guide](docs/agent-skill.md), open your
+target repository in the host agent, and start with a natural request such as:
 
-1. Create a separate design directory in your project.
-2. Add sah.bundle.json and the semantic IR files needed for the current stage. Use
-   [fixtures/simple-crud](fixtures/simple-crud/) as a working shape, not as architecture advice.
-3. Follow S0–S12 in the [design reasoning model](docs/design-reasoning-model.md), recording
-   evidence before claims and keeping unresolved decisions proposed.
-4. Run sah validate after each material edit. Repair the earliest invalid premise instead of
-   patching only the last artifact.
-5. Implement the dependency-ordered slices in implementation-handoff.json.
-6. For TypeScript verification, add a target-local mapping that explicitly names its tsconfig,
-   exhaustive source roots, path-to-element ownership, and write target symbols. Follow the
-   [mapping schema](schemas/typescript-source-mapping.schema.json).
-7. Run full verification, record the result, and advance to S13 only when all eligible checks
-   pass.
+~~~text
+Use $sah to build this feature. Inspect the repository first, keep asking me one or two focused
+questions when consequential information is missing, then implement and verify the result.
+~~~
+
+The agent reads existing evidence before asking. It asks adaptively rather than sending a fixed
+questionnaire, records unknowns instead of guessing, selects methods per subsystem, creates
+`.sah/design`, implements only ready dependency-ordered slices, runs target tests, and attempts
+honest S13 verification. A material unknown blocks only dependent work when an owned seam makes
+that safe. The CLI remains usable by itself for manual bundle validation; it does not conduct the
+conversation or edit product code.
 
 Use the full profile for material architectural work. The short profile is only for reversible,
 local, low-risk work with no critical invariant, distribution, probabilistic autonomy, or
@@ -339,6 +343,7 @@ Common beginner mistakes:
 ## Repository map
 
 - [schemas](schemas/) — canonical JSON IR and verification contracts.
+- [skills/sah](skills/sah/) — shared Codex/Claude Code conversation and implementation workflow.
 - [src](src/) — CLI/library runtime, gates, atomic manifest update, and fact adapters.
 - [test](test/) — schema, stage, CLI, atomicity, and adversarial verification tests.
 - [fixtures](fixtures/) — safe executable examples outside benchmark inputs.
@@ -364,13 +369,14 @@ npm run build
 npm run verify:schemas
 ~~~
 
-The current suite covers 225 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
+The current suite covers 228 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
 slice, file discipline, document budgets, and change workflow.
 
 ## Current boundaries
 
-SAH is not a universal methodology, code generator, source-code reverse-engineering product,
-diagram editor, or general project-management system. It does not currently provide:
+SAH is not a universal methodology, its own foundation model or hosted chat service, a source-code
+reverse-engineering product, diagram editor, or general project-management system. Product code is
+edited by the user's host agent under its existing permissions. SAH does not currently provide:
 
 - hosted coordination;
 - a general evidence database;

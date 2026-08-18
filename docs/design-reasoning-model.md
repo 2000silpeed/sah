@@ -5,6 +5,11 @@ but gates can return work to the earliest invalid premise. IR names refer to sch
 under `schemas/`; partial IR is permitted during a run, while selected output must satisfy
 semantic gates beyond JSON Schema validity.
 
+The portable [`sah` Agent Skill](../skills/sah/SKILL.md) is the first executable host protocol for
+this model. It makes Codex or Claude Code inspect the target, elicit missing evidence progressively,
+persist the IR, implement ready S12 slices, and use the deterministic CLI for lifecycle and S13
+evidence. The host supplies conversation and code mutation; it does not gain stakeholder authority.
+
 ## Control rules
 
 - Evidence precedes claims; an unsupported consequential claim becomes an assumption with a
@@ -24,6 +29,10 @@ semantic gates beyond JSON Schema validity.
 questions. **Complete when:** scope and stakeholders are named, requirements have locators,
 and ambiguity is visible. **Loop-back:** any later uncited claim or changed requirement
 returns here.
+
+The host inspects observable evidence before asking. It asks one or two highest-impact questions at
+a time and uses each answer to choose the next question. An unknown answer remains an unresolved
+question with consequence and resolution owner; it is never filled by an unlabeled model guess.
 
 ### S1 — Characterize and decompose the problem
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Software Architect Harness"
+  short_description: "Design and build software with architecture evidence"
+  default_prompt: "Use $sah to turn my natural-language request into an implemented and verified software change."
