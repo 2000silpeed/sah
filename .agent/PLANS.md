@@ -127,3 +127,68 @@ exercise traces `equipment-owns-writes` through decision `choose-equipment-modul
 Run 11 is complete. The next run should select a bounded S13 capability or exception-disposition
 slice from accepted constraint evidence; do not broaden the record descriptor into hosted
 coordination or a general evidence registry without measured multi-writer or retention need.
+
+## Run 12 ExecPlan — 2026-08-18
+
+### Outcome
+
+The repository has a concise root `README.md` that routes users to the executable entry points
+and authoritative documents. Confirmed Finder metadata is removed, and the documentation-only
+milestone is verified, committed, and pushed when an explicit repository remote is available.
+
+### Scope
+
+Included: repository inventory, exact removal of ignored `.DS_Store` files, a root README,
+documentation-index linkage, full validation, diff review, a meaningful commit, and push.
+Excluded: runtime behavior, schemas, fixtures, dependencies, generated build directories,
+benchmark content, provenance prompt changes, lifecycle authority, and architecture decisions.
+
+### Constraints
+
+- Delete only files whose generated, ignored, non-product status is observable; do not infer
+  that a linked document, fixture, or provenance input is obsolete.
+- Keep the README English, under the document line budget, and navigational. Normative details
+  remain owned by the linked documentation.
+- Preserve CLI/library contracts, exit meanings, lifecycle authority, benchmark expectations,
+  and the completed Run 11 evidence.
+- Do not invent a Git remote or destination. Push only through an already configured remote or
+  an unambiguous repository association discovered read-only.
+- No ADR is required because cleanup and navigation are reversible and make no architecture
+  decision.
+
+### Milestones
+
+| Phase | Milestone                                      | Status      | Evidence |
+| ----- | ---------------------------------------------- | ----------- | -------- |
+| 0     | Inventory files, links, package, and Git state | complete    | clean `main`; four ignored `.DS_Store` files |
+| 1     | Record cleanup and README plan                 | complete    | this ExecPlan |
+| 2     | Remove confirmed metadata and author README   | in_progress | exact deletion list and linked README |
+| 3     | Run full validation and adversarial diff review | pending   | command and audit logs |
+| 4     | Commit and push the milestone                 | pending     | commit and remote evidence |
+
+### Decision log
+
+- 2026-08-18: Limit deletion to the four observed `.DS_Store` files. Ignored `dist/` and
+  `node_modules/` remain because they are current build and verification inputs, not unexplained
+  repository content.
+- 2026-08-18: Add one conventional `README.md` as a reader-oriented map; keep definitions and
+  contracts in `docs/` rather than restating their authority.
+
+### Discovery log
+
+- 2026-08-18: The initial worktree was clean at `8cb44ce`. No tracked editor backups, logs,
+  temporary files, or Finder metadata were found.
+- 2026-08-18: Four ignored `.DS_Store` files exist at the repository root and below `fixtures/`.
+  The existing `.gitignore` already prevents recurrence in Git.
+- 2026-08-18: `main` has no displayed upstream and `git remote -v` returned no configured
+  remote. Push must remain pending unless a destination can be resolved without guessing.
+
+### Verification log
+
+- 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the completed Run 11 handoff, `.gitignore`,
+  `package.json`, tracked paths, ignored cleanup candidates, branch state, and remote state.
+
+### Handoff
+
+Run 12 is active. Complete the documented cleanup and README, run the repository's full
+validation slice, review the final diff, then commit and push only to a resolved remote.
