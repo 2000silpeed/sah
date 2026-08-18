@@ -4,6 +4,27 @@ SAH is a methodology-neutral design reasoning harness for coding agents. Read th
 work. Use [docs/index.md](docs/index.md) to find the authoritative document for each concept
 and [.agent/PLANS.md](.agent/PLANS.md) for the active ExecPlan and evidence.
 
+## Default prompt compilation
+
+[CLAUDE.md](CLAUDE.md) imports this policy so Claude Code and Codex receive the same repository
+authority without duplicated instructions.
+
+- Before planning or executing a material change, multi-step investigation, or architecture
+  decision, invoke the `meta-prompt` skill. Skip it for simple factual/status questions,
+  trivial edits, or explicit user opt-out.
+- In Codex, use the `openai-codex` guidebook with `gpt-5.6-sol` as the default execution model.
+  In Claude Code, use the `anthropic-claude` guidebook with the active Claude model unless the
+  user names another target.
+- Summarize the compiled objective, scope, exclusions, authority, deliverables, verification,
+  and stop conditions in one to three sentences, then continue the work in the same turn.
+- If `meta-prompt` is unavailable or unreadable, do not silently fall back. Direct the user to
+  download the canonical skill from https://github.com/2000silpeed/meta-prompt-skill.git and
+  install or symlink it at `~/.codex/skills/meta-prompt` for Codex or
+  `~/.claude/skills/meta-prompt` for Claude Code; a project-only Claude installation may use
+  `.claude/skills/meta-prompt`. Continue without it only after explicit user opt-out.
+- Never invent another source, download without authorization, auto-refresh guidebooks, invoke
+  a paid external model, expand authorization, or weaken this file's constraints.
+
 ## Non-negotiable order
 
 For every target system or material change:
