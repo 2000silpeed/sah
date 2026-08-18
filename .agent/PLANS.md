@@ -251,9 +251,9 @@ architecture changes and translation of normative product documents.
 | ----- | ---------------------------------------------- | ----------- | -------- |
 | 0     | Reconfirm reader gaps and current contracts    | complete    | clean `main` at `0770103`; authority reread |
 | 1     | Record beginner-documentation plan            | complete    | this ExecPlan |
-| 2     | Expand English guide and add Korean guide      | in_progress | both README files and index links |
-| 3     | Exercise examples and run full verification   | pending     | CLI, tests, links, budgets, diff review |
-| 4     | Commit the documentation milestone            | pending     | local commit evidence |
+| 2     | Expand English guide and add Korean guide      | complete    | 391-line paired guides and index links |
+| 3     | Exercise examples and run full verification   | complete    | 225 tests; 64-file link audit; CLI evidence |
+| 4     | Commit the documentation milestone            | in_progress | local commit evidence |
 
 ### Decision log
 
@@ -269,12 +269,27 @@ architecture changes and translation of normative product documents.
   lifecycle gates, verification scope, and how the fixture maps to a real project.
 - 2026-08-18: The public repository is synchronized and clean. The package remains private,
   so onboarding must begin with cloning the source checkout rather than npm publication.
+- 2026-08-18: Paired 391-line guides fit the document budget while covering the mental model,
+  grouped stages, IR roles, enforcement honesty, first success, S13 evidence, changed scope,
+  CLI/library integration, self-project adoption, failure reading, and current boundaries.
 
 ### Verification log
 
 - 2026-08-18: Re-read the README, documentation index, Run 12 handoff, vision, reasoning model,
   architecture/validation models, CLI/library contract, public types, manifest schema, and
   canonical fixture before drafting.
+- 2026-08-18: `npm install` audited 164 packages with zero vulnerabilities. Formatting, lint,
+  strict typecheck, production build, 225/225 tests, and the 4/4 schema/trace audit passed.
+- 2026-08-18: Both guides' validate, full TypeScript verify, changed verify, record publication,
+  S12→S13 advance, and stored S13 validation commands passed. Disposable S11→S12 also passed;
+  the unsupported filesystem-only target returned its expected incomplete/exit-2 result.
+- 2026-08-18: Audited 64 Markdown files with zero broken local links and balanced fences. The
+  two guides have ten identical executable/reference blocks, remain at 392 lines each, and
+  introduce no runtime, test, schema, fixture, benchmark, package, or provenance diff.
+- 2026-08-18: Adversarial review corrected a flow diagram that could imply validation creates
+  the handoff. Final wording distinguishes authored design evidence from validation, states
+  current generation limits, preserves exact exit and lifecycle authority, and uses disposable
+  mutation examples. `git diff --check` passed.
 
 ### Handoff
 

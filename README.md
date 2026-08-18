@@ -1,126 +1,392 @@
 # Software Architect Harness (SAH)
 
-SAH is a methodology-neutral design reasoning harness for coding agents. It turns requirements
-into traceable responsibilities, invariants, architecture decisions, implementation slices,
-and executable constraints before code changes make those choices expensive to reverse.
+[English](README.md) | [한국어](README.ko.md)
 
-JSON IR under [`schemas/`](schemas/) is the machine contract. Markdown documents and diagrams
-are explanatory views; [`docs/index.md`](docs/index.md) routes each concept to its authoritative
-document.
+SAH is a methodology-neutral design reasoning harness for coding agents. It helps an agent
+turn ambiguous requirements into reviewable architecture evidence before implementation, then
+checks selected architectural constraints against the resulting code.
 
-## What works today
+The short version:
 
-The local TypeScript runtime provides:
+> SAH records why a design was chosen, who owns each rule, what an implementation must do, and
+> which of those claims can be verified from observable facts.
 
-- Draft 2020-12 schema, reference, and lifecycle-gate validation for a design bundle;
-- exact-next, atomic lifecycle advancement through the implemented S5–S13 gates;
-- read-only full or explicit change-scoped verification against a target checkout;
-- filesystem-presence and explicitly mapped TypeScript write-authority fact adapters; and
-- schema-validated full-verification records that can atomically authorize S12→S13.
+SAH is currently a pre-1.0, local-first TypeScript project. The repository is public, but the
+npm package is private and is meant to run from a source checkout.
 
-Changed-scoped, incomplete, violating, stale, malformed, or operational-error evidence cannot
-complete S13. The exact CLI/library behavior and exit codes are owned by
-[`docs/validation-cli.md`](docs/validation-cli.md).
+## Why SAH exists
 
-## Requirements
+Coding agents can generate working code while still making expensive structural mistakes:
 
-- Node.js 22 or newer
-- npm
+- selecting one methodology for every subsystem;
+- creating layers, services, interfaces, or events without evidence;
+- losing the reason a boundary or dependency direction exists;
+- treating a subjective architecture opinion as a deterministic rule; or
+- changing code without knowing which earlier decision must be reconsidered.
 
-The package is currently private and intended to run from a source checkout.
+SAH puts an evidence trail between requirements and implementation. It does not choose one
+universal architecture style. A simple CRUD area can stay simple while a payment, pipeline, or
+agentic area uses stronger boundaries when its risks justify them.
 
-## Quick start
+Use SAH when a coding agent will make a non-trivial structural change and later agents need to
+understand or preserve the decision. For a tiny, reversible, low-risk change, SAH supports a
+short profile so the documentation cost stays proportional.
 
-Install, build, validate the example bundle, and verify its implementation target:
+## The mental model
 
-```sh
+SAH works with three things:
+
+1. **A design bundle** — schema-validated JSON files containing evidence, responsibilities,
+   invariants, architecture, decisions, and an implementation handoff.
+2. **A target checkout** — the code or artifacts being checked.
+3. **A lifecycle** — stages S0 through S13, with gates that stop invalid evidence from becoming
+   accepted progress.
+
+~~~mermaid
+flowchart LR
+    A[Requirements and repository evidence] --> B[Reasoning S0-S12]
+    B --> C[Design bundle and implementation handoff]
+    C --> D[sah validate]
+    C --> E[Target implementation]
+    C --> F[sah verify]
+    E --> F
+    F --> G[Full verification record]
+    G --> H[sah advance to S13]
+~~~
+
+The flow is iterative, not a one-way waterfall. If later evidence contradicts an earlier
+assumption, SAH reopens the earliest affected stage and marks downstream reasoning stale.
+
+### S0–S13 in five beginner-friendly phases
+
+| Phase | Stages | Main question | Main output |
+| --- | --- | --- | --- |
+| Understand | S0–S2 | What problem are we solving, and which strategy fits each region? | Characterization and design strategy |
+| Assign ownership | S3–S5 | What work and invariants exist, and who owns them? | Responsibilities and invariants |
+| Design architecture | S6–S10 | Which boundaries, representations, and candidate best satisfy measured scenarios? | Architecture and accepted decisions |
+| Prepare implementation | S11–S12 | Which claims are checkable, and what ordered changes should the coding agent make? | Constraints and implementation handoff |
+| Verify continuously | S13 | Does the implementation still satisfy the accepted observable constraints? | Verification evidence and lifecycle completion |
+
+The exact stage inputs, gates, and loop-backs are defined in the
+[design reasoning model](docs/design-reasoning-model.md).
+
+## What is inside a design bundle?
+
+The root manifest is named sah.bundle.json. It identifies the bundle, records its completed
+stage and profile, and can point to seven semantic IR (intermediate representation) files as
+the lifecycle progresses:
+
+| Artifact | What it answers |
+| --- | --- |
+| System Characterization | What is in scope, what evidence exists, and which quality scenarios matter? |
+| Design Strategy | Which strategy fits each problem region, what simpler option was considered, and what would reverse the choice? |
+| Responsibility | Which outcomes must happen, why do they change, and who collaborates? |
+| Invariant | What must remain true, where, for how long, and how is failure detected or recovered? |
+| Architecture | Which elements, boundaries, relations, candidates, and executable constraints exist? |
+| Architecture Decision | Which option was accepted, which alternatives were rejected, and what costs or review triggers remain? |
+| Implementation Handoff | Which dependency-ordered code slices, checks, migration steps, and rollback steps should an agent execute? |
+
+JSON under [schemas](schemas/) is the machine contract. Markdown and diagrams explain it but do
+not replace it. Stable IDs connect evidence → strategy → responsibility/invariant → architecture
+→ decision → constraint → implementation slice.
+
+The manifest and verification records are operational metadata, not additional semantic IR.
+See the [structured architecture model](docs/architecture-model.md) for the exact ownership.
+
+## What can SAH enforce?
+
+SAH separates claims by how honestly they can be checked:
+
+| Classification | Meaning | Can it hard-fail automatically? |
+| --- | --- | --- |
+| Deterministic | Complete observable input plus a fixed predicate | Yes, when the required adapter is available |
+| Assisted | Facts narrow a contextual review | No; it emits a finding |
+| Judgment | A human or LLM applies a rubric with confidence and counter-evidence | No; it remains pending until dispositioned |
+
+A missing adapter is **unsupported**, never a pass. A naming smell, abstraction choice, strategy
+fit, or trade-off judgment is not promoted into a deterministic error merely because it is
+easy to phrase as a rule.
+
+The current executable adapters check:
+
+- whether a declared target-relative regular file exists; and
+- whether direct TypeScript callers of one explicitly mapped write symbol belong to the
+  architecture elements allowed by the constraint.
+
+The [validation model](docs/validation-model.md) explains the full deterministic/assisted/
+judgment contract and current limitations.
+
+## Five-minute quick start
+
+### 1. Clone and install
+
+Requirements: Node.js 22 or newer and npm.
+
+~~~sh
+git clone https://github.com/2000silpeed/sah.git
+cd sah
 npm install
 npm run build
+~~~
+
+No global installation is required. npm exec uses the binary built from this checkout.
+
+### 2. Validate the example design bundle
+
+~~~sh
 npm exec -- sah validate fixtures/simple-crud
-npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target \
-  --mapping sah.source-map.json
-```
+~~~
 
-Use `--json` on any command for one machine-readable result envelope.
+Expected result:
 
-### Record full evidence and complete S13
+~~~text
+SAH validation passed
 
-`advance` mutates a bundle, so work on a disposable copy:
+Bundle: equipment-register (S12, short)
 
-```sh
+Summary: 0 error(s), 0 warning(s)
+~~~
+
+This proves that the JSON files match their schemas, references resolve, and every gate
+required by the manifest's stored S12 lifecycle state passes. It does not inspect target code.
+
+Add --json when another tool or agent should consume one machine-readable result:
+
+~~~sh
+npm exec -- sah validate fixtures/simple-crud --json
+~~~
+
+### 3. Verify the example TypeScript target
+
+~~~sh
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
+~~~
+
+Expected result: one passing deterministic check for the equipment-owns-writes constraint.
+
+The arguments mean:
+
+- fixtures/simple-crud is the design bundle;
+- fixtures/s13-typescript-target is the target checkout;
+- sah.source-map.json is relative to the target checkout and maps source paths/symbols to
+  architecture element IDs.
+
+Verification is read-only unless --record is supplied.
+
+## Complete S13 with recorded full evidence
+
+Advancement mutates sah.bundle.json, so never experiment on the checked-in fixture. Make a
+disposable copy:
+
+~~~sh
 bundle_root="$(mktemp -d)"
 cp -R fixtures/simple-crud "$bundle_root/bundle"
 
-npm exec -- sah verify "$bundle_root/bundle" fixtures/s13-typescript-target \
-  --mapping sah.source-map.json \
-  --record verification-record.json \
-  --json
+npm exec -- sah verify "$bundle_root/bundle" fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 
-npm exec -- sah advance "$bundle_root/bundle" S13 \
-  --verification-record verification-record.json \
-  --json
-```
+npm exec -- sah advance "$bundle_root/bundle" S13 --verification-record verification-record.json --json
 
-Publishing a verification record does not advance lifecycle by itself. Advancement validates
-the record, its complete S12 assignment coverage, its design fingerprint, and its pinned bytes
-before replacing the manifest atomically.
+npm exec -- sah validate "$bundle_root/bundle" --json
+~~~
 
-## CLI and library surfaces
+What happened:
 
-```text
+1. verify validated the S12 bundle and ran every assigned constraint;
+2. --record atomically stored the complete result and design fingerprint inside the bundle;
+3. advance revalidated that record, its coverage, its exact bytes, and the current design;
+4. one atomic manifest replacement recorded both completedStage=S13 and the pinned record
+   descriptor; and
+5. the final validate confirmed the stored S13 state.
+
+Publishing a record alone never advances lifecycle. Only a schema-valid **full** record with a
+passed result, complete S12 assignment coverage, all-pass deterministic checks, and a current
+design fingerprint can authorize S12→S13.
+
+### Changed-scoped verification is for feedback, not completion
+
+Use --changed to run constraints assigned to slices affected by explicit target-relative paths:
+
+~~~sh
+npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
+~~~
+
+SAH does not inspect Git. You must supply every changed path explicitly. If a path is unmapped,
+ambiguous, or outside declared roots, selection expands to full-fallback.
+
+Even when every selected check passes—or fallback runs every check—the invocation is still
+change-scoped evidence and cannot complete S13. Run a new verification without --changed to
+produce eligible completion evidence.
+
+## CLI reference
+
+| Command | Purpose | Writes files? |
+| --- | --- | --- |
+| sah validate BUNDLE | Validate the stored bundle at its declared lifecycle stage | No |
+| sah verify BUNDLE TARGET | Validate the bundle and check target facts | No, unless --record is supplied |
+| sah advance BUNDLE STAGE | Validate the exact next gate and update lifecycle atomically | Yes, only after success |
+
+Advancement is forward-only and exactly one stage. The currently executable target gates are
+S5 through S13.
+
+~~~text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
-```
+~~~
 
-The public library exports `validateBundle`, `advanceBundle`, and `verifyBundle` plus their
-framework-neutral result contracts. See the
-[`validation CLI and library guide`](docs/validation-cli.md) before integrating either surface.
+Important options:
 
-## Reasoning flow
+| Option | Meaning |
+| --- | --- |
+| --json | Emit exactly one JSON result and no prose |
+| --mapping PATH | Use explicit target-local TypeScript mapping configuration |
+| --changed PATH | Select affected constraints from an explicit changed file; repeatable and requires --mapping |
+| --record PATH | Store a verification record at a safe bundle-relative JSON path |
+| --verification-record PATH | Use that bundle-relative record only for S12→S13 advancement |
 
-SAH progresses from evidence and problem characterization to strategy, responsibility,
-invariants, ownership, boundaries, representation, candidate comparison, decisions,
-constraints, implementation handoff, and continuous verification (S0–S13). Gates can reopen
-the earliest invalid premise instead of patching only the document where a contradiction
-appears.
+Exit codes are stable across the CLI:
 
-Read [`docs/design-reasoning-model.md`](docs/design-reasoning-model.md) for the complete stage
-contract and [`docs/validation-model.md`](docs/validation-model.md) for the deterministic,
-assisted, and judgment distinction.
+| Exit | Meaning |
+| ---: | --- |
+| 0 | Validation passed, advancement committed, or all selected verification checks passed |
+| 1 | Valid input contains validation/gate defects, advancement is blocked, or target facts violate a deterministic constraint |
+| 2 | Invocation/operation failed, or verification is incomplete because review, blockers, unsafe binding, or adapter coverage remains pending |
+
+See [Validation CLI and Library](docs/validation-cli.md) for the normative result envelopes,
+transition rules, path confinement, adapter coverage, and atomicity guarantees.
+
+## Use SAH with your own project
+
+The current runtime validates, advances, and verifies design evidence; it does **not** scaffold
+or autonomously author an S0–S12 bundle. Start from the schemas and the example:
+
+1. Create a separate design directory in your project.
+2. Add sah.bundle.json and the semantic IR files needed for the current stage. Use
+   [fixtures/simple-crud](fixtures/simple-crud/) as a working shape, not as architecture advice.
+3. Follow S0–S12 in the [design reasoning model](docs/design-reasoning-model.md), recording
+   evidence before claims and keeping unresolved decisions proposed.
+4. Run sah validate after each material edit. Repair the earliest invalid premise instead of
+   patching only the last artifact.
+5. Implement the dependency-ordered slices in implementation-handoff.json.
+6. For TypeScript verification, add a target-local mapping that explicitly names its tsconfig,
+   exhaustive source roots, path-to-element ownership, and write target symbols. Follow the
+   [mapping schema](schemas/typescript-source-mapping.schema.json).
+7. Run full verification, record the result, and advance to S13 only when all eligible checks
+   pass.
+
+Use the full profile for material architectural work. The short profile is only for reversible,
+local, low-risk work with no critical invariant, distribution, probabilistic autonomy, or
+material quality scenario.
+
+## Library integration
+
+The same boundaries are available without the CLI:
+
+~~~ts
+import {
+  advanceBundle,
+  validateBundle,
+  verifyBundle,
+  type VerificationOptions,
+} from "software-architect-harness";
+
+const validation = await validateBundle("design/equipment");
+
+const options = {
+  sourceMappingPath: "sah.source-map.json",
+  verificationRecordPath: "verification-record.json",
+} satisfies VerificationOptions;
+
+const verification = await verifyBundle(
+  "design/equipment",
+  "target/equipment",
+  options,
+);
+
+const advancement = await advanceBundle("design/equipment", "S13", {
+  verificationRecordPath: "verification-record.json",
+});
+~~~
+
+Expected failures are returned as typed result statuses rather than thrown. Public contracts do
+not expose Ajv, the TypeScript compiler, filesystem, Git, or CLI-parser types. The package is
+not yet published to npm, so this example describes the integration surface rather than an
+install-from-registry workflow.
+
+## Reading failures
+
+Start with status, then diagnostic or check code:
+
+- **violations / exit 1** — the input was understood and contradicts a schema, gate, reference,
+  or deterministic target fact. Follow expected and repair fields.
+- **incomplete / exit 2** — SAH cannot honestly conclude pass or violation because a review,
+  blocker, adapter, or source form remains unsupported.
+- **operational-error / exit 2** — invocation, path safety, I/O, parsing, or configuration
+  failed. Fix the operation before interpreting architecture.
+- **blocked / exit 1** — an advance candidate was validly evaluated but its next-stage gate did
+  not pass. The manifest remains at its previous stage.
+
+Common beginner mistakes:
+
+- running advance on the checked-in fixture instead of a disposable copy;
+- assuming --changed reads Git state;
+- treating a changed-scoped pass as S13 completion evidence;
+- omitting --mapping for the TypeScript source-graph constraint;
+- treating unsupported as pass;
+- editing Markdown while leaving canonical JSON contradictory; or
+- skipping directly over a lifecycle stage.
 
 ## Repository map
 
-- [`schemas/`](schemas/) — canonical JSON IR and runtime evidence contracts.
-- [`src/`](src/) — the local CLI/library implementation and fact-adapter seams.
-- [`fixtures/`](fixtures/) — executable validation and verification examples.
-- [`benchmarks/`](benchmarks/) — isolated methodology-discrimination cases and scoring inputs.
-- [`docs/`](docs/) — product, reasoning, architecture, validation, and ADR authority.
-- [`.agent/PLANS.md`](.agent/PLANS.md) — active execution plan, discoveries, and verification
-  evidence.
-- [`AGENTS.md`](AGENTS.md) — permanent repository policy for coding agents.
-- [`CLAUDE.md`](CLAUDE.md) — Claude Code entry point importing the same repository policy.
+- [schemas](schemas/) — canonical JSON IR and verification contracts.
+- [src](src/) — CLI/library runtime, gates, atomic manifest update, and fact adapters.
+- [test](test/) — schema, stage, CLI, atomicity, and adversarial verification tests.
+- [fixtures](fixtures/) — safe executable examples outside benchmark inputs.
+- [benchmarks](benchmarks/) — methodology-discrimination cases and hidden expectations.
+- [docs](docs/) — product, reasoning, architecture, validation, and ADR authority.
+- [.agent/PLANS.md](.agent/PLANS.md) — execution history, discoveries, and verification evidence.
+- [AGENTS.md](AGENTS.md) — permanent policy for Codex and other coding agents.
+- [CLAUDE.md](CLAUDE.md) — Claude Code entry point importing the same policy.
 
-The bootstrap prompts are preserved provenance inputs, not current product authority.
+The bootstrap prompts are preserved provenance inputs. They are not current product authority.
 
-## Development verification
+## Develop and verify SAH
 
-Run the full local quality suite before committing a change:
+Run the complete local quality suite before committing:
 
-```sh
+~~~sh
+npm install
 npm run format:check
 npm run lint
 npm run typecheck
 npm test
 npm run build
-```
+npm run verify:schemas
+~~~
 
-The exact executable validation slice and change workflow live in [`AGENTS.md`](AGENTS.md).
-Do not mutate checked-in fixtures with `advance`; use a disposable copy.
+The current suite covers 225 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
+slice, file discipline, document budgets, and change workflow.
 
-## Current boundary
+## Current boundaries
 
-SAH is local-first. It does not currently provide hosted coordination, a general evidence
-database, source-code reverse engineering, or automated LLM/human judgment execution. Missing
-fact adapters and pending contextual review remain explicit incomplete coverage rather than a
-manufactured pass.
+SAH is not a universal methodology, code generator, source-code reverse-engineering product,
+diagram editor, or general project-management system. It does not currently provide:
+
+- hosted coordination;
+- a general evidence database;
+- automatic Git change discovery;
+- general source-graph or predicate evaluation;
+- automated LLM/human judgment execution; or
+- a published npm package.
+
+Missing capabilities remain explicit backlog or incomplete coverage; they never manufacture a
+pass.
+
+## Where to read next
+
+- [Documentation index](docs/index.md) — authoritative owner for every concept.
+- [Vision](docs/vision.md) — audience, outcome, success, and non-goals.
+- [Design reasoning model](docs/design-reasoning-model.md) — exact S0–S13 contract.
+- [Validation CLI and Library](docs/validation-cli.md) — commands, results, exits, and atomicity.
+- [Harness architecture](docs/harness-architecture.md) — component boundaries and dependency rules.
+- [Dogfood walkthroughs](docs/dogfood.md) — concrete reasoning repairs found by using SAH on itself.
