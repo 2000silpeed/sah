@@ -301,3 +301,86 @@ architecture changes and translation of normative product documents.
 Run 13 is complete. English and Korean readers now have equivalent, executable onboarding;
 normative product authority remains in the indexed English documents. The verified local
 commits and publication evidence are current on public `origin/main`.
+
+## Run 14 ExecPlan — 2026-08-18
+
+### Outcome
+
+A user can invoke one repository-owned `sah` Agent Skill from Codex or Claude Code, describe a
+software change in natural language, and have the host agent carry a proportionate SAH workflow
+through evidence-backed architecture, actual implementation, tests, and honest S13 verification.
+
+### Scope
+
+Included: correct the product boundary, record ADR-0015, package a portable Agent Skill and its
+focused references, document Codex and Claude Code installation/use, add deterministic skill
+contract tests, forward-test one isolated natural-language-to-working-code task, update both
+READMEs and product authority, run full validation and diff review, and create meaningful local
+milestone commits. Excluded: hosted coordination, an embedded or paid LLM/API, a general evidence
+database, an LLM judge, benchmark expectation changes, schema redesign, and new S13 fact adapters.
+
+### Constraints
+
+- The host coding agent owns dialogue and code edits; SAH owns the staged reasoning protocol,
+  canonical JSON evidence, lifecycle gates, and deterministic verification kernel.
+- Elicit missing evidence conversationally: ask one or two highest-impact questions at a time,
+  use repository facts before asking, and continue until the next decision is supported. Record
+  unknown answers honestly; block only the dependent slice when an unresolved choice is material.
+- Preserve existing CLI/library boundaries, exit meanings, lifecycle authority, record
+  eligibility, and validation-honesty rules. The skill must call public surfaces, not bypass them.
+- Use the least elaborate workflow per target: short, reversible changes may take an explicit
+  short path; unresolved consequential decisions block dependent implementation.
+- Keep one canonical `skills/sah` package portable across Agent Skills hosts. Host-specific
+  installation is a link or copy of that package, not duplicated methodology.
+- Forward testing uses an isolated disposable target and no benchmark expectations. No push is
+  authorized by this request.
+
+### Affected authority and evidence
+
+- Earliest premise: `docs/vision.md` currently ends SAH at implementation planning even though
+  ADR-0001 and `docs/harness-architecture.md` already promise a host skill and coding-agent loop.
+- Affected product authority: vision, harness architecture, design reasoning model, documentation
+  index, ADR-0001 relationship, README guides, and the new skill contract.
+- Affected target IR IDs: none; this run changes the SAH delivery/integration surface, not a
+  fixture design decision or semantic schema. Benchmarks remain unchanged.
+
+### Milestones
+
+| Phase | Milestone                                           | Status      | Evidence |
+| ----- | --------------------------------------------------- | ----------- | -------- |
+| 0     | Reconfirm gap and compile the execution prompt      | complete    | authority and runtime inventory |
+| 1     | Record Run 14 plan and product-boundary ADR         | in_progress | this ExecPlan; ADR-0015 draft |
+| 2     | Build portable skill and installation surface      | pending     | `skills/sah` |
+| 3     | Add contract tests and isolated forward test        | pending     | pending |
+| 4     | Update bilingual guides and product authority       | pending     | pending |
+| 5     | Run full verification, diff review, and commits     | pending     | pending |
+
+### Decision log
+
+- 2026-08-18: Select a skill-first host integration instead of an in-product chat CLI. Codex and
+  Claude Code already provide conversation, tools, and code mutation; duplicating those would add
+  model/provider coupling without protecting a new SAH responsibility.
+- 2026-08-18: Keep the TypeScript runtime as the deterministic kernel rather than presenting it as
+  the whole product. The skill composes methodology, artifact authoring, implementation, and that
+  kernel into the end-to-end user workflow.
+- 2026-08-18: Make progressive elicitation part of the workflow contract. A static questionnaire
+  cannot adapt follow-up questions to repository evidence or expose contradictions in user answers.
+
+### Discovery log
+
+- 2026-08-18: The architecture names Method Library, Reasoning Orchestrator, and Coding-Agent
+  Integration, but the repository ships only Model Repository/validation slices. Both READMEs
+  therefore accurately describe a manual authoring gap that conflicts with the intended experience.
+- 2026-08-18: Codex skill tooling and Claude Code both consume `SKILL.md` packages with supporting
+  files, so one canonical Agent Skill can serve both without a hosted coordinator.
+
+### Verification log
+
+- 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the Run 13 handoff, Git state, vision, harness
+  architecture, reasoning/methodology authority, package/test surfaces, and the skill-creator and
+  meta-prompt instructions. Worktree started clean at `24c3600`, synchronized with `origin/main`.
+
+### Handoff
+
+Run 14 is active. Planning and ADR must be committed before implementation; the next milestone is
+the canonical Agent Skill plus its public-host installation and invocation contract.

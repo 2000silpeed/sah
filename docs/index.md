@@ -65,6 +65,9 @@ read [vision](vision.md), [principles](principles.md), and the
   constraints from explicit changed paths and falls back safely when mapping is incomplete.
 - [ADR-0014](adr/0014-pin-full-verification-evidence-for-s13.md) — pins one schema-validated
   full-verification record as the atomic S12→S13 completion evidence.
+- [ADR-0015](adr/0015-orchestrate-the-full-loop-through-a-portable-agent-skill.md) — makes one
+  portable Agent Skill the Codex/Claude orchestration surface from natural language through
+  implementation and S13 verification.
 
 ## JSON Schema contracts
 
