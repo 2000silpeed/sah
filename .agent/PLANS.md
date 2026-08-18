@@ -59,7 +59,7 @@ architecture decisions, schemas, fixtures, or benchmarks are affected.
 | 1     | Record Run 15 and archive completed history    | complete    | this ExecPlan; Runs 11–14 archive |
 | 2     | Correct and expand installation/use guidance  | complete    | paired READMEs; guide; contract test |
 | 3     | Verify local install, docs, tests, and diff    | complete    | 228 tests; CLI lifecycle; 71-file docs audit |
-| 4     | Commit and push the verified milestone        | in_progress | planning commit `501afff` |
+| 4     | Commit and push the verified milestone        | complete    | `501afff`; `487313a`; public `origin/main` |
 
 ### Decision log
 
@@ -102,9 +102,11 @@ architecture decisions, schemas, fixtures, or benchmarks are affected.
   paired READMEs are 400 lines; all governed files meet budget except the unchanged 407-line
   provenance prompt preserved by policy. `git diff --check` passed, and runtime, schema, fixture,
   benchmark, package, and dependency files have no diff.
+- 2026-08-18: Committed planning as `501afff` and the verified installation, bilingual guides,
+  resolver rule, and contract coverage as `487313a`; pushed both to public `origin/main`.
 
 ### Handoff
 
-Run 15 implementation and verification are complete. Commit the reviewed documentation, skill,
-test, and evidence changes, push the authorized commits to `origin/main`, confirm synchronization,
-and close this plan.
+Run 15 is complete. Codex uses the official user/repository skill locations, the local user link
+resolves to the complete SAH checkout, both host workflows are documented from installation through
+S13, and the tested documentation and skill contract are published on `origin/main`.
