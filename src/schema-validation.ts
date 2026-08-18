@@ -25,6 +25,7 @@ const schemaFiles = [
   "verification-diagnostic.schema.json",
   "verification-record.schema.json",
   "verification-result.schema.json",
+  "resume-result.schema.json",
 ] as const;
 
 const schemaDirectory = fileURLToPath(new URL("../schemas/", import.meta.url));

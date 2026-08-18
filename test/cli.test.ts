@@ -44,6 +44,27 @@ async function runCli(arguments_: string[]): Promise<ProcessResult> {
   });
 }
 
+describe("sah resume CLI", () => {
+  it("emits a schema-tagged deterministic handoff", async () => {
+    const execution = await runCli(["resume", fixtureDirectory, "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      $schema: string;
+      resumeVersion: string;
+      status: string;
+      bundleFingerprint: string;
+      nextAction: string;
+      readySliceRefs: string[];
+    };
+    expect(execution.code).toBe(0);
+    expect(output.$schema).toBe("https://sah.dev/schemas/resume-result/v0.1.0");
+    expect(output.resumeVersion).toBe("0.1.0");
+    expect(output.status).toBe("ready");
+    expect(output.bundleFingerprint).toMatch(/^sha256:[a-f0-9]{64}$/u);
+    expect(output.nextAction).toBe("implement-ready-slices");
+    expect(output.readySliceRefs).toContain("implement-equipment-operations");
+  });
+});
+
 describe("sah validate CLI", () => {
   it("returns exit 0 and human-readable success", async () => {
     const execution = await runCli(["validate", fixtureDirectory]);

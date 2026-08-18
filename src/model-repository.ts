@@ -12,11 +12,13 @@ import type {
   VerificationOptions,
   VerificationResult,
   VerificationSelection,
+  ResumeResult,
 } from "./contracts.js";
 import { stages, verificationRecordSchemaId } from "./contracts.js";
 import {
   advanceResult,
   hasErrors,
+  resumeResult,
   result,
   verificationResult,
 } from "./diagnostics.js";
@@ -53,6 +55,7 @@ import {
   loadVerificationRecord,
   publishVerificationRecord,
   validateS13VerificationRecord,
+  designFingerprint,
   type LoadedVerificationRecord,
 } from "./verification-record.js";
 
@@ -618,6 +621,65 @@ export async function validateBundle(
         preparation.prepared.manifest.lifecycle.completedStage,
       )
     : preparation.validation;
+}
+
+export async function resumeBundle(directory: string): Promise<ResumeResult> {
+  const preparation = await prepareBundle(directory);
+  if (!preparation.ok) {
+    return resumeResult(
+      "operational-error",
+      preparation.validation.bundleDirectory,
+      preparation.validation.diagnostics,
+    );
+  }
+  const { prepared } = preparation;
+  const validation = evaluatePreparedBundle(
+    prepared,
+    prepared.manifest.lifecycle.completedStage,
+  );
+  if (validation.status !== "passed") {
+    return resumeResult(
+      validation.status === "operational-error"
+        ? "operational-error"
+        : "blocked",
+      prepared.bundleRoot,
+      validation.diagnostics,
+      {
+        ...(validation.bundle === undefined
+          ? {}
+          : { bundle: validation.bundle }),
+      },
+    );
+  }
+  const handoff = toModels(prepared.artifacts).implementationHandoff;
+  const readySliceRefs =
+    handoff?.slices
+      .filter((slice) => slice.status === "ready")
+      .map((slice) => slice.id) ?? [];
+  const blockedSliceRefs =
+    handoff?.slices
+      .filter((slice) => slice.status === "blocked")
+      .map((slice) => slice.id) ?? [];
+  const dependencyOrder = handoff?.slices.map((slice) => slice.id) ?? [];
+  const stage = prepared.manifest.lifecycle.completedStage;
+  const nextAction =
+    stages.indexOf(stage) < stages.indexOf("S12")
+      ? "author-design"
+      : stage === "S13"
+        ? "complete"
+        : readySliceRefs.length > 0
+          ? "implement-ready-slices"
+          : "resolve-blockers";
+  const status = nextAction === "resolve-blockers" ? "blocked" : "ready";
+  const bundle = validation.bundle;
+  return resumeResult(status, prepared.bundleRoot, [], {
+    ...(bundle === undefined ? {} : { bundle }),
+    bundleFingerprint: designFingerprint(prepared.manifest, prepared.artifacts),
+    nextAction,
+    readySliceRefs,
+    blockedSliceRefs,
+    dependencyOrder,
+  });
 }
 
 function failedValidationForVerification(

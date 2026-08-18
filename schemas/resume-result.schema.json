@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/resume-result/v0.1.0",
+  "title": "SAH Resume Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "resumeVersion",
+    "status",
+    "bundleDirectory",
+    "readySliceRefs",
+    "blockedSliceRefs",
+    "dependencyOrder",
+    "diagnostics",
+    "summary"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/resume-result/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["resume consumers"]
+      }
+    },
+    "resumeVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["resume consumers"]
+      }
+    },
+    "status": {
+      "enum": ["ready", "blocked", "operational-error"],
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "bundleDirectory": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "required": ["id", "completedStage", "profile"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["resume projection"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "completedStage": {
+          "type": "string",
+          "pattern": "^S(?:[0-9]|1[0-3])$",
+          "x-sah-trace": {
+            "writtenBy": ["resume projection"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "profile": {
+          "enum": ["full", "short"],
+          "x-sah-trace": {
+            "writtenBy": ["resume projection"],
+            "readBy": ["session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "bundleFingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "nextAction": {
+      "enum": [
+        "author-design",
+        "implement-ready-slices",
+        "resolve-blockers",
+        "complete"
+      ],
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "readySliceRefs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "blockedSliceRefs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "dependencyOrder": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "type": "object" },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["errors", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["resume projection"],
+            "readBy": ["CLI", "session consumer"]
+          }
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["resume projection"],
+            "readBy": ["CLI", "session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["resume projection"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/resume-result/v0.1.0",
+      "resumeVersion": "0.1.0",
+      "status": "ready",
+      "bundleDirectory": "fixtures/simple-crud",
+      "bundle": {
+        "id": "simple-crud",
+        "completedStage": "S12",
+        "profile": "full"
+      },
+      "bundleFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "nextAction": "implement-ready-slices",
+      "readySliceRefs": ["slice-1"],
+      "blockedSliceRefs": [],
+      "dependencyOrder": ["slice-1"],
+      "diagnostics": [],
+      "summary": { "errors": 0, "warnings": 0 }
+    }
+  ]
+}

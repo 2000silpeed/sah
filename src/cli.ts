@@ -12,18 +12,21 @@ import {
   type VerificationOptions,
   type VerificationResult,
   type VerificationSelection,
+  type ResumeResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
   advanceBundle,
   validateBundle,
   verifyBundle,
+  resumeBundle,
 } from "./model-repository.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]",
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
+  "       sah resume <design-bundle-directory> [--json]",
 ].join("\n");
 
 type ParsedArguments = {
@@ -270,11 +273,12 @@ export function formatVerificationHuman(
 }
 
 function exitCode(
-  outcome: ValidationResult | AdvanceResult | VerificationResult,
+  outcome: ValidationResult | AdvanceResult | VerificationResult | ResumeResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
     case "advanced":
+    case "ready":
       return 0;
     case "violations":
     case "blocked":
@@ -283,6 +287,30 @@ function exitCode(
     case "operational-error":
       return 2;
   }
+}
+
+function formatResumeHuman(resume: ResumeResult): string {
+  return [
+    resume.status === "ready"
+      ? "SAH session resume ready"
+      : "SAH session resume blocked",
+    ...(resume.bundle === undefined
+      ? []
+      : [
+          `Bundle: ${resume.bundle.id} (${resume.bundle.completedStage}, ${resume.bundle.profile})`,
+        ]),
+    ...(resume.bundleFingerprint === undefined
+      ? []
+      : [`Fingerprint: ${resume.bundleFingerprint}`]),
+    ...(resume.nextAction === undefined
+      ? []
+      : [`Next action: ${resume.nextAction}`]),
+    `Ready slices: ${resume.readySliceRefs.join(", ") || "(none)"}`,
+    `Blocked slices: ${resume.blockedSliceRefs.join(", ") || "(none)"}`,
+    `Dependency order: ${resume.dependencyOrder.join(" -> ") || "(none)"}`,
+    ...resume.diagnostics.map(humanDiagnostic),
+    `Summary: ${resume.summary.errors} error(s), ${resume.summary.warnings} warning(s)`,
+  ].join("\n\n");
 }
 
 function isStage(value: string | undefined): value is Stage {
@@ -374,6 +402,22 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(verification, null, 2) : formatVerificationHuman(verification)}\n`,
     );
     return exitCode(verification);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "resume" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const resume = await resumeBundle(positional[1] ?? "");
+    const output = json ? resume : formatResumeHuman(resume);
+    process.stdout.write(
+      `${typeof output === "string" ? output : JSON.stringify(output, null, 2)}\n`,
+    );
+    return exitCode(resume);
   }
 
   const invalid = invocationError(

@@ -110,3 +110,52 @@ architecture decisions, schemas, fixtures, or benchmarks are affected.
 Run 15 is complete. Codex uses the official user/repository skill locations, the local user link
 resolves to the complete SAH checkout, both host workflows are documented from installation through
 S13, and the tested documentation and skill contract are published on `origin/main`.
+
+## Run 16 ExecPlan — 2026-08-18
+
+### Outcome
+
+Different LLM services and sessions can resume a local SAH run from the same canonical bundle via
+`sah resume`, with a schema-tagged fingerprint and deterministic next-action projection.
+
+### Scope and constraints
+
+Included: public `resumeBundle`, `sah resume`, resume-result schema, ADR-0016, beginner-facing
+session handoff documentation, tests, full verification, and a milestone commit. Excluded:
+hosted coordination, a general evidence/session database, concurrent-writer locking, provider-
+specific conversation adapters, Git-based implementation inference, and benchmark changes.
+Existing lifecycle authority, library/CLI boundary, and exit codes remain unchanged.
+
+### Milestones
+
+| Phase | Milestone | Status |
+| --- | --- | --- |
+| 0 | Inspect canonical lifecycle and choose projection boundary | complete |
+| 1 | Write Run 16 plan and ADR-0016 | complete |
+| 2 | Implement schema, library projection, and CLI | complete |
+| 3 | Document cross-session workflow and test | complete |
+| 4 | Full verification, diff review, and commit | complete |
+
+### Decision and discovery log
+
+- The bundle remains the only authority; the resume JSON is a regenerable view and carries a
+  fingerprint so a later session can detect stale output.
+- Implementation completion is intentionally not inferred from Git or target code. S13 full
+  verification remains the completion proof; durable progress tracking is a future authority
+  decision, not hidden state in this slice.
+
+### Verification log and handoff
+
+- Typecheck, build, 228 existing tests, schema-contract tests, and a production `sah resume` run
+  passed. The initial `npm test -- --runInBand` attempt was invalid for Vitest and was rerun as
+  the supported `npm test` command.
+- 229 tests, schema examples/trace audit, format, lint, strict typecheck, build, and
+  `git diff --check` passed. Production `sah resume fixtures/simple-crud --json` emitted a
+  schema-tagged ready handoff with a sha256 fingerprint. The first unsupported Vitest flag was
+  not counted as a product failure; the supported `npm test` command passed.
+
+### Handoff
+
+Run 16 is complete. A later session runs `npm exec -- sah resume <bundle> --json`, checks the
+fingerprint, and continues the model-neutral next action. The canonical bundle and S13 evidence
+remain authoritative; no push was performed.

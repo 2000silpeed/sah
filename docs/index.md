@@ -31,6 +31,7 @@ read [vision](vision.md), [principles](principles.md), and the
   result types, and exit codes for the executable structural slice.
 - [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
   progressive questioning, and the natural-language-to-implementation experience.
+- [Session resume](session-resume.md) — owns the local, model-neutral cross-session resume view.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -72,6 +73,8 @@ read [vision](vision.md), [principles](principles.md), and the
 - [ADR-0015](adr/0015-orchestrate-the-full-loop-through-a-portable-agent-skill.md) — makes one
   portable Agent Skill the Codex/Claude orchestration surface from natural language through
   implementation and S13 verification.
+- [ADR-0016](adr/0016-resume-from-canonical-bundle-projection.md) — adds a regenerable resume
+  projection without introducing a second lifecycle authority or coordination service.
 
 ## JSON Schema contracts
 
@@ -99,6 +102,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Verification record](../schemas/verification-record.schema.json), [result](../schemas/verification-result.schema.json),
   [check](../schemas/verification-check.schema.json), and [diagnostic](../schemas/verification-diagnostic.schema.json)
   — validate the complete runtime evidence envelope used by the S13 completion gate.
+- [Resume result](../schemas/resume-result.schema.json) — validates the cross-session handoff
+  projection emitted by `sah resume`.
 
 ## Runtime implementation and executable fixture
 

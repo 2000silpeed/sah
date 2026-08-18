@@ -24,10 +24,13 @@ export type {
   VerificationSelectionIssueCode,
   VerificationStatus,
   VerificationSummary,
+  ResumeResult,
+  ResumeStatus,
 } from "./contracts.js";
 export { verificationRecordSchemaId } from "./contracts.js";
 export {
   advanceBundle,
   validateBundle,
   verifyBundle,
+  resumeBundle,
 } from "./model-repository.js";

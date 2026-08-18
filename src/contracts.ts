@@ -27,6 +27,7 @@ export type VerificationCheckStatus =
   "pass" | "violation" | "pending" | "unsupported";
 export type VerificationStatus =
   "passed" | "violations" | "incomplete" | "operational-error";
+export type ResumeStatus = "ready" | "blocked" | "operational-error";
 
 export type SourceLocation = {
   line: number;
@@ -141,6 +142,25 @@ export type VerificationResult = {
   checks: VerificationCheck[];
   diagnostics: SahDiagnostic[];
   summary: VerificationSummary;
+};
+
+export type ResumeResult = {
+  $schema: "https://sah.dev/schemas/resume-result/v0.1.0";
+  resumeVersion: "0.1.0";
+  status: ResumeStatus;
+  bundleDirectory: string;
+  bundle?: ValidatedBundle;
+  bundleFingerprint?: string;
+  nextAction?:
+    | "author-design"
+    | "implement-ready-slices"
+    | "resolve-blockers"
+    | "complete";
+  readySliceRefs: string[];
+  blockedSliceRefs: string[];
+  dependencyOrder: string[];
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
 };
 
 export type VerificationOptions = {

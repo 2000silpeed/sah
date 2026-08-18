@@ -10,6 +10,8 @@ import type {
   VerificationResult,
   VerificationSelection,
   VerificationStatus,
+  ResumeResult,
+  ResumeStatus,
 } from "./contracts.js";
 
 function orderDiagnostics(diagnostics: SahDiagnostic[]): SahDiagnostic[] {
@@ -55,6 +57,29 @@ export function result(
     status,
     bundleDirectory,
     ...(bundle === undefined ? {} : { bundle }),
+    diagnostics: ordered,
+    summary: summarize(ordered),
+  };
+}
+
+export function resumeResult(
+  status: ResumeStatus,
+  bundleDirectory: string,
+  diagnostics: SahDiagnostic[],
+  fields: Partial<
+    Omit<ResumeResult, "status" | "bundleDirectory" | "diagnostics" | "summary">
+  > = {},
+): ResumeResult {
+  const ordered = orderDiagnostics(diagnostics);
+  return {
+    $schema: "https://sah.dev/schemas/resume-result/v0.1.0",
+    resumeVersion: "0.1.0",
+    status,
+    bundleDirectory,
+    ...fields,
+    readySliceRefs: fields.readySliceRefs ?? [],
+    blockedSliceRefs: fields.blockedSliceRefs ?? [],
+    dependencyOrder: fields.dependencyOrder ?? [],
     diagnostics: ordered,
     summary: summarize(ordered),
   };
