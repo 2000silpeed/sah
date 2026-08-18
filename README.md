@@ -12,8 +12,7 @@ The short version:
 > SAH records why a design was chosen, who owns each rule, what an implementation must do, and
 > which of those claims can be verified from observable facts.
 
-SAH is currently a pre-1.0, local-first Agent Skill plus a TypeScript validation kernel. The
-repository is public, but the npm package is private and runs from a source checkout.
+SAH is currently a pre-1.0, local-first Agent Skill plus a TypeScript validation kernel. The repository is public, but the npm package is private and runs from a source checkout.
 
 ## Why SAH exists
 
@@ -71,8 +70,7 @@ assumption, SAH reopens the earliest affected stage and marks downstream reasoni
 | Prepare implementation | S11–S12 | Which claims are checkable, and what ordered changes should the coding agent make? | Constraints and implementation handoff |
 | Verify continuously | S13 | Does the implementation still satisfy the accepted observable constraints? | Verification evidence and lifecycle completion |
 
-The exact stage inputs, gates, and loop-backs are defined in the
-[design reasoning model](docs/design-reasoning-model.md).
+Exact stage inputs, gates, and loop-backs are in the [design reasoning model](docs/design-reasoning-model.md).
 
 ## What is inside a design bundle?
 
@@ -117,8 +115,7 @@ The current executable adapters check:
 - whether direct TypeScript callers of one explicitly mapped write symbol belong to the
   architecture elements allowed by the constraint.
 
-The [validation model](docs/validation-model.md) explains the full deterministic/assisted/
-judgment contract and current limitations.
+The [validation model](docs/validation-model.md) explains this contract and its current limits.
 
 ## Five-minute CLI kernel check
 
@@ -143,18 +140,8 @@ No global installation is required. npm exec uses the binary built from this che
 npm exec -- sah validate fixtures/simple-crud
 ~~~
 
-Expected result:
-
-~~~text
-SAH validation passed
-
-Bundle: equipment-register (S12, short)
-
-Summary: 0 error(s), 0 warning(s)
-~~~
-
-This proves that the JSON files match their schemas, references resolve, and every gate
-required by the manifest's stored S12 lifecycle state passes. It does not inspect target code.
+Expected result: `SAH validation passed` for bundle `equipment-register (S12, short)`. This proves
+that schemas, references, and stored-stage gates pass; it does not inspect target code.
 
 Add --json when another tool or agent should consume one machine-readable result:
 
@@ -170,13 +157,8 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 
 Expected result: one passing deterministic check for the equipment-owns-writes constraint.
 
-The arguments mean:
-
-- fixtures/simple-crud is the design bundle;
-- fixtures/s13-typescript-target is the target checkout;
-- sah.source-map.json is relative to the target checkout and maps source paths/symbols to
-  architecture element IDs.
-
+Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-target` is the target,
+and the target-relative mapping connects source paths/symbols to architecture element IDs.
 Verification is read-only unless --record is supplied.
 
 ## Complete S13 with recorded full evidence
@@ -195,18 +177,9 @@ npm exec -- sah advance "$bundle_root/bundle" S13 --verification-record verifica
 npm exec -- sah validate "$bundle_root/bundle" --json
 ~~~
 
-What happened:
-
-1. verify validated the S12 bundle and ran every assigned constraint;
-2. --record atomically stored the complete result and design fingerprint inside the bundle;
-3. advance revalidated that record, its coverage, its exact bytes, and the current design;
-4. one atomic manifest replacement recorded both completedStage=S13 and the pinned record
-   descriptor; and
-5. the final validate confirmed the stored S13 state.
-
-Publishing a record alone never advances lifecycle. Only a schema-valid **full** record with a
-passed result, complete S12 assignment coverage, all-pass deterministic checks, and a current
-design fingerprint can authorize S12→S13.
+`verify --record` stores the complete result and design fingerprint; `advance` revalidates its
+coverage, bytes, and current design before atomically pinning it with S13. Publishing alone never
+advances lifecycle. Only a schema-valid **full**, passed, current, completely covered record can.
 
 ### Changed-scoped verification is for feedback, not completion
 
@@ -234,22 +207,6 @@ produce eligible completion evidence.
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.
 
-~~~text
-sah validate <design-bundle-directory> [--json]
-sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
-~~~
-
-Important options:
-
-| Option | Meaning |
-| --- | --- |
-| --json | Emit exactly one JSON result and no prose |
-| --mapping PATH | Use explicit target-local TypeScript mapping configuration |
-| --changed PATH | Select affected constraints from an explicit changed file; repeatable and requires --mapping |
-| --record PATH | Store a verification record at a safe bundle-relative JSON path |
-| --verification-record PATH | Use that bundle-relative record only for S12→S13 advancement |
-
 Exit codes are stable across the CLI:
 
 | Exit | Meaning |
@@ -258,64 +215,109 @@ Exit codes are stable across the CLI:
 | 1 | Valid input contains validation/gate defects, advancement is blocked, or target facts violate a deterministic constraint |
 | 2 | Invocation/operation failed, or verification is incomplete because review, blockers, unsafe binding, or adapter coverage remains pending |
 
-See [Validation CLI and Library](docs/validation-cli.md) for the normative result envelopes,
-transition rules, path confinement, adapter coverage, and atomicity guarantees.
+See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result
+envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees.
 
-## Use SAH with your own project
+## Install the conversational skill
 
-Install the portable skill using the [Codex and Claude Code guide](docs/agent-skill.md), open your
-target repository in the host agent, and start with a natural request such as:
+The clone built in the five-minute check is the **SAH checkout**. Your application is a separate
+**target checkout**. Keep the whole SAH clone: the skill supplies the workflow while `schemas/`
+and the built CLI supply deterministic validation. Copying only `skills/sah` disconnects them.
+
+Set its absolute path for the commands below:
+
+~~~sh
+SAH_CHECKOUT=/absolute/path/to/sah
+~~~
+
+### Codex
+
+For a user skill available in every project, use Codex's documented user location:
+
+~~~sh
+mkdir -p ~/.agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" ~/.agents/skills/sah
+~~~
+
+For a skill limited to one target, run this inside it; do not commit this machine-local link:
+
+~~~sh
+mkdir -p .agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" .agents/skills/sah
+~~~
+
+Inspect the destination with `ls -ld` first. If it exists, do not rerun `ln` or overwrite it;
+linking to an existing directory link can create an accidental nested self-link. Codex normally
+detects changes automatically; restart if needed. Use `/skills` to inspect discovery and `$sah`
+to invoke SAH explicitly. These locations and invocation forms follow
+[official OpenAI documentation](https://developers.openai.com/codex/skills).
+
+### Claude Code
+
+Use one of the equivalent personal or target-local locations:
+
+~~~sh
+# Personal:
+mkdir -p ~/.claude/skills
+ln -s "$SAH_CHECKOUT/skills/sah" ~/.claude/skills/sah
+
+# Or, from the target checkout:
+mkdir -p .claude/skills
+ln -s "$SAH_CHECKOUT/skills/sah" .claude/skills/sah
+~~~
+
+Invoke it with `/sah` or an ordinary request that explicitly names the `sah` skill.
+
+### Confirm both skill and runtime
+
+For a user-scoped Codex install, `realpath ~/.agents/skills/sah` should print
+`$SAH_CHECKOUT/skills/sah`. Then verify the non-global CLI from the SAH checkout:
+
+~~~sh
+cd "$SAH_CHECKOUT"
+npm exec -- sah validate fixtures/simple-crud
+~~~
+
+## Use SAH in a new project
+
+Open the **target checkout** in Codex or Claude Code and state the outcome, repository context,
+hard constraints, and what completion means. You do not need to design the JSON or choose an
+architecture pattern first. For example:
 
 ~~~text
-Use $sah to build this feature. Inspect the repository first, keep asking me one or two focused
-questions when consequential information is missing, then implement and verify the result.
+Use $sah to build the reservation feature end to end.
+
+Read this repository, its requirements, tests, and Git state first. Ask me one or two focused
+questions whenever an answer could change scope, an invariant, ownership, security, recovery, or
+an expensive architecture choice. Do not guess unknown product policy.
+
+Preserve existing public boundaries and do not add hosted services or push without permission.
+Finish when ready slices are implemented, target tests pass, full SAH evidence is recorded, the
+lifecycle advances as far as that evidence permits, and the final diff is reviewed.
 ~~~
 
-The agent reads existing evidence before asking. It asks adaptively rather than sending a fixed
-questionnaire, records unknowns instead of guessing, selects methods per subsystem, creates
-`.sah/design`, implements only ready dependency-ordered slices, runs target tests, and attempts
-honest S13 verification. A material unknown blocks only dependent work when an owned seam makes
-that safe. The CLI remains usable by itself for manual bundle validation; it does not conduct the
-conversation or edit product code.
+The host agent will:
 
-Use the full profile for material architectural work. The short profile is only for reversible,
-local, low-risk work with no critical invariant, distribution, probabilistic autonomy, or
-material quality scenario.
+1. inspect before asking and continue questioning only while consequential uncertainty remains;
+2. characterize problem regions and compare the simplest credible architecture alternatives;
+3. write `.sah/design`, validate S0–S12 in order, and keep unresolved decisions proposed;
+4. implement only ready, dependency-ordered slices and run the target's own checks;
+5. use changed verification for feedback, then fresh full evidence for possible S13 completion;
+6. report deterministic results, assisted findings, judgment items, and unsupported coverage
+   separately.
 
-## Library integration
+If you answer “I don't know,” SAH records the uncertainty and owner. It blocks only dependent work
+when a safe owned seam exists. Use the full profile for material architecture work and the short
+profile only for reversible, local, low-risk work.
 
-The same boundaries are available without the CLI:
+If the agent says the skill has no schemas or CLI, it found a detached copy or failed to resolve
+the link. Give it the absolute path explicitly: “The canonical SAH checkout is
+`/absolute/path/to/sah`; use its schemas and run `npm exec -- sah` there with absolute target and
+bundle paths. Do not download another copy.” See the complete
+[Codex and Claude Code guide](docs/agent-skill.md) for updates, removal, and troubleshooting.
 
-~~~ts
-import {
-  advanceBundle,
-  validateBundle,
-  verifyBundle,
-  type VerificationOptions,
-} from "software-architect-harness";
-
-const validation = await validateBundle("design/equipment");
-
-const options = {
-  sourceMappingPath: "sah.source-map.json",
-  verificationRecordPath: "verification-record.json",
-} satisfies VerificationOptions;
-
-const verification = await verifyBundle(
-  "design/equipment",
-  "target/equipment",
-  options,
-);
-
-const advancement = await advanceBundle("design/equipment", "S13", {
-  verificationRecordPath: "verification-record.json",
-});
-~~~
-
-Expected failures are returned as typed result statuses rather than thrown. Public contracts do
-not expose Ajv, the TypeScript compiler, filesystem, Git, or CLI-parser types. The package is
-not yet published to npm, so this example describes the integration surface rather than an
-install-from-registry workflow.
+The same boundaries are available as `validateBundle`, `verifyBundle`, and `advanceBundle`. The
+package is not yet on npm; [Validation CLI and Library](docs/validation-cli.md) owns this contract.
 
 ## Reading failures
 

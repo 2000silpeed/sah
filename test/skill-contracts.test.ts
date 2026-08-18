@@ -58,6 +58,10 @@ describe("portable SAH Agent Skill", () => {
     }
     expect(skill).toContain("Ask one or two questions at a time");
     expect(skill).toContain("Do not stop after producing suggestions or JSON");
+    expect(skill).toContain(
+      "Resolve the skill directory through any host symlink",
+    );
+    expect(skill).toContain("do not use\n`command -v sah`");
     expect(elicitation).toContain("Do not ask the user for facts");
     expect(elicitation).toContain("lower-ceremony reversible option");
     expect(artifacts).toContain("`completedStage: S4`");
@@ -72,14 +76,12 @@ describe("portable SAH Agent Skill", () => {
 
   it("keeps the package concise, placeholder-free, and linked from product docs", async () => {
     const contents = await Promise.all(skillFiles.map(readSkillFile));
-    const index = await readFile(
-      join(repositoryRoot, "docs", "index.md"),
-      "utf8",
-    );
-    const guide = await readFile(
-      join(repositoryRoot, "docs", "agent-skill.md"),
-      "utf8",
-    );
+    const [index, guide, readme, koreanReadme] = await Promise.all([
+      readFile(join(repositoryRoot, "docs", "index.md"), "utf8"),
+      readFile(join(repositoryRoot, "docs", "agent-skill.md"), "utf8"),
+      readFile(join(repositoryRoot, "README.md"), "utf8"),
+      readFile(join(repositoryRoot, "README.ko.md"), "utf8"),
+    ]);
 
     contents.forEach((content, index_) => {
       expect(content, skillFiles[index_]).not.toMatch(/TODO|placeholder/u);
@@ -93,9 +95,21 @@ describe("portable SAH Agent Skill", () => {
     });
 
     for (const path of skillFiles) expect(index).toContain(path);
-    expect(guide).toContain("~/.codex/skills");
+    expect(guide).toContain("~/.agents/skills");
+    expect(guide).toContain(".agents/skills");
     expect(guide).toContain("~/.claude/skills");
+    expect(guide).toContain("realpath");
+    expect(guide).toContain("npm exec -- sah validate");
     expect(guide).toContain("Use $sah");
     expect(guide).toContain("/sah");
+
+    for (const landingPage of [readme, koreanReadme]) {
+      expect(landingPage).toContain("~/.agents/skills");
+      expect(landingPage).toContain(".agents/skills");
+      expect(landingPage).toContain("~/.claude/skills");
+      expect(landingPage).toContain("npm exec -- sah validate");
+      expect(landingPage).toContain(".sah/design");
+      expect(landingPage).not.toContain("~/.codex/skills");
+    }
   });
 });

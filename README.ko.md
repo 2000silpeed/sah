@@ -2,8 +2,7 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스입니다. 자연어로 만들
-소프트웨어를 설명하면 설치된 host skill이 저장소를 살피고 필요한 질문을 이어가며,
+SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스입니다. 자연어로 만들 소프트웨어를 설명하면 설치된 host skill이 저장소를 살피고 필요한 질문을 이어가며,
 검토 가능한 아키텍처 근거를 기록하고 준비된 작업을 실제로 구현한 뒤 선택한 제약을
 코드에서 확인합니다.
 
@@ -12,8 +11,7 @@ SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스
 > SAH는 왜 이 설계를 선택했는지, 각 규칙의 책임자는 누구인지, 구현이 무엇을 해야
 > 하는지, 그중 무엇을 관찰 가능한 사실로 검증할 수 있는지를 기록합니다.
 
-현재 SAH는 1.0 이전의 로컬 우선 Agent Skill과 TypeScript 검증 커널입니다. GitHub
-저장소는 공개되어 있지만 npm 패키지는 private이므로 소스 체크아웃에서 실행합니다.
+현재 SAH는 1.0 이전의 로컬 우선 Agent Skill과 TypeScript 검증 커널입니다. GitHub 저장소는 공개되어 있지만 npm 패키지는 private이므로 소스 체크아웃에서 실행합니다.
 
 ## 왜 SAH가 필요한가요?
 
@@ -72,14 +70,12 @@ flowchart LR
 | 구현 준비 | S11–S12 | 어떤 주장을 검사할 수 있으며 코딩 에이전트는 어떤 순서로 변경해야 하는가? | Constraint와 Implementation Handoff |
 | 지속 검증 | S13 | 구현이 승인된 관찰 가능 제약을 계속 만족하는가? | 검증 증거와 라이프사이클 완료 |
 
-각 stage의 입력, gate, 되돌아가는 조건은
-[설계 추론 모델](docs/design-reasoning-model.md)이 정확히 정의합니다.
+각 stage의 입력, gate, 되돌아가는 조건은 [설계 추론 모델](docs/design-reasoning-model.md)이 정의합니다.
 
 ## 설계 번들에는 무엇이 들어가나요?
 
-루트 manifest 이름은 sah.bundle.json입니다. 번들 ID, 완료 stage, profile을 기록하고
-lifecycle이 진행되면서 다음 일곱 개의 의미론적 IR(Intermediate Representation, 중간
-표현) 파일을 가리킬 수 있습니다.
+루트 manifest 이름은 sah.bundle.json입니다. 번들 ID, 완료 stage, profile을 기록하며 다음
+일곱 개의 의미론적 IR(Intermediate Representation, 중간 표현) 파일을 가리킬 수 있습니다.
 
 | 산출물 | 답하는 질문 |
 | --- | --- |
@@ -143,18 +139,8 @@ npm run build
 npm exec -- sah validate fixtures/simple-crud
 ~~~
 
-예상 결과:
-
-~~~text
-SAH validation passed
-
-Bundle: equipment-register (S12, short)
-
-Summary: 0 error(s), 0 warning(s)
-~~~
-
-이 결과는 JSON이 schema에 맞고, 참조가 연결되며, manifest에 저장된 S12 상태에 필요한
-모든 gate가 통과했음을 뜻합니다. 아직 대상 코드는 검사하지 않았습니다.
+예상 결과는 `equipment-register (S12, short)` 번들의 `SAH validation passed`입니다. Schema,
+reference, 저장 stage gate가 통과했다는 뜻이며 아직 대상 코드는 검사하지 않았습니다.
 
 다른 도구나 에이전트가 결과를 읽어야 하면 --json을 추가하세요.
 
@@ -170,14 +156,9 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 
 예상 결과는 equipment-owns-writes constraint의 결정론적 check 하나가 pass하는 것입니다.
 
-각 인자의 의미:
-
-- fixtures/simple-crud: 설계 번들
-- fixtures/s13-typescript-target: 검증 대상 체크아웃
-- sah.source-map.json: 대상 체크아웃 기준 상대 경로이며 source path/symbol을 Architecture
-  element ID에 연결하는 mapping
-
---record를 지정하지 않은 verify는 읽기 전용입니다.
+`fixtures/simple-crud`는 설계 번들, `fixtures/s13-typescript-target`은 대상이며, 대상 상대
+mapping은 source path/symbol을 Architecture element ID와 연결합니다. --record를 지정하지
+않은 verify는 읽기 전용입니다.
 
 ## Full evidence를 기록하고 S13 완료하기
 
@@ -195,18 +176,10 @@ npm exec -- sah advance "$bundle_root/bundle" S13 --verification-record verifica
 npm exec -- sah validate "$bundle_root/bundle" --json
 ~~~
 
-내부에서 일어난 일:
-
-1. verify가 S12 번들을 검증하고 할당된 모든 constraint를 실행합니다.
-2. --record가 전체 결과와 design fingerprint를 번들 내부에 원자적으로 저장합니다.
-3. advance가 record, coverage, 정확한 byte, 현재 design을 다시 검증합니다.
-4. manifest 한 번의 원자적 교체로 completedStage=S13과 고정된 record descriptor를 함께
-   기록합니다.
-5. 마지막 validate가 저장된 S13 상태를 다시 확인합니다.
-
-Record를 저장하는 것만으로 lifecycle이 진행되지는 않습니다. Schema가 유효한 **full**
-record이면서 결과가 passed이고, S12 assignment coverage가 완전하며, 모든 결정론적 check가
-pass하고, design fingerprint가 현재 상태와 일치해야 S12→S13을 승인할 수 있습니다.
+`verify --record`는 전체 결과와 design fingerprint를 저장하고, `advance`는 coverage, byte,
+현재 design을 다시 검사한 뒤 S13과 함께 원자적으로 고정합니다. 저장만으로 lifecycle이
+진행되지는 않습니다. Schema-valid **full**, passed, current, complete-coverage record만
+S12→S13을 승인할 수 있습니다.
 
 ### Changed-scoped 검증은 빠른 피드백용입니다
 
@@ -235,22 +208,6 @@ verification을 실행해야 합니다.
 Advance는 정방향으로 정확히 한 stage만 이동합니다. 현재 실행 가능한 target gate는
 S5부터 S13까지입니다.
 
-~~~text
-sah validate <design-bundle-directory> [--json]
-sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
-~~~
-
-주요 option:
-
-| Option | 의미 |
-| --- | --- |
-| --json | 설명 없이 JSON result 하나만 출력 |
-| --mapping PATH | 대상 내부의 명시적 TypeScript mapping 설정 사용 |
-| --changed PATH | 변경 파일 기준 affected constraint 선택, 반복 가능하며 --mapping 필요 |
-| --record PATH | 안전한 번들 상대 JSON 경로에 verification record 저장 |
-| --verification-record PATH | S12→S13 advance에서 해당 번들 상대 record 사용 |
-
 CLI exit code:
 
 | Exit | 의미 |
@@ -259,63 +216,108 @@ CLI exit code:
 | 1 | 유효한 입력에 validation/gate 결함이 있거나 advance가 blocked되었거나 deterministic constraint 위반 |
 | 2 | 호출/운영 실패 또는 review, blocker, unsafe binding, adapter가 남아 verification incomplete |
 
-Result envelope, 전이 규칙, 경로 제한, adapter 범위, 원자성의 기준 문서는
-[Validation CLI and Library](docs/validation-cli.md)입니다.
+정확한 문법, option, result envelope, 전이 규칙, 경로 제한, adapter 범위, 원자성은
+[Validation CLI and Library](docs/validation-cli.md)가 소유합니다.
 
-## 내 프로젝트에 적용하기
+## 대화형 skill 설치하기
 
-[Codex·Claude Code 설치 가이드](docs/agent-skill.md)에 따라 portable skill을 설치하고,
-대상 저장소를 host agent에서 연 뒤 다음처럼 자연어로 시작하세요.
+5분 확인에서 만든 clone이 **SAH checkout**이고, 실제 앱은 별도의 **target checkout**입니다.
+전체 SAH clone을 유지하세요. Skill은 workflow를 제공하고 `schemas/`와 빌드된 CLI는
+결정론적 검증을 담당합니다. `skills/sah`만 복사하면 둘의 연결이 끊어집니다.
+
+아래 명령을 위해 clone의 절대 경로를 지정합니다.
+
+~~~sh
+SAH_CHECKOUT=/absolute/path/to/sah
+~~~
+
+### Codex
+
+모든 프로젝트에서 사용할 user skill은 Codex 공식 사용자 경로에 연결합니다.
+
+~~~sh
+mkdir -p ~/.agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" ~/.agents/skills/sah
+~~~
+
+한 target에서만 쓸 때는 안에서 실행하되 이 machine-local link를 commit하지 마세요.
+
+~~~sh
+mkdir -p .agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" .agents/skills/sah
+~~~
+
+먼저 `ls -ld`로 목적지를 확인하세요. 이미 존재하면 `ln`을 다시 실행하거나 덮어쓰지
+마세요. Directory symlink를 목적지로 다시 연결하면 의도하지 않은 중첩 self-link가 생길
+수 있습니다. Codex는 보통 변경을 자동 감지하며, 보이지 않으면 재시작하세요. `/skills`로
+발견 여부를 보고 prompt에서 `$sah`를 입력해 명시적으로 호출할 수 있습니다. 이 경로와
+호출 방식은 [OpenAI 공식 문서](https://developers.openai.com/codex/skills)를 따릅니다.
+
+### Claude Code
+
+Personal 또는 target-local 위치 중 하나를 사용합니다.
+
+~~~sh
+# Personal:
+mkdir -p ~/.claude/skills
+ln -s "$SAH_CHECKOUT/skills/sah" ~/.claude/skills/sah
+
+# 또는 target checkout에서:
+mkdir -p .claude/skills
+ln -s "$SAH_CHECKOUT/skills/sah" .claude/skills/sah
+~~~
+
+`/sah` 또는 `sah` skill을 명시한 자연어 요청으로 호출합니다.
+
+### Skill과 runtime 함께 확인하기
+
+Codex user 설치라면 `realpath ~/.agents/skills/sah`가 `$SAH_CHECKOUT/skills/sah`를 출력해야
+합니다. 다음으로 SAH checkout에서 전역 설치가 아닌 CLI를 확인합니다.
+
+~~~sh
+cd "$SAH_CHECKOUT"
+npm exec -- sah validate fixtures/simple-crud
+~~~
+
+## 신규 프로젝트에 적용하기
+
+Codex 또는 Claude Code에서 **target checkout**을 열고 결과, 저장소 맥락, hard constraint,
+완료 조건을 자연어로 알려주세요. JSON을 직접 설계하거나 architecture pattern을 먼저
+고를 필요는 없습니다.
 
 ~~~text
-Use $sah to build this feature. 저장소부터 조사하고 중요한 정보가 없으면 한 번에 한두
-가지씩 계속 질문한 다음 실제 구현과 검증까지 진행해줘.
+$sah를 사용해서 예약 기능을 end-to-end로 만들어줘.
+
+먼저 이 저장소의 요구사항, 테스트, Git 상태를 읽어. Scope, invariant, ownership,
+security, recovery, 비용이 큰 architecture 선택을 바꿀 수 있는 정보가 없으면 한 번에
+한두 가지씩 계속 질문하고, 모르는 제품 정책은 추측하지 마.
+
+기존 public boundary를 보존하고 hosted service를 추가하거나 허락 없이 push하지 마.
+Ready slice 구현, target test 통과, full SAH evidence 기록, 근거가 허용하는 lifecycle
+advance, 최종 diff review까지 완료해.
 ~~~
 
-에이전트는 질문하기 전에 기존 근거를 읽습니다. 고정 설문 대신 답변에 따라 다음 질문을
-고르고, 모르는 답을 추측하지 않고 기록하며, subsystem마다 맞는 방법을 선택합니다.
-이후 `.sah/design`을 만들고 의존 순서상 ready인 slice만 구현하며 대상 test와 정직한
-S13 검증을 실행합니다. 중요한 미해결 항목은 owned seam으로 격리할 수 있을 때만 관련
-slice에 한정해 막습니다. CLI만 따로 사용하면 번들을 수동 검증할 수 있지만 대화나 제품
-코드 편집은 하지 않습니다.
+Host agent는 다음 순서로 진행합니다.
 
-중요한 아키텍처 작업에는 full profile을 사용하세요. Short profile은 되돌리기 쉽고,
-로컬이며, critical invariant·분산·확률적 자율성·중요한 품질 시나리오가 없는 저위험
-작업에만 맞습니다.
+1. 질문 전에 저장소를 조사하고 중요한 불확실성이 남아 있을 때만 질문을 이어갑니다.
+2. 문제 영역을 특성화하고 가장 단순한 credible architecture 대안을 비교합니다.
+3. `.sah/design`을 만들고 S0–S12를 순서대로 검증하며 미해결 결정은 proposed로 둡니다.
+4. 의존 순서상 ready인 slice만 구현하고 target 자체 검사를 실행합니다.
+5. Changed 검증은 피드백에 쓰고, S13 후보에는 새로운 full evidence를 사용합니다.
+6. Deterministic result, assisted finding, judgment item, unsupported coverage를 분리해 보고합니다.
 
-## Library로 통합하기
+“모르겠다”고 답해도 됩니다. SAH는 불확실성과 해결 authority를 기록하고 안전한 owned
+seam이 있을 때만 관련 작업을 막습니다. 중요한 작업은 full profile을, 되돌리기 쉽고
+로컬인 저위험 작업에만 short profile을 사용합니다.
 
-CLI와 같은 경계가 TypeScript library로도 제공됩니다.
+에이전트가 skill에는 schema나 CLI가 없다고 말하면 detached copy를 찾았거나 symlink의
+실제 경로를 해석하지 못한 것입니다. 다음처럼 알려주세요. “Canonical SAH checkout은
+`/absolute/path/to/sah`야. 해당 경로의 schema를 사용하고 그곳에서 절대 target/bundle
+경로로 `npm exec -- sah`를 실행해. 새로 다운로드하지 마.” Update, 제거, troubleshooting은
+[Codex·Claude Code 상세 가이드](docs/agent-skill.md)를 참고하세요.
 
-~~~ts
-import {
-  advanceBundle,
-  validateBundle,
-  verifyBundle,
-  type VerificationOptions,
-} from "software-architect-harness";
-
-const validation = await validateBundle("design/equipment");
-
-const options = {
-  sourceMappingPath: "sah.source-map.json",
-  verificationRecordPath: "verification-record.json",
-} satisfies VerificationOptions;
-
-const verification = await verifyBundle(
-  "design/equipment",
-  "target/equipment",
-  options,
-);
-
-const advancement = await advanceBundle("design/equipment", "S13", {
-  verificationRecordPath: "verification-record.json",
-});
-~~~
-
-예상 가능한 실패는 throw 대신 type이 있는 result status로 반환됩니다. Public contract는
-Ajv, TypeScript compiler, filesystem, Git, CLI parser type을 노출하지 않습니다. 패키지는
-아직 npm에 게시되지 않았으므로 위 코드는 registry 설치법이 아니라 통합 surface 예시입니다.
+같은 경계는 `validateBundle`, `verifyBundle`, `advanceBundle`로도 제공됩니다. 아직 npm에
+게시되지 않았으며 [Validation CLI and Library](docs/validation-cli.md)가 계약을 소유합니다.
 
 ## 실패 결과 읽는 법
 

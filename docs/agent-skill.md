@@ -22,7 +22,7 @@ With the skill, the host coding agent becomes SAH's conversational and implement
 
 The skill does not contain or call a hosted model. Codex or Claude Code supplies the model, tools,
 conversation, and existing permissions. SAH supplies the reusable method and evidence protocol.
-This matches the general skill model documented by [OpenAI](https://openai.com/index/introducing-the-codex-app/)
+This matches the skill model documented by [OpenAI](https://developers.openai.com/codex/skills)
 and [Claude Code](https://code.claude.com/docs/en/slash-commands).
 
 ## Prerequisites
@@ -40,22 +40,44 @@ npm install
 npm run build
 ```
 
-Use the absolute clone path as `SAH_CHECKOUT` in the following examples:
+Resolve the clone to an absolute path and keep it. The skill instructions and deterministic
+runtime are separate responsibilities but must remain discoverable together:
 
 ```sh
 SAH_CHECKOUT=/absolute/path/to/sah
 ```
 
+- **SAH checkout:** the clone above, containing `skills/sah`, `schemas`, `package.json`, and `dist`.
+- **Target checkout:** the application Codex or Claude Code will design and modify.
+
+Do not copy only `skills/sah` to another directory. A detached copy can provide instructions, but
+the agent cannot reliably locate the schemas and CLI needed to validate S12 or S13. A symlink keeps
+the physical path connected to the complete SAH checkout.
+
 ## Install for Codex
 
-Link the canonical package into the personal Codex skill directory:
+OpenAI documents `$HOME/.agents/skills` for user skills and `.agents/skills` for repository skills.
+Choose one scope. For a personal installation available in every checkout:
 
 ```sh
-mkdir -p ~/.codex/skills
-ln -s "$SAH_CHECKOUT/skills/sah" ~/.codex/skills/sah
+mkdir -p ~/.agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" ~/.agents/skills/sah
 ```
 
-Restart or refresh Codex skill discovery, then begin a target-repository conversation with:
+For a repository-only installation, run from the target checkout. This absolute link is local
+machine configuration; do not commit it to a shared repository:
+
+```sh
+mkdir -p .agents/skills
+ln -s "$SAH_CHECKOUT/skills/sah" .agents/skills/sah
+```
+
+Before running either `ln` command, inspect the destination with `ls -ld`. If it exists, do not
+run the command again or overwrite it. In particular, rerunning `ln -s SOURCE DEST` when `DEST`
+already resolves to a directory can create an unintended nested link inside the skill package.
+
+Codex detects skill changes automatically; restart it if the skill does not appear. Use `/skills`
+to inspect available skills or type `$sah` in the prompt to invoke SAH explicitly:
 
 ```text
 Use $sah to build this feature. Inspect what is already in the repository and keep asking me
@@ -63,8 +85,12 @@ focused questions when a consequential requirement cannot be discovered locally.
 implementation and verification.
 ```
 
-If `~/.codex/skills/sah` already exists, inspect it before replacing anything. Keep one canonical
-copy rather than silently overwriting a customized skill.
+Repository and user skills with the same `name` are both discoverable; Codex does not merge them.
+Install one intentional copy unless you are testing different versions.
+
+SAH documentation before Run 15 used `~/.codex/skills/sah`. To migrate an existing link, create
+and verify the new `~/.agents/skills/sah` link first, then remove only the old `sah` symlink. Never
+remove the containing skills directory or the SAH checkout.
 
 ## Install for Claude Code
 
@@ -93,6 +119,32 @@ Claude Code officially supports project skills at `.claude/skills/<name>/SKILL.m
 at `~/.claude/skills/<name>/SKILL.md`, supporting files, and symlinks. A repository-owned symlink
 keeps Codex and Claude Code on the same method version.
 
+## Verify the installation
+
+Confirm that the host path resolves to the canonical package. Use the path for your selected host
+and scope; these examples show user installations:
+
+```sh
+realpath ~/.agents/skills/sah
+realpath ~/.claude/skills/sah
+```
+
+The result should be `$SAH_CHECKOUT/skills/sah`. Then prove that the runtime is available from the
+SAH checkout; `sah` is not expected to be a global shell command:
+
+```sh
+cd "$SAH_CHECKOUT"
+npm exec -- sah validate fixtures/simple-crud
+```
+
+If Codex or Claude says that the skill copy has no schemas or CLI, provide the absolute checkout
+path explicitly:
+
+```text
+The canonical SAH checkout is /absolute/path/to/sah. Use its schemas and run npm exec -- sah from
+that checkout, passing absolute paths for the target and design bundle. Do not download another copy.
+```
+
 ## What the conversation looks like
 
 The agent does not ask you to complete a fixed architecture questionnaire. It first reads the code,
@@ -111,6 +163,23 @@ Once enough evidence exists, the agent proceeds without repeatedly asking for pe
 in-scope work. It chooses responsibilities and ownership before functions, classes, modules,
 services, events, queues, or agents. It then writes the bundle, implements the actual software, and
 runs the relevant tests and SAH checks.
+
+For a new target, open the target checkout in the host and give one outcome-oriented request. Name
+hard technology or delivery constraints, but do not preselect layers, services, aggregates, or
+patterns unless they are truly imposed. A useful starting prompt has four parts:
+
+```text
+Goal: Build the reservation feature end to end.
+Context: Read this repository, its product requirements, tests, and Git state first.
+Constraints: Use $sah; ask one or two consequential questions at a time; preserve existing public
+boundaries; do not add hosted services or push without permission.
+Done when: The ready slices are implemented, target checks pass, full SAH evidence is recorded,
+the lifecycle is advanced as far as the evidence permits, and the final diff is reviewed.
+```
+
+You do not need to know SAH artifact names. The agent authors them. You only answer product facts
+that cannot be learned from the repository, accept or reject consequential proposed decisions, and
+grant separate permission for external actions such as downloads or pushes.
 
 ## Where artifacts live
 
@@ -142,5 +211,7 @@ the lifecycle remains earlier.
 ## Updating or uninstalling
 
 A symlinked installation updates when you pull the SAH checkout. Review release changes before
-using a new method version on consequential work. To uninstall, remove only the exact `sah` symlink
-from the host's skill directory; do not delete the SAH checkout or a broad skills directory.
+using a new method version on consequential work. To uninstall, remove only the exact
+`~/.agents/skills/sah`, `.agents/skills/sah`, `~/.claude/skills/sah`, or
+`.claude/skills/sah` symlink you created; do not delete the SAH checkout or a broad skills
+directory.

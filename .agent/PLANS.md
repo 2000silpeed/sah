@@ -57,9 +57,9 @@ architecture decisions, schemas, fixtures, or benchmarks are affected.
 | ----- | ---------------------------------------------- | ----------- | -------- |
 | 0     | Inspect authority, installation, and Git state | complete    | official docs; local paths; clean tracked tree |
 | 1     | Record Run 15 and archive completed history    | complete    | this ExecPlan; Runs 11–14 archive |
-| 2     | Correct and expand installation/use guidance  | in_progress | pending |
-| 3     | Verify local install, docs, tests, and diff    | pending     | pending |
-| 4     | Commit and push the verified milestone        | pending     | pending |
+| 2     | Correct and expand installation/use guidance  | complete    | paired READMEs; guide; contract test |
+| 3     | Verify local install, docs, tests, and diff    | complete    | 228 tests; CLI lifecycle; 71-file docs audit |
+| 4     | Commit and push the verified milestone        | in_progress | planning commit `501afff` |
 
 ### Decision log
 
@@ -88,9 +88,23 @@ architecture decisions, schemas, fixtures, or benchmarks are affected.
 - 2026-08-18: OpenAI Docs confirms standalone skills, explicit `$` or `/skills` invocation,
   automatic change detection with restart fallback, user/repository discovery locations, and
   symlink support.
+- 2026-08-18: Removed only the untracked recursive link, created the previously absent
+  `~/.agents/skills/sah` link, confirmed it resolves to the canonical package, and validated the
+  S12 fixture through the built non-global CLI.
+- 2026-08-18: The first full check found only Prettier wrapping in the expanded contract test.
+  Formatting that file repaired the finding; the repeated format check passed.
+- 2026-08-18: `npm install` audited 164 packages with zero vulnerabilities. Final format, lint,
+  strict typecheck, build, 228/228 tests, and the 4/4 schema/trace audit passed.
+- 2026-08-18: Production CLI checks passed for human/JSON validation, disposable S11→S12,
+  TypeScript full and changed verification, record publication, atomic S12→S13, and stored-S13
+  validation. The adapter-less target remained honestly `incomplete` at exit 2.
+- 2026-08-18: Audited 71 Markdown files with zero broken local links or unbalanced fences. The
+  paired READMEs are 400 lines; all governed files meet budget except the unchanged 407-line
+  provenance prompt preserved by policy. `git diff --check` passed, and runtime, schema, fixture,
+  benchmark, package, and dependency files have no diff.
 
 ### Handoff
 
-Run 15 is active. Finish the paired onboarding update, install and verify the official Codex link,
-run the full repository validation slice and adversarial diff review, then commit and push only the
-verified files to `origin/main`.
+Run 15 implementation and verification are complete. Commit the reviewed documentation, skill,
+test, and evidence changes, push the authorized commits to `origin/main`, confirm synchronization,
+and close this plan.

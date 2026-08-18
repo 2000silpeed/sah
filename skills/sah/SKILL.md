@@ -53,11 +53,12 @@ Distinguish:
   built `sah` CLI.
 
 First obey the target checkout's `AGENTS.md` or equivalent instructions and inspect its Git state.
-Locate the physical directory containing this skill; its canonical package is `skills/sah` under
-the SAH checkout. Confirm the inferred checkout by reading its package name
-`software-architect-harness`. If the skill was copied without the runtime, ask for the SAH checkout
-path before claiming deterministic validation. Never download software or invoke a paid model
-without authorization.
+Resolve the skill directory through any host symlink before inferring paths. When that physical
+directory ends in `skills/sah`, the SAH checkout is exactly two parents above it. Confirm the
+checkout by reading package name `software-architect-harness` and checking `schemas/`; do not use
+`command -v sah` as the installation test because the CLI is intentionally non-global. If the skill
+was copied without the runtime, ask for the SAH checkout path before claiming deterministic
+validation. Never download software or invoke a paid model without authorization.
 
 Run CLI commands with the SAH checkout as the working directory and pass absolute target/bundle
 paths. Install/build the runtime there when needed:
