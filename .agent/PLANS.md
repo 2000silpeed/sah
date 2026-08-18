@@ -134,7 +134,7 @@ coordination or a general evidence registry without measured multi-writer or ret
 
 The repository has a concise root `README.md` that routes users to the executable entry points
 and authoritative documents. Confirmed Finder metadata is removed, and the documentation-only
-milestone is verified, committed, and pushed when an explicit repository remote is available.
+milestone is verified, committed, and published in the public repository.
 
 ### Scope
 
@@ -164,7 +164,7 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 | 1     | Record cleanup and README plan                 | complete    | this ExecPlan |
 | 2     | Remove confirmed metadata and author README   | complete    | four removals; `README.md`; index backlink |
 | 3     | Run full validation and adversarial diff review | complete  | 225 tests; CLI and document audits |
-| 4     | Commit and push the milestone                 | blocked     | `e6f1c24`, `5acb61a`; no push destination |
+| 4     | Commit and push the milestone                 | complete    | `2000silpeed/sah`; local and remote `main` synchronized |
 
 ### Decision log
 
@@ -185,6 +185,9 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 - 2026-08-18: The authenticated GitHub account is `2000silpeed`, but repository and code
   searches found no matching SAH remote. The similarly named `design-ontology-harness` has a
   different product description and history, so it is not a safe destination.
+- 2026-08-18: The user authorized creating a new public repository. The available conventional
+  destination `2000silpeed/sah` resolved the publication blocker without repurposing another
+  repository.
 
 ### Verification log
 
@@ -204,9 +207,10 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
   unsupported README claim or authority duplication.
 - 2026-08-18: Planning was committed as `e6f1c24` and the README milestone as `5acb61a`.
   `git push` returned exit 128 with `No configured push destination`; no external state changed.
+- 2026-08-18: Created public `https://github.com/2000silpeed/sah`, configured its HTTPS URL as
+  `origin`, pushed `main`, and confirmed local and remote at `ec809b6` before this closure update.
 
 ### Handoff
 
-Run 12 implementation and verification are complete. Push is blocked only by the missing
-remote; obtain the intended repository URL, add it explicitly, then push `main` without
-rewriting the verified commits.
+Run 12 is complete. The repository cleanup, reader entry point, verification evidence, and
+public `main` history are current; no product, benchmark, schema, or provenance content changed.
