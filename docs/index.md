@@ -1,6 +1,7 @@
 # SAH Documentation Index
 
-Start with [vision](vision.md), [principles](principles.md), and the
+Start with the root [README](../README.md) for the repository overview and executable quick
+start, then read [vision](vision.md), [principles](principles.md), and the
 [design reasoning model](design-reasoning-model.md). Terms are canonical in the
 [glossary](glossary.md). The root [AGENTS.md](../AGENTS.md) is the permanent operating policy;
 [the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks;

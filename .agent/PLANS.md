@@ -162,9 +162,9 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 | ----- | ---------------------------------------------- | ----------- | -------- |
 | 0     | Inventory files, links, package, and Git state | complete    | clean `main`; four ignored `.DS_Store` files |
 | 1     | Record cleanup and README plan                 | complete    | this ExecPlan |
-| 2     | Remove confirmed metadata and author README   | in_progress | exact deletion list and linked README |
-| 3     | Run full validation and adversarial diff review | pending   | command and audit logs |
-| 4     | Commit and push the milestone                 | pending     | commit and remote evidence |
+| 2     | Remove confirmed metadata and author README   | complete    | four removals; `README.md`; index backlink |
+| 3     | Run full validation and adversarial diff review | complete  | 225 tests; CLI and document audits |
+| 4     | Commit and push the milestone                 | in_progress | commit and remote evidence |
 
 ### Decision log
 
@@ -187,6 +187,18 @@ benchmark content, provenance prompt changes, lifecycle authority, and architect
 
 - 2026-08-18: Read `AGENTS.md`, `docs/index.md`, the completed Run 11 handoff, `.gitignore`,
   `package.json`, tracked paths, ignored cleanup candidates, branch state, and remote state.
+- 2026-08-18: Removed exactly the four observed `.DS_Store` files. Added the root README and
+  linked it from the documentation index without changing runtime, schema, fixture, benchmark,
+  or provenance content.
+- 2026-08-18: `npm install` audited 164 packages with zero vulnerabilities. Formatting, lint,
+  strict typecheck, production build, 225/225 tests, and the 4/4 schema/trace audit passed.
+- 2026-08-18: CLI validation passed; disposable S11→S12 advancement passed; the filesystem-only
+  target returned its expected incomplete/exit-2 result; full and changed TypeScript checks
+  passed; and the README's full-record S12→S13 flow advanced and revalidated at exit 0.
+- 2026-08-18: Final document audits found 63 Markdown files with zero broken local links,
+  all governed documents within line budgets, no remaining `.DS_Store`, no runtime/schema/test/
+  fixture/benchmark/provenance diff, and a clean `git diff --check`. Diff review found no
+  unsupported README claim or authority duplication.
 
 ### Handoff
 
