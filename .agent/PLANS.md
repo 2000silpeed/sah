@@ -292,9 +292,12 @@ architecture changes and translation of normative product documents.
   mutation examples. `git diff --check` passed.
 - 2026-08-18: Planning was committed as `6eec1c1` and the bilingual beginner guides as
   `8cae9b4`. No push was performed because this request did not authorize a new external write.
+- 2026-08-18: A subsequent explicit request authorized publication. Pushed the Run 13 planning,
+  guide, and closure commits through `1dde464` to public `origin/main`; this publication note is
+  included in the final follow-up push.
 
 ### Handoff
 
 Run 13 is complete. English and Korean readers now have equivalent, executable onboarding;
 normative product authority remains in the indexed English documents. The verified local
-commits may be pushed when explicitly requested.
+commits and publication evidence are current on public `origin/main`.
