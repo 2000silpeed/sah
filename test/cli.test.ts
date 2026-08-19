@@ -103,6 +103,39 @@ describe("sah loop CLI", () => {
     expect(output.operation).toBe("recorded");
     expect(output.nextTask?.goal).toBe("Clarify first-run copy");
   });
+
+  it("runs declared checks only with an explicit working directory", async () => {
+    const execution = await runCli([
+      "loop-checks",
+      join(iterationLoopFixtureDirectory, "sah.loop.json"),
+      "--cwd",
+      process.cwd(),
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      $schema: string;
+      outcomeVersion: string;
+      evidence: { executor: { name: string }; cwd: string };
+      checkResults: Array<{
+        command: string;
+        status: string;
+        exitCode: number | null;
+      }>;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.$schema).toBe(
+      "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+    );
+    expect(output.outcomeVersion).toBe("0.2.0");
+    expect(output.evidence.executor.name).toBe("sah-loop-checks");
+    expect(output.evidence.cwd).toBe(process.cwd());
+    expect(output.checkResults[0]).toMatchObject({
+      command: "npm run lint",
+      status: "passed",
+      exitCode: 0,
+    });
+  });
 });
 
 describe("sah validate CLI", () => {

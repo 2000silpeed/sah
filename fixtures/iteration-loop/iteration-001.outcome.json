@@ -1,12 +1,25 @@
 {
-  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
-  "outcomeVersion": "0.1.0",
+  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+  "outcomeVersion": "0.2.0",
   "iterationId": "iteration-001",
   "status": "succeeded",
+  "evidence": {
+    "executor": { "name": "sah-loop-checks", "version": "0.1.0" },
+    "cwd": "/workspace/product",
+    "startedAt": "2026-08-19T00:00:00.000Z",
+    "finishedAt": "2026-08-19T00:00:01.000Z"
+  },
   "checkResults": [
     {
       "checkId": "lint",
       "status": "passed",
+      "command": "npm run lint",
+      "cwd": "/workspace/product",
+      "startedAt": "2026-08-19T00:00:00.000Z",
+      "finishedAt": "2026-08-19T00:00:01.000Z",
+      "exitCode": 0,
+      "stdoutDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "stderrDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
       "observed": "0 findings"
     }
   ],

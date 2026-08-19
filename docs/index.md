@@ -84,6 +84,8 @@ read [vision](vision.md), [principles](principles.md), and the
   a first-class feedback check without adding a universal linter engine.
 - [ADR-0018](adr/0018-add-an-executable-iteration-loop.md) — adds a separate canonical loop
   artifact for risk routing, atomic outcomes, and proposed next tasks.
+- [ADR-0019](adr/0019-evidence-backed-iteration-completion.md) — requires execution evidence for
+  successful iteration recording and adds the explicit local check runner.
 
 ## JSON Schema contracts
 
@@ -114,8 +116,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Resume result](../schemas/resume-result.schema.json) — validates the cross-session handoff
   projection emitted by `sah resume`.
 - [Iteration loop](../schemas/iteration-loop.schema.json), [outcome](../schemas/iteration-outcome.schema.json),
-  and [result](../schemas/iteration-loop-result.schema.json) — validate loop policy, recorded
-  learning, and model-neutral route/next-task projections.
+  and [result](../schemas/iteration-loop-result.schema.json) — validate loop policy, executable
+  check evidence, recorded learning, and model-neutral route/next-task projections.
 
 ## Runtime implementation and executable fixture
 
@@ -131,12 +133,12 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   — enforce strict checking and emit the distributable library/CLI.
 - [ESLint configuration](../eslint.config.js) — owns typed lint rules for runtime and tests.
 - [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
-  framework-neutral diagnostics, results, stages, `validateBundle`, `advanceBundle`, and
-  `verifyBundle`.
+  framework-neutral diagnostics, results, stages, `validateBundle`, `advanceBundle`, `verifyBundle`,
+  and `runIterationChecks`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
-- [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome artifacts, routes
-  risk, records outcomes atomically, and projects the next task contract.
+- [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome artifacts, executes
+  declared checks, routes risk, records outcomes atomically, and projects the next task contract.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,

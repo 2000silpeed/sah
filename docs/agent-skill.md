@@ -21,9 +21,10 @@ With the skill, the host coding agent becomes SAH's conversational and implement
 7. advances S13 only with eligible full evidence.
 
 For repeated product iterations, keep a schema-validated `.sah/sah.loop.json` beside the design
-bundle. Run `npm exec -- sah loop .sah/sah.loop.json --json` to select the fast/reasoning route and
-`sah loop-record` after an outcome to generate the next task. The loop is a work selector; the
-design bundle remains the architecture and S13 authority.
+bundle. Run `npm exec -- sah loop .sah/sah.loop.json --json` to select the fast/reasoning route,
+then `npm exec -- sah loop-checks .sah/sah.loop.json --cwd /absolute/project --json` to produce
+execution evidence before `sah loop-record` records an outcome and projects the next task. The loop
+is a work selector and evidence gate; the design bundle remains the architecture and S13 authority.
 
 The skill does not contain or call a hosted model. Codex or Claude Code supplies the model, tools,
 conversation, and existing permissions. SAH supplies the reusable method and evidence protocol.

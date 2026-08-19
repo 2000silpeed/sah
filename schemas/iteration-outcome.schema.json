@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+  "$id": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
   "title": "SAH Iteration Outcome",
   "type": "object",
   "additionalProperties": false,
@@ -9,22 +9,23 @@
     "outcomeVersion",
     "iterationId",
     "status",
+    "evidence",
     "checkResults",
     "learnings"
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+      "const": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
-        "readBy": ["loop evaluator"]
+        "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "outcomeVersion": {
-      "const": "0.1.0",
+      "const": "0.2.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
-        "readBy": ["loop evaluator"]
+        "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "iterationId": {
@@ -32,55 +33,181 @@
       "minLength": 1,
       "x-sah-trace": {
         "writtenBy": ["coding agent"],
-        "readBy": ["loop evaluator"]
+        "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "status": {
       "enum": ["succeeded", "partial", "failed"],
       "x-sah-trace": {
-        "writtenBy": ["coding agent"],
-        "readBy": ["loop evaluator"]
+        "writtenBy": ["coding agent", "SAH check runner"],
+        "readBy": ["loop evaluator", "loop recorder"]
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executor", "cwd", "startedAt", "finishedAt"],
+      "properties": {
+        "executor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version"],
+          "properties": {
+            "name": {
+              "const": "sah-loop-checks",
+              "x-sah-trace": {
+                "writtenBy": ["SAH check runner"],
+                "readBy": ["loop recorder"]
+              }
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "x-sah-trace": {
+                "writtenBy": ["SAH check runner"],
+                "readBy": ["loop recorder"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["SAH check runner"],
+            "readBy": ["loop recorder"]
+          }
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["SAH check runner"],
+            "readBy": ["loop recorder", "session consumer"]
+          }
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-sah-trace": {
+            "writtenBy": ["SAH check runner"],
+            "readBy": ["loop recorder", "session consumer"]
+          }
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-sah-trace": {
+            "writtenBy": ["SAH check runner"],
+            "readBy": ["loop recorder", "session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["SAH check runner"],
+        "readBy": ["loop recorder", "session consumer"]
       }
     },
     "checkResults": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["checkId", "status"],
+        "required": [
+          "checkId",
+          "status",
+          "command",
+          "cwd",
+          "startedAt",
+          "finishedAt",
+          "exitCode",
+          "stdoutDigest",
+          "stderrDigest"
+        ],
         "properties": {
           "checkId": {
             "type": "string",
             "minLength": 1,
             "x-sah-trace": {
-              "writtenBy": ["coding agent"],
-              "readBy": ["loop evaluator"]
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           },
           "status": {
             "enum": ["passed", "failed", "incomplete"],
             "x-sah-trace": {
-              "writtenBy": ["target check"],
-              "readBy": ["loop evaluator"]
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "exitCode": {
+            "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }],
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "stdoutDigest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
+            }
+          },
+          "stderrDigest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           },
           "observed": {
             "type": "string",
             "x-sah-trace": {
-              "writtenBy": ["target check"],
-              "readBy": ["loop evaluator"]
+              "writtenBy": ["SAH check runner"],
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           }
         },
         "x-sah-trace": {
-          "writtenBy": ["coding agent"],
-          "readBy": ["loop evaluator"]
-        },
-        "required": ["checkId", "status"]
+          "writtenBy": ["SAH check runner"],
+          "readBy": ["loop evaluator", "loop recorder"]
+        }
       },
       "x-sah-trace": {
-        "writtenBy": ["coding agent"],
-        "readBy": ["loop evaluator"]
+        "writtenBy": ["SAH check runner"],
+        "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "learnings": {
@@ -95,7 +222,7 @@
             "minLength": 1,
             "x-sah-trace": {
               "writtenBy": ["coding agent"],
-              "readBy": ["loop evaluator"]
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           },
           "observation": {
@@ -103,14 +230,14 @@
             "minLength": 1,
             "x-sah-trace": {
               "writtenBy": ["coding agent"],
-              "readBy": ["loop evaluator"]
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           },
           "priority": {
             "enum": ["must", "should", "could"],
             "x-sah-trace": {
               "writtenBy": ["product owner", "coding agent"],
-              "readBy": ["loop evaluator"]
+              "readBy": ["loop evaluator", "loop recorder"]
             }
           },
           "nextTask": {
@@ -164,18 +291,35 @@
       },
       "x-sah-trace": {
         "writtenBy": ["coding agent"],
-        "readBy": ["loop evaluator"]
+        "readBy": ["loop evaluator", "loop recorder"]
       }
     }
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
-      "outcomeVersion": "0.1.0",
+      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+      "outcomeVersion": "0.2.0",
       "iterationId": "iteration-001",
       "status": "succeeded",
+      "evidence": {
+        "executor": { "name": "sah-loop-checks", "version": "0.1.0" },
+        "cwd": "/workspace/product",
+        "startedAt": "2026-08-19T00:00:00.000Z",
+        "finishedAt": "2026-08-19T00:00:01.000Z"
+      },
       "checkResults": [
-        { "checkId": "lint", "status": "passed", "observed": "0 findings" }
+        {
+          "checkId": "lint",
+          "status": "passed",
+          "command": "npm run lint",
+          "cwd": "/workspace/product",
+          "startedAt": "2026-08-19T00:00:00.000Z",
+          "finishedAt": "2026-08-19T00:00:01.000Z",
+          "exitCode": 0,
+          "stdoutDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "stderrDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "observed": "0 findings"
+        }
       ],
       "learnings": [
         {

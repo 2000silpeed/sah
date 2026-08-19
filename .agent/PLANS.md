@@ -258,4 +258,85 @@ silently mutate product direction or bypass S0–S13.
   and `git diff --check` passed.
 - Existing validate/advance/verify/resume behavior, S13 evidence rules, exit meanings, benchmarks,
   and hosted-coordination exclusions remain unchanged.
-- Milestone committed as `a14863a` (`feat: add executable iteration loop`); no push was performed.
+- Milestone committed as `23f86e0` (`feat: add executable iteration loop`); no push was performed.
+
+## Run 19 ExecPlan — 2026-08-19
+
+### Compiled task
+
+Goal: make an iteration's successful completion depend on schema-validated evidence produced by
+real target-check execution, without replacing the S0–S13 or S13 lifecycle authorities.
+
+Context: the current loop validates `checkId` and `status` but accepts missing required checks and
+agent-authored success claims. `docs/linting.md` already requires exact invocation, working
+directory, tool context when material, exit code, and an output reference. The loop is the narrow
+authority for iteration evidence; design bundles remain the authority for architecture and S13.
+
+Constraints: preserve the public CLI/library boundary, existing validate/advance/verify/resume
+semantics, exit-code meanings, atomic loop writes, target-owned commands, and local/model-neutral
+operation. Do not infer Git state, add hosted coordination, add a universal linter, invoke an LLM
+judge, add release orchestration, or edit benchmark expectations. Keep the runner opt-in and
+explicitly scoped to a caller-supplied working directory.
+
+Done when: `loop-checks` executes declared checks and emits a schema-valid outcome with command,
+cwd, timestamps, exit code, and stdout/stderr digests; `loop-record` rejects a succeeded claim
+with missing, unknown, duplicate, mismatched, or non-passing required evidence; valid failed/partial
+outcomes are durably recorded as blocked; valid successful evidence is atomically recorded; focused
+and full tests, schema/trace validation, format, lint, typecheck, build, CLI smoke checks, diff
+review, and a meaningful milestone commit all pass. No push is performed.
+
+### Scope and constraints
+
+Included: a versioned iteration-outcome evidence contract, the local declared-check runner, strict
+required-check/evidence validation, CLI/library exports, fixture and focused tests, loop/linting
+documentation, ADR-0019, and full repository verification.
+
+Excluded: automatic next-iteration promotion, product-complete/release states, repository or Git
+fingerprints, hosted/multi-writer coordination, provider adapters, telemetry, LLM judges, benchmark
+changes, and changes to existing S0–S13 lifecycle or exit-code authority. Those remain separately
+scoped follow-up decisions.
+
+### Design decision
+
+Use a new `iteration-outcome` v0.2.0 contract rather than treating optional strings as evidence.
+Each check result carries the exact command, explicit cwd, start/end timestamps, exit code (or null
+for an incomplete spawn), and sha256 digests of captured stdout/stderr. `sah loop-checks <loop>
+--cwd <target>` executes the declared commands sequentially and emits a valid outcome template;
+the caller may add learnings before recording it. `loop-record` compares evidence to the current
+declared checks and only appends a succeeded outcome when every required check has one matching,
+passed result with exit code zero. Failed/partial outcomes remain recordable but leave the current
+iteration blocked. The runner never discovers Git state or changes a design bundle.
+
+### Milestones
+
+| Phase | Milestone | Status |
+| --- | --- | --- |
+| 0 | Inspect loop, lint, schema, atomic-write, and CLI boundaries | complete |
+| 1 | Record Run 19 plan and ADR-0019 | complete |
+| 2 | Add outcome v0.2 evidence schema, types, and fixture | complete |
+| 3 | Implement declared-check runner and strict record gate | complete |
+| 4 | Update skill/docs and contract tests | complete |
+| 5 | Full verification, diff review, and milestone commit | complete |
+
+### Discovery and verification log
+
+- The previous v0.1 outcome contract allowed an empty `checkResults` array and did not bind a
+  result to its declared command. This is the earliest invalid premise for completion claims.
+- The runner requires an explicit `--cwd`; it will not infer a target root from the loop path or
+  inspect Git state. This preserves SAH's model-neutral, non-Git lifecycle boundary.
+- `loop-checks` emits a valid outcome with empty `learnings`; recording a successful iteration
+  still requires a bounded learning/next-task proposal under the existing loop contract.
+- Format, lint, strict typecheck, build, all 238 tests, schema audit, and `git diff --check` pass.
+- Production CLI smoke passed for route evaluation, explicit-cwd check execution, and atomic
+  evidence-backed recording on a disposable loop copy. The generated outcome contains the v0.2.0
+  schema, executor identity, command/cwd/timestamps, exit code, and stdout/stderr digests.
+- Markdown link audit covered 74 files with no missing local links; all governed documents remain
+  within the 400-line budget, and `git diff --check` passed.
+- Milestone committed as `feat: gate iteration completion on execution evidence`; no push was
+  performed. See `git log` for the immutable commit identifier.
+
+### Handoff
+
+After Run 19, a later session can run target checks through SAH, inspect deterministic evidence,
+and record only an honestly proven iteration result. Run 20 should address accept/advance, repair,
+and product-complete states; it must not be smuggled into this evidence slice.

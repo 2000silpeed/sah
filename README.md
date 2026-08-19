@@ -371,7 +371,7 @@ npm run build
 npm run verify:schemas
 ~~~
 
-The current suite covers 228 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
+The current suite covers 238 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
 slice, file discipline, document budgets, and change workflow.
 
 ## Current boundaries

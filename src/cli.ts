@@ -13,6 +13,7 @@ import {
   type VerificationResult,
   type VerificationSelection,
   type ResumeResult,
+  type IterationChecksResult,
   type IterationLoopResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
@@ -24,6 +25,7 @@ import {
 } from "./model-repository.js";
 import {
   evaluateIterationLoop,
+  runIterationChecks,
   recordIterationOutcome,
 } from "./iteration-loop.js";
 
@@ -33,6 +35,7 @@ const usage = [
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
   "       sah loop <sah.loop.json> [--json]",
+  "       sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]",
   "       sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]",
 ].join("\n");
 
@@ -43,6 +46,7 @@ type ParsedArguments = {
   changedPaths?: string[];
   recordPath?: string;
   verificationRecordPath?: string;
+  cwd?: string;
   error?: string;
 };
 
@@ -52,6 +56,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let sourceMappingPath: string | undefined;
   let recordPath: string | undefined;
   let verificationRecordPath: string | undefined;
+  let cwd: string | undefined;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -94,6 +99,22 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       index += 1;
       continue;
     }
+    if (argument === "--cwd") {
+      if (cwd !== undefined) {
+        return { positional, json, error: "--cwd may be supplied only once." };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--cwd requires one directory path.",
+        };
+      }
+      cwd = value;
+      index += 1;
+      continue;
+    }
     if (argument === "--record" || argument === "--verification-record") {
       const current =
         argument === "--record" ? recordPath : verificationRecordPath;
@@ -126,6 +147,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     ...(changedPaths.length === 0 ? {} : { changedPaths }),
     ...(recordPath === undefined ? {} : { recordPath }),
     ...(verificationRecordPath === undefined ? {} : { verificationRecordPath }),
+    ...(cwd === undefined ? {} : { cwd }),
   };
 }
 
@@ -285,6 +307,7 @@ function exitCode(
     | AdvanceResult
     | VerificationResult
     | ResumeResult
+    | IterationChecksResult
     | IterationLoopResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
@@ -294,8 +317,11 @@ function exitCode(
       return 0;
     case "escalate":
       return 1;
-    case "violations":
+    case "failed":
+      return 1;
     case "blocked":
+      return 1;
+    case "violations":
       return 1;
     case "incomplete":
     case "operational-error":
@@ -334,6 +360,35 @@ function formatLoopHuman(loop: IterationLoopResult): string {
       : [`Learned from: ${loop.learningSourceIterationId}`]),
     ...loop.diagnostics.map(humanDiagnostic),
     `Summary: ${loop.summary.errors} error(s), ${loop.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
+function formatChecksHuman(checks: IterationChecksResult): string {
+  const title =
+    checks.status === "passed"
+      ? "SAH iteration checks passed"
+      : checks.status === "failed"
+        ? "SAH iteration checks failed"
+        : checks.status === "incomplete"
+          ? "SAH iteration checks are incomplete"
+          : checks.status === "blocked"
+            ? "SAH iteration checks blocked"
+            : "SAH iteration checks could not run";
+  return [
+    title,
+    `Loop file: ${checks.loopFile}`,
+    ...(checks.outcome === undefined
+      ? []
+      : [
+          `Iteration: ${checks.outcome.iterationId}`,
+          `Evidence cwd: ${checks.outcome.evidence.cwd}`,
+          ...checks.outcome.checkResults.map(
+            (check) =>
+              `Check ${check.checkId}: ${check.status} (exit ${String(check.exitCode)})`,
+          ),
+        ]),
+    ...checks.diagnostics.map(humanDiagnostic),
+    `Summary: ${checks.summary.errors} error(s), ${checks.summary.warnings} warning(s)`,
   ].join("\n\n");
 }
 
@@ -381,6 +436,14 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     process.stdout.write(`${usage}\n`);
     return 0;
+  }
+
+  if (parsed.cwd !== undefined && positional[0] !== "loop-checks") {
+    const invalid = invocationError("--cwd is supported only by loop-checks.");
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
   }
 
   if (
@@ -481,6 +544,24 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "loop-checks" &&
+    parsed.cwd !== undefined &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const checks = await runIterationChecks(positional[1] ?? "", parsed.cwd);
+    const output =
+      json && checks.outcome !== undefined ? checks.outcome : checks;
+    process.stdout.write(
+      `${json ? JSON.stringify(output, null, 2) : formatChecksHuman(checks)}\n`,
+    );
+    return exitCode(checks);
   }
 
   if (

@@ -29,6 +29,7 @@ sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
+sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
 ```
 
@@ -47,14 +48,18 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
+npm exec -- sah loop-checks /path/to/target/.sah/sah.loop.json --cwd /path/to/target --json
 npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
 ```
 
 `advance` and `loop-record` mutate their canonical files, so examples deliberately name a disposable copy or an intended working artifact rather
-than the checked-in fixture. `verify` requires an explicit target checkout and is read-only
+than the checked-in fixture. `loop-checks` is read-only with respect to the loop but executes the
+declared target commands in the explicit `--cwd` and emits a schema-valid outcome template.
+`verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
-Default output is human-readable. `--json` writes exactly one `ValidationResult`,
-`AdvanceResult`, or `VerificationResult` and no prose. Validation diagnostics preserve stable
+Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
+`AdvanceResult`, `VerificationResult`, `IterationLoopResult`, or a schema-valid iteration outcome)
+and no prose. Validation diagnostics preserve stable
 code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
 repair, and owning stage when applicable. Verification checks preserve constraint, decision,
 scope elements, invariants, slices, capability, status, expected/observed facts, blockers, and
@@ -81,8 +86,10 @@ previously published evidence.
 |    2 | Invocation/operation failed, or verification is incomplete because a review, blocker, unsafe binding, or adapter is pending. |
 
 The loop command maps `fast`/ready to exit 0, `reasoning`/escalate and `blocked` to exit 1, and
-malformed or inaccessible loop/outcome artifacts to exit 2. These additions do not change the
-existing validation, advancement, or verification meanings.
+malformed or inaccessible loop/outcome artifacts to exit 2. `loop-checks` maps all required checks
+passing to 0, a completed non-zero check or blocked iteration to 1, and incomplete execution or
+operational failure to 2. These additions do not change the existing validation, advancement, or
+verification meanings.
 
 The root [manifest schema](../schemas/design-bundle-manifest.schema.json) defines lifecycle and
 artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR. Declared

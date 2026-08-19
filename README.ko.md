@@ -371,7 +371,7 @@ npm run build
 npm run verify:schemas
 ~~~
 
-현재 suite는 228개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
+현재 suite는 238개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
 변경 workflow는 [AGENTS.md](AGENTS.md)가 소유합니다.
 
 ## 현재 범위와 한계

@@ -1,6 +1,6 @@
 {
-  "$schema": "https://sah.dev/schemas/iteration-loop/v0.1.0",
-  "loopVersion": "0.1.0",
+  "$schema": "https://sah.dev/schemas/iteration-loop/v0.2.0",
+  "loopVersion": "0.2.0",
   "loopId": "reservation-product",
   "direction": {
     "goal": "Make reservation creation reliable and understandable.",

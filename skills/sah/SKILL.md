@@ -11,8 +11,9 @@ whose important structural choices remain explainable and checkable—not an arc
 that stops before code.
 
 For repeated product work, use the separate schema-validated iteration loop: `sah loop` routes a
-declared task to `fast`, `reasoning`, or `blocked`, and `sah loop-record` atomically records an
-outcome and projects a proposed next task. The loop selects work; S0–S13 remains the authority for
+declared task to `fast`, `reasoning`, or `blocked`; `sah loop-checks --cwd <target>` executes its
+declared checks and emits evidence; and `sah loop-record` atomically records an outcome and projects
+a proposed next task. The loop selects work and gates evidence; S0–S13 remains the authority for
 material architecture decisions and S13 completion.
 
 ## Required references
@@ -152,8 +153,10 @@ Keep scope tied to accepted decisions, but allow evidence from implementation to
 stage.
 
 Run the target's formatter/linter, typechecker, tests, and build throughout the implementation
-loop. Record exact commands and outcomes; a required non-zero lint result blocks the iteration's
-done contract, but is not automatically an SAH architecture violation. Use changed-scoped SAH
+loop. Use `sah loop-checks --cwd <target>` when the current loop declares these commands; it records
+the exact command, working directory, timestamps, exit code, and output digests. A required
+non-zero lint result blocks the iteration's done contract, but is not automatically an SAH
+architecture violation. Use changed-scoped SAH
 verification only for fast feedback. Final S13 eligibility requires a new full verification record and an atomic
 `S12 -> S13` advance. `incomplete`, `violations`, `operational-error`, changed scope, and
 `full-fallback` selected from a changed request never satisfy completion.

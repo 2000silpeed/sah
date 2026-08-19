@@ -27,6 +27,7 @@ export type {
   ResumeResult,
   ResumeStatus,
   IterationLoopResult,
+  IterationChecksResult,
   IterationOutcome,
   IterationTaskContract,
   LoopRoute,
@@ -41,5 +42,6 @@ export {
 } from "./model-repository.js";
 export {
   evaluateIterationLoop,
+  runIterationChecks,
   recordIterationOutcome,
 } from "./iteration-loop.js";

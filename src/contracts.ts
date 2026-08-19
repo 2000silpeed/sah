@@ -194,13 +194,29 @@ export type IterationLoopResult = {
 };
 
 export type IterationOutcome = {
-  $schema: "https://sah.dev/schemas/iteration-outcome/v0.1.0";
-  outcomeVersion: "0.1.0";
+  $schema: "https://sah.dev/schemas/iteration-outcome/v0.2.0";
+  outcomeVersion: "0.2.0";
   iterationId: string;
   status: "succeeded" | "partial" | "failed";
+  evidence: {
+    executor: {
+      name: string;
+      version: string;
+    };
+    cwd: string;
+    startedAt: string;
+    finishedAt: string;
+  };
   checkResults: Array<{
     checkId: string;
     status: "passed" | "failed" | "incomplete";
+    command: string;
+    cwd: string;
+    startedAt: string;
+    finishedAt: string;
+    exitCode: number | null;
+    stdoutDigest: string;
+    stderrDigest: string;
     observed?: string;
   }>;
   learnings: Array<{
@@ -209,6 +225,14 @@ export type IterationOutcome = {
     priority: "must" | "should" | "could";
     nextTask: IterationTaskContract;
   }>;
+};
+
+export type IterationChecksResult = {
+  status: "passed" | "failed" | "incomplete" | "blocked" | "operational-error";
+  loopFile: string;
+  outcome?: IterationOutcome;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
 };
 
 export type VerificationOptions = {
