@@ -8,6 +8,8 @@ import {
   evaluateIterationLoop,
   runIterationChecks,
   recordIterationOutcome,
+  acceptNextIteration,
+  completeIterationLoop,
 } from "../src/iteration-loop.js";
 import { loadSchemaRegistry } from "../src/schema-validation.js";
 
@@ -34,9 +36,10 @@ async function createLoop(signal = "local-reversible"): Promise<{
     loop,
     `${JSON.stringify(
       {
-        $schema: "https://sah.dev/schemas/iteration-loop/v0.2.0",
-        loopVersion: "0.2.0",
+        $schema: "https://sah.dev/schemas/iteration-loop/v0.3.0",
+        loopVersion: "0.3.0",
         loopId: "test-loop",
+        status: "active",
         direction: {
           goal: "Improve the product",
           successCriteria: [
@@ -75,6 +78,11 @@ async function createLoop(signal = "local-reversible"): Promise<{
             },
           ],
         },
+        completion: {
+          completionVersion: "0.1.0",
+          status: "open",
+          criterionResults: [],
+        },
         outcomes: [],
       },
       null,
@@ -85,8 +93,8 @@ async function createLoop(signal = "local-reversible"): Promise<{
     outcome,
     `${JSON.stringify(
       {
-        $schema: "https://sah.dev/schemas/iteration-outcome/v0.2.0",
-        outcomeVersion: "0.2.0",
+        $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+        outcomeVersion: "0.3.0",
         iterationId: "iteration-1",
         status: "succeeded",
         evidence: {
@@ -121,6 +129,15 @@ async function createLoop(signal = "local-reversible"): Promise<{
               context: ["src/empty-state"],
               constraints: ["preserve navigation"],
               doneWhen: ["lint passes", "empty-state test passes"],
+              checks: [
+                {
+                  id: "lint",
+                  kind: "lint",
+                  command: "npm run lint",
+                  expected: "exit 0",
+                  required: true,
+                },
+              ],
             },
           },
         ],
@@ -147,7 +164,7 @@ describe("iteration loop", () => {
     if (registry.ok)
       expect(
         registry.registry.validate(
-          "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+          "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
           result,
           "iteration-loop-result",
         ),
@@ -179,6 +196,149 @@ describe("iteration loop", () => {
     expect(result.learningSourceIterationId).toBe("iteration-1");
     expect(persisted.currentIteration.status).toBe("completed");
     expect(persisted.outcomes).toHaveLength(1);
+  });
+
+  it("accepts a declared next task as a new planned iteration", async () => {
+    const { loop, outcome } = await createLoop();
+
+    await recordIterationOutcome(loop, outcome);
+    const result = await acceptNextIteration(loop);
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      status: string;
+      currentIteration: {
+        id: string;
+        status: string;
+        goal: string;
+        checks: Array<{ id: string }>;
+      };
+    };
+
+    expect(result.operation).toBe("advanced");
+    expect(result.status).toBe("ready");
+    expect(persisted.status).toBe("active");
+    expect(persisted.currentIteration.id).toBe("iteration-002");
+    expect(persisted.currentIteration.status).toBe("planned");
+    expect(persisted.currentIteration.goal).toBe("Improve the empty state");
+    expect(persisted.currentIteration.checks).toHaveLength(1);
+  });
+
+  it("requires an explicit repair transition after failed evidence", async () => {
+    const { loop, outcome } = await createLoop();
+    const failed = JSON.parse(await readFile(outcome, "utf8")) as {
+      status: string;
+      checkResults: Array<{ status: string; exitCode: number | null }>;
+    };
+    failed.status = "failed";
+    const check = failed.checkResults[0];
+    if (check !== undefined) {
+      check.status = "failed";
+      check.exitCode = 1;
+    }
+    await writeFile(outcome, `${JSON.stringify(failed, null, 2)}\n`);
+
+    await recordIterationOutcome(loop, outcome);
+    const withoutRepair = await acceptNextIteration(loop);
+    expect(withoutRepair.status).toBe("blocked");
+    expect(withoutRepair.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_REPAIR_FLAG_REQUIRED",
+    );
+
+    const repaired = await acceptNextIteration(loop, { repair: true });
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      currentIteration: { status: string; riskSignals: string[] };
+    };
+    expect(repaired.operation).toBe("advanced");
+    expect(persisted.currentIteration.status).toBe("planned");
+    expect(persisted.currentIteration.riskSignals).toContain(
+      "repeated-failure",
+    );
+  });
+
+  it("completes only when every success criterion references passed evidence", async () => {
+    const { loop, outcome, directory } = await createLoop();
+    const succeeded = JSON.parse(await readFile(outcome, "utf8")) as {
+      learnings: Array<{ priority: string }>;
+    };
+    const learning = succeeded.learnings[0];
+    if (learning !== undefined) learning.priority = "should";
+    await writeFile(outcome, `${JSON.stringify(succeeded, null, 2)}\n`);
+    await recordIterationOutcome(loop, outcome);
+    const completion = join(directory, "completion.json");
+    await writeFile(
+      completion,
+      `${JSON.stringify(
+        {
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
+          completionVersion: "0.1.0",
+          status: "completed",
+          criterionResults: [
+            {
+              criterionId: "criterion-1",
+              evidenceRefs: ["iteration-1:lint"],
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const result = await completeIterationLoop(loop, completion);
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      status: string;
+      completion: { status: string; criterionResults: unknown[] };
+    };
+    expect(result.operation).toBe("completed");
+    expect(result.status).toBe("complete");
+    expect(result.route).toBe("complete");
+    expect(persisted.status).toBe("completed");
+    expect(persisted.completion.status).toBe("completed");
+    expect(persisted.completion.criterionResults).toHaveLength(1);
+
+    const evaluated = await evaluateIterationLoop(loop);
+    expect(evaluated.operation).toBe("evaluated");
+    expect(evaluated.status).toBe("complete");
+    expect(evaluated.route).toBe("complete");
+  });
+
+  it("does not write a completion with unknown evidence", async () => {
+    const { loop, outcome, directory } = await createLoop();
+    const succeeded = JSON.parse(await readFile(outcome, "utf8")) as {
+      learnings: Array<{ priority: string }>;
+    };
+    const learning = succeeded.learnings[0];
+    if (learning !== undefined) learning.priority = "should";
+    await writeFile(outcome, `${JSON.stringify(succeeded, null, 2)}\n`);
+    await recordIterationOutcome(loop, outcome);
+    const completion = join(directory, "invalid-completion.json");
+    await writeFile(
+      completion,
+      `${JSON.stringify(
+        {
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
+          completionVersion: "0.1.0",
+          status: "completed",
+          criterionResults: [
+            {
+              criterionId: "criterion-1",
+              evidenceRefs: ["iteration-1:missing"],
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const result = await completeIterationLoop(loop, completion);
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      status: string;
+    };
+    expect(result.status).toBe("blocked");
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_COMPLETION_EVIDENCE_UNKNOWN",
+    );
+    expect(persisted.status).toBe("active");
   });
 
   it("rejects a succeeded outcome when a required check is missing", async () => {
@@ -223,7 +383,7 @@ describe("iteration loop", () => {
     if (registry.ok && result.outcome !== undefined)
       expect(
         registry.registry.validate(
-          "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+          "https://sah.dev/schemas/iteration-outcome/v0.3.0",
           result.outcome,
           "iteration-outcome",
         ),

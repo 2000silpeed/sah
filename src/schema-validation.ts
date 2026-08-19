@@ -26,6 +26,7 @@ const schemaFiles = [
   "verification-record.schema.json",
   "verification-result.schema.json",
   "resume-result.schema.json",
+  "iteration-completion.schema.json",
   "iteration-outcome.schema.json",
   "iteration-loop.schema.json",
   "iteration-loop-result.schema.json",

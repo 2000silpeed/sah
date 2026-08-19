@@ -29,8 +29,9 @@ export type VerificationStatus =
   "passed" | "violations" | "incomplete" | "operational-error";
 export type ResumeStatus = "ready" | "blocked" | "operational-error";
 export type LoopRoute = "fast" | "reasoning" | "blocked";
+export type LoopResultRoute = LoopRoute | "complete";
 export type LoopResultStatus =
-  "ready" | "escalate" | "blocked" | "operational-error";
+  "ready" | "escalate" | "blocked" | "complete" | "operational-error";
 
 export type SourceLocation = {
   line: number;
@@ -171,16 +172,37 @@ export type IterationTaskContract = {
   context: string[];
   constraints: string[];
   doneWhen: string[];
+  checks?: IterationCheckContract[];
+};
+
+export type IterationCheckContract = {
+  id: string;
+  kind: string;
+  command: string;
+  expected: string;
+  required: boolean;
+};
+
+export type IterationCriterionEvidence = {
+  criterionId: string;
+  evidenceRefs: string[];
+};
+
+export type IterationCompletion = {
+  completionVersion: "0.1.0";
+  status: "open" | "completed";
+  criterionResults: IterationCriterionEvidence[];
+  completedAt?: string;
 };
 
 export type IterationLoopResult = {
-  $schema: "https://sah.dev/schemas/iteration-loop-result/v0.1.0";
-  resultVersion: "0.1.0";
-  operation: "evaluated" | "recorded";
+  $schema: "https://sah.dev/schemas/iteration-loop-result/v0.2.0";
+  resultVersion: "0.2.0";
+  operation: "evaluated" | "recorded" | "advanced" | "completed";
   status: LoopResultStatus;
   loopFile: string;
   loopId?: string;
-  route?: LoopRoute;
+  route?: LoopResultRoute;
   escalation: {
     triggered: boolean;
     ruleRefs: string[];
@@ -194,8 +216,8 @@ export type IterationLoopResult = {
 };
 
 export type IterationOutcome = {
-  $schema: "https://sah.dev/schemas/iteration-outcome/v0.2.0";
-  outcomeVersion: "0.2.0";
+  $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0";
+  outcomeVersion: "0.3.0";
   iterationId: string;
   status: "succeeded" | "partial" | "failed";
   evidence: {
@@ -233,6 +255,13 @@ export type IterationChecksResult = {
   outcome?: IterationOutcome;
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
+};
+
+export type IterationCompletionRequest = {
+  $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0";
+  completionVersion: "0.1.0";
+  status: "completed";
+  criterionResults: IterationCriterionEvidence[];
 };
 
 export type VerificationOptions = {

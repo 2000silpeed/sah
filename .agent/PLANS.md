@@ -340,3 +340,58 @@ iteration blocked. The runner never discovers Git state or changes a design bund
 After Run 19, a later session can run target checks through SAH, inspect deterministic evidence,
 and record only an honestly proven iteration result. Run 20 should address accept/advance, repair,
 and product-complete states; it must not be smuggled into this evidence slice.
+
+## Run 20 ExecPlan — 2026-08-19
+
+### Compiled task and boundaries
+
+Close the local loop lifecycle: actionable learnings must carry checks; explicit
+`loop-accept-next` creates the next planned iteration; `--repair` is required from blocked; and
+`loop-complete` reaches a local terminal state only when every declared success criterion resolves
+to recorded passed/exit-zero evidence. Preserve CLI/library boundaries, atomic writes, target-owned
+checks, existing validate/advance/verify/resume exit meanings, S0–S13/S13 authority, and local
+model-neutral operation. Exclude Git/revision binding, hosted coordination, release/deploy,
+telemetry, LLM judges, provider adapters, benchmarks, and user acceptance.
+
+### Accepted design
+
+Run 20 adds loop/outcome v0.3, completion-request v0.1, and result v0.2 contracts. The normal
+transition selects the highest-priority latest learning, requires a unique required check, and
+atomically copies it into a fresh `planned` iteration. Repair is the only blocked transition and
+adds `repeated-failure`. Completion requires a completed current iteration, a succeeded latest
+outcome, no latest `must` learning, exact criterion coverage, and `iterationId:checkId` references
+that resolve to recorded passed checks. It sets local `active|blocked|completed` state; it is not
+S13, release approval, or user acceptance. ADR-0020 records alternatives, costs, authority, and
+review triggers.
+
+### Milestones
+
+| Phase | Milestone | Status |
+| --- | --- | --- |
+| 0 | Inspect Run 19 seam | complete |
+| 1 | Write plan and ADR-0020 | complete |
+| 2 | Schemas, types, and fixtures | complete |
+| 3 | Accept/repair/complete runtime and CLI | complete |
+| 4 | Docs and contract tests | complete |
+| 5 | Full verification, diff review, and commit | complete |
+
+### Discovery and verification log
+
+- Existing source-byte comparison is sufficient for one explicit lifecycle writer; a coordinator
+  or lock would expand scope without closing the missing transitions.
+- Criteria remain descriptions, so stable `iterationId:checkId` references are the deterministic
+  evidence boundary; external/user acceptance remains outside this slice.
+- A next task without checks is not executable and cannot enter `currentIteration`. A separate
+  completion request lets an agent prepare evidence mappings without mutating the loop until the
+  atomic gate resolves every reference.
+- Format, lint, strict typecheck, schema audit, focused loop/CLI tests, full 244-test suite,
+  standalone build, disposable CLI record/accept smoke, link/budget audit, and `git diff --check`
+  pass. `sah validate fixtures/simple-crud` passes; its short-profile verification remains the
+  expected `incomplete`/exit 2 because the declared source-graph adapter is unsupported.
+- Milestone committed as `feat: close iteration lifecycle`; no push was performed. See `git log`
+  for the immutable commit identifier.
+
+### Handoff
+
+After Run 20, local continuation and termination are explicit and evidence-backed. Run 21 may bind
+iterations to repository/design-bundle revisions, but must not fold that authority into this slice.

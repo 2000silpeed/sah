@@ -26,11 +26,16 @@ export type {
   VerificationSummary,
   ResumeResult,
   ResumeStatus,
+  IterationCheckContract,
+  IterationCompletion,
+  IterationCompletionRequest,
+  IterationCriterionEvidence,
   IterationLoopResult,
   IterationChecksResult,
   IterationOutcome,
   IterationTaskContract,
   LoopRoute,
+  LoopResultRoute,
   LoopResultStatus,
 } from "./contracts.js";
 export { verificationRecordSchemaId } from "./contracts.js";
@@ -44,4 +49,6 @@ export {
   evaluateIterationLoop,
   runIterationChecks,
   recordIterationOutcome,
+  acceptNextIteration,
+  completeIterationLoop,
 } from "./iteration-loop.js";

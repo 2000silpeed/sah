@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-completion/v0.1.0",
+  "title": "SAH Iteration Completion Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "completionVersion", "status", "criterionResults"],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/iteration-completion/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop completion author"],
+        "readBy": ["loop completion gate"]
+      }
+    },
+    "completionVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop completion author"],
+        "readBy": ["loop completion gate"]
+      }
+    },
+    "status": {
+      "const": "completed",
+      "x-sah-trace": {
+        "writtenBy": ["loop completion author"],
+        "readBy": ["loop completion gate"]
+      }
+    },
+    "criterionResults": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterionId", "evidenceRefs"],
+        "properties": {
+          "criterionId": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["loop completion author"],
+              "readBy": ["loop completion gate"]
+            }
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["loop completion author"],
+              "readBy": ["loop completion gate"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["loop completion author"],
+          "readBy": ["loop completion gate"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop completion author"],
+        "readBy": ["loop completion gate"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/iteration-completion/v0.1.0",
+      "completionVersion": "0.1.0",
+      "status": "completed",
+      "criterionResults": [
+        {
+          "criterionId": "success-1",
+          "evidenceRefs": ["iteration-001:lint"]
+        }
+      ]
+    }
+  ]
+}

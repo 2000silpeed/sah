@@ -12,6 +12,9 @@ import {
 import { basename, dirname, resolve } from "node:path";
 
 import type {
+  IterationCheckContract,
+  IterationCompletion,
+  IterationCompletionRequest,
   IterationLoopResult,
   IterationChecksResult,
   IterationOutcome,
@@ -22,8 +25,10 @@ import type {
 import { summarize } from "./diagnostics.js";
 import { loadSchemaRegistry } from "./schema-validation.js";
 
-const loopSchemaId = "https://sah.dev/schemas/iteration-loop/v0.2.0";
-const outcomeSchemaId = "https://sah.dev/schemas/iteration-outcome/v0.2.0";
+const loopSchemaId = "https://sah.dev/schemas/iteration-loop/v0.3.0";
+const outcomeSchemaId = "https://sah.dev/schemas/iteration-outcome/v0.3.0";
+const completionSchemaId =
+  "https://sah.dev/schemas/iteration-completion/v0.1.0";
 const iterationRunnerVersion = "0.1.0";
 
 type RiskSignal =
@@ -38,8 +43,9 @@ type RiskSignal =
 
 type LoopModel = {
   $schema: typeof loopSchemaId;
-  loopVersion: "0.2.0";
+  loopVersion: "0.3.0";
   loopId: string;
+  status: "active" | "blocked" | "completed";
   direction: {
     goal: string;
     successCriteria: Array<{ id: string; description: string }>;
@@ -59,14 +65,9 @@ type LoopModel = {
     status: "planned" | "in-progress" | "completed" | "blocked";
     riskSignals: RiskSignal[];
     taskContract: IterationTaskContract;
-    checks: Array<{
-      id: string;
-      kind: string;
-      command: string;
-      expected: string;
-      required: boolean;
-    }>;
+    checks: IterationCheckContract[];
   };
+  completion: IterationCompletion;
   outcomes: IterationOutcome[];
 };
 
@@ -212,7 +213,7 @@ function checksResult(
 }
 
 function result(
-  operation: "evaluated" | "recorded",
+  operation: IterationLoopResult["operation"],
   status: IterationLoopResult["status"],
   loopFile: string,
   diagnostics: SahDiagnostic[],
@@ -231,8 +232,8 @@ function result(
       ),
   );
   return {
-    $schema: "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
-    resultVersion: "0.1.0",
+    $schema: "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
+    resultVersion: "0.2.0",
     operation,
     status,
     loopFile,
@@ -303,26 +304,39 @@ function routeRank(route: LoopRoute): number {
   return route === "blocked" ? 3 : route === "reasoning" ? 2 : 1;
 }
 
-function taskFromLatestOutcome(loop: LoopModel): {
-  task?: IterationTaskContract;
+type SelectedLearning = {
+  learning: IterationOutcome["learnings"][number];
   sourceIterationId?: string;
-} {
+};
+
+function learningFromLatestOutcome(
+  loop: LoopModel,
+): SelectedLearning | undefined {
   const latest = loop.outcomes.at(-1);
-  if (latest === undefined || latest.learnings.length === 0) return {};
+  if (latest === undefined || latest.learnings.length === 0) return undefined;
   const priority = { must: 3, should: 2, could: 1 } as const;
   const selected = [...latest.learnings].sort(
     (left, right) => priority[right.priority] - priority[left.priority],
   )[0];
   return selected === undefined
-    ? {}
-    : { task: selected.nextTask, sourceIterationId: latest.iterationId };
+    ? undefined
+    : { learning: selected, sourceIterationId: latest.iterationId };
 }
 
 function evaluateLoadedLoop(
   loop: LoopModel,
   loopFile: string,
-  operation: "evaluated" | "recorded",
+  operation: IterationLoopResult["operation"],
 ): IterationLoopResult {
+  if (loop.status === "completed") {
+    return result(operation, "complete", loopFile, [], {
+      loopId: loop.loopId,
+      route: "complete",
+      escalation: { triggered: false, ruleRefs: [], reasons: [] },
+      currentTask: loop.currentIteration.taskContract,
+    });
+  }
+
   const current = loop.currentIteration;
   const matches = loop.policy.rules.filter((rule) =>
     current.riskSignals.includes(rule.signal),
@@ -350,11 +364,13 @@ function evaluateLoadedLoop(
   }
 
   const learning =
-    current.status === "completed" ? taskFromLatestOutcome(loop) : {};
+    current.status === "completed"
+      ? learningFromLatestOutcome(loop)
+      : undefined;
   const status =
     route === "fast" ? "ready" : route === "reasoning" ? "escalate" : "blocked";
   const extra =
-    current.status === "completed" && learning.task === undefined
+    current.status === "completed" && learning === undefined
       ? [
           diagnostic({
             code: "ITERATION_NEXT_TASK_MISSING",
@@ -388,8 +404,10 @@ function evaluateLoadedLoop(
             }
           : escalation,
       currentTask: current.taskContract,
-      ...(learning.task === undefined ? {} : { nextTask: learning.task }),
-      ...(learning.sourceIterationId === undefined
+      ...(learning === undefined
+        ? {}
+        : { nextTask: learning.learning.nextTask }),
+      ...(learning?.sourceIterationId === undefined
         ? {}
         : { learningSourceIterationId: learning.sourceIterationId }),
     },
@@ -436,6 +454,16 @@ export async function runIterationChecks(
     );
 
   const loop = loaded.loaded.data;
+  if (loop.status === "completed")
+    return checksResult("blocked", loaded.loaded.path, [
+      diagnostic({
+        code: "ITERATION_CHECKS_LOOP_COMPLETED",
+        path: loaded.loaded.path,
+        message: "The iteration loop is already product-complete.",
+        expected: "an active iteration loop",
+        repair: "Create a new loop artifact for a new product direction.",
+      }),
+    ]);
   if (loop.currentIteration.status === "completed")
     return checksResult("blocked", loaded.loaded.path, [
       diagnostic({
@@ -504,8 +532,8 @@ export async function runIterationChecks(
       ? "failed"
       : "succeeded";
   const outcome: IterationOutcome = {
-    $schema: "https://sah.dev/schemas/iteration-outcome/v0.2.0",
-    outcomeVersion: "0.2.0",
+    $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+    outcomeVersion: "0.3.0",
     iterationId: loop.currentIteration.id,
     status,
     evidence: {
@@ -758,6 +786,30 @@ export async function recordIterationOutcome(
 
   const loop = loadedLoop.loaded.data;
   const outcome = loadedOutcome.loaded.data;
+  if (loop.status === "completed")
+    return result(
+      "recorded",
+      "blocked",
+      loadedLoop.loaded.path,
+      [
+        diagnostic({
+          code: "ITERATION_LOOP_ALREADY_COMPLETED",
+          path: loadedLoop.loaded.path,
+          message: "A completed iteration loop cannot accept another outcome.",
+          expected: "an active or blocked iteration loop",
+          repair: "Create a new loop artifact for a new product direction.",
+        }),
+      ],
+      {
+        loopId: loop.loopId,
+        route: "blocked",
+        escalation: {
+          triggered: true,
+          ruleRefs: [],
+          reasons: ["The iteration loop is already product-complete."],
+        },
+      },
+    );
   const diagnostics: SahDiagnostic[] = [];
   if (outcome.iterationId !== loop.currentIteration.id) {
     diagnostics.push(
@@ -797,6 +849,7 @@ export async function recordIterationOutcome(
     });
 
   loop.outcomes.push(outcome);
+  loop.status = outcome.status === "succeeded" ? "active" : "blocked";
   loop.currentIteration.status =
     outcome.status === "succeeded" ? "completed" : "blocked";
   const writeDiagnostic = await replaceLoopAtomically({
@@ -810,4 +863,418 @@ export async function recordIterationOutcome(
       writeDiagnostic,
     ]);
   return evaluateLoadedLoop(loop, loadedLoop.loaded.path, "recorded");
+}
+
+function nextTaskDiagnostics(
+  task: IterationTaskContract | undefined,
+  path: string,
+): SahDiagnostic[] {
+  if (task?.checks === undefined || task.checks.length === 0)
+    return [
+      diagnostic({
+        code: "ITERATION_NEXT_TASK_CHECKS_MISSING",
+        path,
+        message:
+          "The selected learning proposal declares no executable checks.",
+        expected: "nextTask.checks to contain at least one check",
+        repair:
+          "Record a learning proposal with target-owned checks before advancing.",
+      }),
+    ];
+  const diagnostics: SahDiagnostic[] = [];
+  const seen = new Set<string>();
+  for (const check of task.checks) {
+    if (seen.has(check.id)) {
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_NEXT_TASK_CHECK_DUPLICATE",
+          path,
+          message: `The selected learning proposal repeats check ${check.id}.`,
+          expected: "unique check IDs in nextTask.checks",
+          repair: "Give each proposed check a unique ID and retry.",
+        }),
+      );
+    }
+    seen.add(check.id);
+  }
+  if (!task.checks.some(({ required }) => required)) {
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_NEXT_TASK_REQUIRED_CHECK_MISSING",
+        path,
+        message: "The selected learning proposal has no required check.",
+        expected: "at least one nextTask.checks entry with required true",
+        repair: "Mark the check that must pass before recording success.",
+      }),
+    );
+  }
+  return diagnostics;
+}
+
+function transitionBlocked(
+  operation: IterationLoopResult["operation"],
+  loop: LoopModel,
+  loopFile: string,
+  diagnostics: SahDiagnostic[],
+): IterationLoopResult {
+  return result(operation, "blocked", loopFile, diagnostics, {
+    loopId: loop.loopId,
+    route: "blocked",
+    escalation: {
+      triggered: true,
+      ruleRefs: [],
+      reasons: diagnostics.map(({ message }) => message),
+    },
+    currentTask: loop.currentIteration.taskContract,
+  });
+}
+
+function proposedIterationId(loop: LoopModel): string {
+  const existing = new Set([
+    loop.currentIteration.id,
+    ...loop.outcomes.map(({ iterationId }) => iterationId),
+  ]);
+  let ordinal = loop.outcomes.length + 1;
+  let candidate = `iteration-${String(ordinal).padStart(3, "0")}`;
+  while (existing.has(candidate)) {
+    ordinal += 1;
+    candidate = `iteration-${String(ordinal).padStart(3, "0")}`;
+  }
+  return candidate;
+}
+
+export async function acceptNextIteration(
+  loopFile: string,
+  options: { repair?: boolean } = {},
+): Promise<IterationLoopResult> {
+  const loadedLoop = await readJson<LoopModel>(
+    loopFile,
+    loopSchemaId,
+    "iteration loop",
+  );
+  if (!loadedLoop.ok)
+    return result(
+      "advanced",
+      "operational-error",
+      resolve(loopFile),
+      loadedLoop.diagnostics,
+    );
+
+  const loop = loadedLoop.loaded.data;
+  if (loop.status === "completed")
+    return transitionBlocked("advanced", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_LOOP_ALREADY_COMPLETED",
+        path: loadedLoop.loaded.path,
+        message: "A completed iteration loop cannot start another iteration.",
+        expected: "an active or blocked iteration loop",
+        repair: "Create a new loop artifact for a new product direction.",
+      }),
+    ]);
+
+  const repair = options.repair === true;
+  if (loop.currentIteration.status === "blocked" && !repair)
+    return transitionBlocked("advanced", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_REPAIR_FLAG_REQUIRED",
+        path: loadedLoop.loaded.path,
+        message: "A blocked iteration requires an explicit repair transition.",
+        expected: "loop-accept-next --repair",
+        repair: "Inspect the failed evidence and retry with --repair.",
+      }),
+    ]);
+  if (loop.currentIteration.status !== (repair ? "blocked" : "completed"))
+    return transitionBlocked("advanced", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_TRANSITION_INVALID",
+        path: loadedLoop.loaded.path,
+        message: repair
+          ? "Repair can start only from a blocked current iteration."
+          : "The next iteration can be accepted only after a completed current iteration.",
+        expected: repair
+          ? "currentIteration.status blocked"
+          : "currentIteration.status completed",
+        repair: repair
+          ? "Record failed or incomplete evidence, then retry repair."
+          : "Run checks and record a successful outcome before accepting the next task.",
+      }),
+    ]);
+
+  const selected = learningFromLatestOutcome(loop);
+  if (selected === undefined)
+    return transitionBlocked("advanced", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_NEXT_TASK_MISSING",
+        path: loadedLoop.loaded.path,
+        message: "The latest outcome has no learning proposal to accept.",
+        expected: "the latest outcome to contain a nextTask learning",
+        repair: "Record a bounded learning proposal before advancing.",
+      }),
+    ]);
+  const taskDiagnostics = nextTaskDiagnostics(
+    selected.learning.nextTask,
+    loadedLoop.loaded.path,
+  );
+  if (taskDiagnostics.length > 0)
+    return transitionBlocked(
+      "advanced",
+      loop,
+      loadedLoop.loaded.path,
+      taskDiagnostics,
+    );
+
+  const task = selected.learning.nextTask;
+  const checks = task.checks?.map((check) => ({ ...check })) ?? [];
+  loop.currentIteration = {
+    id: proposedIterationId(loop),
+    goal: task.goal,
+    status: "planned",
+    riskSignals: repair
+      ? Array.from(
+          new Set<RiskSignal>([
+            "repeated-failure",
+            ...loop.currentIteration.riskSignals,
+          ]),
+        )
+      : [...loop.currentIteration.riskSignals],
+    taskContract: {
+      ...task,
+      context: [...task.context],
+      constraints: [...task.constraints],
+      doneWhen: [...task.doneWhen],
+      checks,
+    },
+    checks,
+  };
+  loop.status = "active";
+  const writeDiagnostic = await replaceLoopAtomically({
+    path: loadedLoop.loaded.path,
+    expectedSource: loadedLoop.loaded.source,
+    mode: loadedLoop.loaded.mode,
+    data: loop,
+  });
+  if (writeDiagnostic !== undefined)
+    return result("advanced", "operational-error", loadedLoop.loaded.path, [
+      writeDiagnostic,
+    ]);
+  return evaluateLoadedLoop(loop, loadedLoop.loaded.path, "advanced");
+}
+
+function completionDiagnostics(
+  loop: LoopModel,
+  completion: IterationCompletionRequest,
+  completionFile: string,
+): SahDiagnostic[] {
+  const diagnostics: SahDiagnostic[] = [];
+  const declaredIds = new Set(
+    loop.direction.successCriteria.map(({ id }) => id),
+  );
+  const seenCriteria = new Set<string>();
+  const seenEvidence = new Set<string>();
+  for (const criterion of completion.criterionResults) {
+    if (seenCriteria.has(criterion.criterionId)) {
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_CRITERION_DUPLICATE",
+          path: completionFile,
+          message: `Criterion ${criterion.criterionId} appears more than once.`,
+          expected: "one completion result per declared success criterion",
+          repair: "Merge the evidence references under one criterion result.",
+        }),
+      );
+    }
+    seenCriteria.add(criterion.criterionId);
+    if (!declaredIds.has(criterion.criterionId)) {
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_CRITERION_UNKNOWN",
+          path: completionFile,
+          message: `Completion references unknown criterion ${criterion.criterionId}.`,
+          expected: "only IDs from direction.successCriteria",
+          repair: "Use a declared success criterion ID and retry.",
+        }),
+      );
+    }
+    for (const reference of criterion.evidenceRefs) {
+      if (seenEvidence.has(reference)) {
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_COMPLETION_EVIDENCE_DUPLICATE",
+            path: completionFile,
+            message: `Evidence reference ${reference} appears more than once.`,
+            expected: "each recorded check evidence reference used once",
+            repair: "Remove duplicate evidence references and retry.",
+          }),
+        );
+        continue;
+      }
+      seenEvidence.add(reference);
+      const separator = reference.indexOf(":");
+      const iterationId = separator < 1 ? "" : reference.slice(0, separator);
+      const checkId = separator < 1 ? "" : reference.slice(separator + 1);
+      const outcome = loop.outcomes.find(
+        ({ iterationId: candidate }) => candidate === iterationId,
+      );
+      const check = outcome?.checkResults.find(
+        ({ checkId: candidate }) => candidate === checkId,
+      );
+      if (outcome === undefined || check === undefined) {
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_COMPLETION_EVIDENCE_UNKNOWN",
+            path: completionFile,
+            message: `Completion references unknown evidence ${reference}.`,
+            expected: "iterationId:checkId for a recorded check result",
+            repair: "Use an evidence reference from loop.outcomes.",
+          }),
+        );
+      } else if (check.status !== "passed" || check.exitCode !== 0) {
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_COMPLETION_EVIDENCE_NOT_PASSED",
+            path: completionFile,
+            message: `Evidence ${reference} did not pass with exit code 0.`,
+            expected: "check status passed and exitCode 0",
+            repair:
+              "Run the check successfully and reference its passing evidence.",
+          }),
+        );
+      }
+    }
+  }
+  for (const criterion of loop.direction.successCriteria) {
+    if (!seenCriteria.has(criterion.id))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_CRITERION_MISSING",
+          path: completionFile,
+          message: `Completion omits declared criterion ${criterion.id}.`,
+          expected: "one criterion result for every success criterion",
+          repair: "Add evidence references for the missing criterion.",
+        }),
+      );
+  }
+  return diagnostics;
+}
+
+export async function completeIterationLoop(
+  loopFile: string,
+  completionFile: string,
+): Promise<IterationLoopResult> {
+  const loadedLoop = await readJson<LoopModel>(
+    loopFile,
+    loopSchemaId,
+    "iteration loop",
+  );
+  if (!loadedLoop.ok)
+    return result(
+      "completed",
+      "operational-error",
+      resolve(loopFile),
+      loadedLoop.diagnostics,
+    );
+  const loadedCompletion = await readJson<IterationCompletionRequest>(
+    completionFile,
+    completionSchemaId,
+    "iteration completion request",
+  );
+  if (!loadedCompletion.ok)
+    return result(
+      "completed",
+      "operational-error",
+      loadedLoop.loaded.path,
+      loadedCompletion.diagnostics,
+    );
+
+  const loop = loadedLoop.loaded.data;
+  if (loop.status === "completed")
+    return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_LOOP_ALREADY_COMPLETED",
+        path: loadedLoop.loaded.path,
+        message: "The iteration loop is already product-complete.",
+        expected: "an active iteration loop",
+        repair: "Create a new loop artifact for a new product direction.",
+      }),
+    ]);
+  if (loop.status === "blocked" || loop.currentIteration.status === "blocked")
+    return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_COMPLETION_BLOCKED",
+        path: loadedLoop.loaded.path,
+        message: "A blocked iteration cannot satisfy the completion gate.",
+        expected: "a completed current iteration with passing evidence",
+        repair: "Run an explicit repair iteration before completing the loop.",
+      }),
+    ]);
+  if (loop.currentIteration.status !== "completed")
+    return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_COMPLETION_CURRENT_NOT_COMPLETED",
+        path: loadedLoop.loaded.path,
+        message: "The current iteration has not recorded a successful outcome.",
+        expected: "currentIteration.status completed",
+        repair: "Run checks and record a succeeded outcome first.",
+      }),
+    ]);
+  const latest = loop.outcomes.at(-1);
+  if (latest?.status !== "succeeded")
+    return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_COMPLETION_SUCCESS_OUTCOME_MISSING",
+        path: loadedLoop.loaded.path,
+        message: "The latest iteration does not have a succeeded outcome.",
+        expected: "the latest outcome status succeeded",
+        repair: "Record passing execution evidence before completing the loop.",
+      }),
+    ]);
+  if (latest.learnings.some(({ priority }) => priority === "must"))
+    return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_COMPLETION_MUST_LEARNING_OPEN",
+        path: loadedLoop.loaded.path,
+        message:
+          "The latest succeeded iteration still has an unresolved must learning.",
+        expected: "no latest learning with priority must",
+        repair:
+          "Accept and complete the required next task before product completion.",
+      }),
+    ]);
+
+  const diagnostics = completionDiagnostics(
+    loop,
+    loadedCompletion.loaded.data,
+    completionFile,
+  );
+  if (diagnostics.length > 0)
+    return transitionBlocked(
+      "completed",
+      loop,
+      loadedLoop.loaded.path,
+      diagnostics,
+    );
+
+  loop.status = "completed";
+  loop.completion = {
+    completionVersion: "0.1.0",
+    status: "completed",
+    criterionResults: loadedCompletion.loaded.data.criterionResults.map(
+      ({ criterionId, evidenceRefs }) => ({
+        criterionId,
+        evidenceRefs: [...evidenceRefs],
+      }),
+    ),
+    completedAt: new Date().toISOString(),
+  };
+  const writeDiagnostic = await replaceLoopAtomically({
+    path: loadedLoop.loaded.path,
+    expectedSource: loadedLoop.loaded.source,
+    mode: loadedLoop.loaded.mode,
+    data: loop,
+  });
+  if (writeDiagnostic !== undefined)
+    return result("completed", "operational-error", loadedLoop.loaded.path, [
+      writeDiagnostic,
+    ]);
+  return evaluateLoadedLoop(loop, loadedLoop.loaded.path, "completed");
 }

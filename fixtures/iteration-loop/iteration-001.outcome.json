@@ -1,6 +1,6 @@
 {
-  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
-  "outcomeVersion": "0.2.0",
+  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+  "outcomeVersion": "0.3.0",
   "iterationId": "iteration-001",
   "status": "succeeded",
   "evidence": {
@@ -32,7 +32,16 @@
         "goal": "Clarify first-run copy",
         "context": ["src/onboarding"],
         "constraints": ["preserve existing route"],
-        "doneWhen": ["lint passes", "onboarding test passes"]
+        "doneWhen": ["lint passes", "onboarding test passes"],
+        "checks": [
+          {
+            "id": "lint",
+            "kind": "lint",
+            "command": "npm run lint",
+            "expected": "exit 0",
+            "required": true
+          }
+        ]
       }
     }
   ]

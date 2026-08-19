@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+  "$id": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
   "title": "SAH Iteration Loop Result",
   "type": "object",
   "additionalProperties": false,
@@ -18,28 +18,28 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+      "const": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
       "x-sah-trace": {
         "writtenBy": ["loop evaluator"],
         "readBy": ["CLI", "session consumer"]
       }
     },
     "resultVersion": {
-      "const": "0.1.0",
+      "const": "0.2.0",
       "x-sah-trace": {
         "writtenBy": ["loop evaluator"],
         "readBy": ["CLI", "session consumer"]
       }
     },
     "operation": {
-      "enum": ["evaluated", "recorded"],
+      "enum": ["evaluated", "recorded", "advanced", "completed"],
       "x-sah-trace": {
         "writtenBy": ["loop evaluator", "loop recorder"],
         "readBy": ["CLI", "session consumer"]
       }
     },
     "status": {
-      "enum": ["ready", "escalate", "blocked", "operational-error"],
+      "enum": ["ready", "escalate", "blocked", "complete", "operational-error"],
       "x-sah-trace": {
         "writtenBy": ["risk router"],
         "readBy": ["CLI", "session consumer"]
@@ -62,7 +62,7 @@
       }
     },
     "route": {
-      "enum": ["fast", "reasoning", "blocked"],
+      "enum": ["fast", "reasoning", "blocked", "complete"],
       "x-sah-trace": {
         "writtenBy": ["risk router"],
         "readBy": ["session consumer"]
@@ -138,6 +138,63 @@
             "writtenBy": ["loop evaluator"],
             "readBy": ["coding agent"]
           }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "command", "expected", "required"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["loop evaluator"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["loop evaluator"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["loop evaluator"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "expected": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["loop evaluator"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "required": {
+                "type": "boolean",
+                "x-sah-trace": {
+                  "writtenBy": ["loop evaluator"],
+                  "readBy": ["coding agent"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["loop evaluator"],
+              "readBy": ["coding agent"]
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent"]
+          }
         }
       },
       "x-sah-trace": {
@@ -148,7 +205,7 @@
     "nextTask": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["goal", "context", "constraints", "doneWhen"],
+      "required": ["goal", "context", "constraints", "doneWhen", "checks"],
       "properties": {
         "goal": {
           "type": "string",
@@ -177,6 +234,63 @@
         "doneWhen": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "command", "expected", "required"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["learning projector"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["learning projector"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["learning projector"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "expected": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["learning projector"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "required": {
+                "type": "boolean",
+                "x-sah-trace": {
+                  "writtenBy": ["learning projector"],
+                  "readBy": ["coding agent"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["learning projector"],
+              "readBy": ["coding agent"]
+            }
+          },
           "x-sah-trace": {
             "writtenBy": ["learning projector"],
             "readBy": ["coding agent"]
@@ -234,8 +348,8 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
-      "resultVersion": "0.1.0",
+      "$schema": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
+      "resultVersion": "0.2.0",
       "operation": "evaluated",
       "status": "ready",
       "loopFile": ".sah/sah.loop.json",

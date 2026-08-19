@@ -104,6 +104,81 @@ describe("sah loop CLI", () => {
     expect(output.nextTask?.goal).toBe("Clarify first-run copy");
   });
 
+  it("accepts the learned task through an explicit transition", async () => {
+    const loopDirectory = await copyIterationLoop();
+    const record = await runCli([
+      "loop-record",
+      join(loopDirectory, "sah.loop.json"),
+      join(loopDirectory, "iteration-001.outcome.json"),
+      "--json",
+    ]);
+    expect(record.code).toBe(0);
+
+    const execution = await runCli([
+      "loop-accept-next",
+      join(loopDirectory, "sah.loop.json"),
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      operation: string;
+      status: string;
+      currentTask?: { goal: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.operation).toBe("advanced");
+    expect(output.status).toBe("ready");
+    expect(output.currentTask?.goal).toBe("Clarify first-run copy");
+  });
+
+  it("completes a loop from a schema-valid evidence reference", async () => {
+    const loopDirectory = await copyIterationLoop();
+    const loopFile = join(loopDirectory, "sah.loop.json");
+    const record = await runCli([
+      "loop-record",
+      loopFile,
+      join(loopDirectory, "iteration-001.outcome.json"),
+      "--json",
+    ]);
+    expect(record.code).toBe(0);
+    const completionFile = join(loopDirectory, "completion.json");
+    await writeFile(
+      completionFile,
+      `${JSON.stringify(
+        {
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
+          completionVersion: "0.1.0",
+          status: "completed",
+          criterionResults: [
+            {
+              criterionId: "success-1",
+              evidenceRefs: ["iteration-001:lint"],
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const execution = await runCli([
+      "loop-complete",
+      loopFile,
+      completionFile,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      operation: string;
+      status: string;
+      route: string;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.operation).toBe("completed");
+    expect(output.status).toBe("complete");
+    expect(output.route).toBe("complete");
+  });
+
   it("runs declared checks only with an explicit working directory", async () => {
     const execution = await runCli([
       "loop-checks",
@@ -125,9 +200,9 @@ describe("sah loop CLI", () => {
 
     expect(execution.code).toBe(0);
     expect(output.$schema).toBe(
-      "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+      "https://sah.dev/schemas/iteration-outcome/v0.3.0",
     );
-    expect(output.outcomeVersion).toBe("0.2.0");
+    expect(output.outcomeVersion).toBe("0.3.0");
     expect(output.evidence.executor.name).toBe("sah-loop-checks");
     expect(output.evidence.cwd).toBe(process.cwd());
     expect(output.checkResults[0]).toMatchObject({

@@ -143,6 +143,9 @@ npm exec -- sah advance /path/to/disposable-s11-bundle S12 --json
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
 npm exec -- sah loop-checks /path/to/target/.sah/sah.loop.json --cwd /path/to/target --json
 npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --repair --json
+npm exec -- sah loop-complete /path/to/target/.sah/sah.loop.json /path/to/target/.sah/completion.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json

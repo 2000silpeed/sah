@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+  "$id": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
   "title": "SAH Iteration Outcome",
   "type": "object",
   "additionalProperties": false,
@@ -15,14 +15,14 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
+      "const": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
         "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "outcomeVersion": {
-      "const": "0.2.0",
+      "const": "0.3.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
         "readBy": ["loop evaluator", "loop recorder"]
@@ -243,7 +243,13 @@
           "nextTask": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["goal", "context", "constraints", "doneWhen"],
+            "required": [
+              "goal",
+              "context",
+              "constraints",
+              "doneWhen",
+              "checks"
+            ],
             "properties": {
               "goal": {
                 "type": "string",
@@ -276,6 +282,64 @@
                   "writtenBy": ["coding agent"],
                   "readBy": ["next-task projection"]
                 }
+              },
+              "checks": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "kind", "command", "expected", "required"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-sah-trace": {
+                        "writtenBy": ["coding agent"],
+                        "readBy": ["next-task projection", "loop transition"]
+                      }
+                    },
+                    "kind": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-sah-trace": {
+                        "writtenBy": ["coding agent"],
+                        "readBy": ["next-task projection", "loop transition"]
+                      }
+                    },
+                    "command": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-sah-trace": {
+                        "writtenBy": ["coding agent"],
+                        "readBy": ["next-task projection", "loop transition"]
+                      }
+                    },
+                    "expected": {
+                      "type": "string",
+                      "minLength": 1,
+                      "x-sah-trace": {
+                        "writtenBy": ["coding agent"],
+                        "readBy": ["next-task projection", "loop transition"]
+                      }
+                    },
+                    "required": {
+                      "type": "boolean",
+                      "x-sah-trace": {
+                        "writtenBy": ["coding agent"],
+                        "readBy": ["loop transition"]
+                      }
+                    }
+                  },
+                  "x-sah-trace": {
+                    "writtenBy": ["coding agent"],
+                    "readBy": ["next-task projection", "loop transition"]
+                  }
+                },
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": ["next-task projection", "loop transition"]
+                }
               }
             },
             "x-sah-trace": {
@@ -297,8 +361,8 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.2.0",
-      "outcomeVersion": "0.2.0",
+      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+      "outcomeVersion": "0.3.0",
       "iterationId": "iteration-001",
       "status": "succeeded",
       "evidence": {
@@ -330,7 +394,16 @@
             "goal": "Clarify first-run copy",
             "context": ["src/onboarding"],
             "constraints": ["preserve existing route"],
-            "doneWhen": ["lint passes", "onboarding test passes"]
+            "doneWhen": ["lint passes", "onboarding test passes"],
+            "checks": [
+              {
+                "id": "lint",
+                "kind": "lint",
+                "command": "npm run lint",
+                "expected": "exit 0",
+                "required": true
+              }
+            ]
           }
         }
       ]

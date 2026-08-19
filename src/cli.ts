@@ -27,6 +27,8 @@ import {
   evaluateIterationLoop,
   runIterationChecks,
   recordIterationOutcome,
+  acceptNextIteration,
+  completeIterationLoop,
 } from "./iteration-loop.js";
 
 const usage = [
@@ -37,6 +39,8 @@ const usage = [
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]",
   "       sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]",
+  "       sah loop-accept-next <sah.loop.json> [--repair] [--json]",
+  "       sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]",
 ].join("\n");
 
 type ParsedArguments = {
@@ -47,6 +51,7 @@ type ParsedArguments = {
   recordPath?: string;
   verificationRecordPath?: string;
   cwd?: string;
+  repair?: boolean;
   error?: string;
 };
 
@@ -57,6 +62,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let recordPath: string | undefined;
   let verificationRecordPath: string | undefined;
   let cwd: string | undefined;
+  let repair = false;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -64,6 +70,16 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       if (json)
         return { positional, json, error: "--json may be supplied only once." };
       json = true;
+      continue;
+    }
+    if (argument === "--repair") {
+      if (repair)
+        return {
+          positional,
+          json,
+          error: "--repair may be supplied only once.",
+        };
+      repair = true;
       continue;
     }
     if (argument === "--mapping") {
@@ -148,6 +164,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     ...(recordPath === undefined ? {} : { recordPath }),
     ...(verificationRecordPath === undefined ? {} : { verificationRecordPath }),
     ...(cwd === undefined ? {} : { cwd }),
+    ...(repair ? { repair: true } : {}),
   };
 }
 
@@ -314,6 +331,7 @@ function exitCode(
     case "passed":
     case "advanced":
     case "ready":
+    case "complete":
       return 0;
     case "escalate":
       return 1;
@@ -337,7 +355,9 @@ function formatLoopHuman(loop: IterationLoopResult): string {
         ? "SAH iteration requires reasoning path"
         : loop.status === "blocked"
           ? "SAH iteration blocked"
-          : "SAH iteration loop could not run";
+          : loop.status === "complete"
+            ? "SAH iteration loop complete"
+            : "SAH iteration loop could not run";
   return [
     title,
     ...(loop.loopId === undefined ? [] : [`Loop: ${loop.loopId}`]),
@@ -445,6 +465,15 @@ async function main(arguments_: string[]): Promise<number> {
     );
     return 2;
   }
+  if (parsed.repair === true && positional[0] !== "loop-accept-next") {
+    const invalid = invocationError(
+      "--repair is supported only by loop-accept-next.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
 
   if (
     positional.length === 2 &&
@@ -540,6 +569,44 @@ async function main(arguments_: string[]): Promise<number> {
     parsed.verificationRecordPath === undefined
   ) {
     const loop = await evaluateIterationLoop(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+    );
+    return exitCode(loop);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "loop-accept-next" &&
+    parsed.cwd === undefined &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const loop = await acceptNextIteration(positional[1] ?? "", {
+      ...(parsed.repair === true ? { repair: true } : {}),
+    });
+    process.stdout.write(
+      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+    );
+    return exitCode(loop);
+  }
+
+  if (
+    positional.length === 3 &&
+    positional[0] === "loop-complete" &&
+    parsed.cwd === undefined &&
+    parsed.repair !== true &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const loop = await completeIterationLoop(
+      positional[1] ?? "",
+      positional[2] ?? "",
+    );
     process.stdout.write(
       `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
     );

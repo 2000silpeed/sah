@@ -31,6 +31,8 @@ sah verify <design-bundle-directory> <target-directory> [--mapping <target-relat
 sah loop <sah.loop.json> [--json]
 sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
+sah loop-accept-next <sah.loop.json> [--repair] [--json]
+sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -50,11 +52,15 @@ npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
 npm exec -- sah loop-checks /path/to/target/.sah/sah.loop.json --cwd /path/to/target --json
 npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --repair --json
+npm exec -- sah loop-complete /path/to/target/.sah/sah.loop.json /path/to/target/.sah/completion.json --json
 ```
 
-`advance` and `loop-record` mutate their canonical files, so examples deliberately name a disposable copy or an intended working artifact rather
-than the checked-in fixture. `loop-checks` is read-only with respect to the loop but executes the
-declared target commands in the explicit `--cwd` and emits a schema-valid outcome template.
+`advance`, `loop-record`, `loop-accept-next`, and `loop-complete` mutate their canonical files, so
+examples deliberately name a disposable copy or an intended working artifact rather than the
+checked-in fixture. `loop-checks` is read-only with respect to the loop but executes the declared
+target commands in the explicit `--cwd` and emits a schema-valid outcome template.
 `verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
 Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
@@ -85,8 +91,9 @@ previously published evidence.
 |    1 | Valid input has validation/gate errors, advancement is blocked, or target facts violate a deterministic constraint.          |
 |    2 | Invocation/operation failed, or verification is incomplete because a review, blocker, unsafe binding, or adapter is pending. |
 
-The loop command maps `fast`/ready to exit 0, `reasoning`/escalate and `blocked` to exit 1, and
-malformed or inaccessible loop/outcome artifacts to exit 2. `loop-checks` maps all required checks
+The loop command maps `fast`/ready, an accepted next iteration, and `complete` to exit 0;
+`reasoning`/escalate, blocked transitions, and completion-gate failures to exit 1; and malformed
+or inaccessible loop/outcome/completion artifacts to exit 2. `loop-checks` maps all required checks
 passing to 0, a completed non-zero check or blocked iteration to 1, and incomplete execution or
 operational failure to 2. These additions do not change the existing validation, advancement, or
 verification meanings.

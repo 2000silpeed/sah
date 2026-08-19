@@ -1,7 +1,8 @@
 {
-  "$schema": "https://sah.dev/schemas/iteration-loop/v0.2.0",
-  "loopVersion": "0.2.0",
+  "$schema": "https://sah.dev/schemas/iteration-loop/v0.3.0",
+  "loopVersion": "0.3.0",
   "loopId": "reservation-product",
+  "status": "active",
   "direction": {
     "goal": "Make reservation creation reliable and understandable.",
     "successCriteria": [
@@ -48,6 +49,11 @@
         "required": true
       }
     ]
+  },
+  "completion": {
+    "completionVersion": "0.1.0",
+    "status": "open",
+    "criterionResults": []
   },
   "outcomes": []
 }

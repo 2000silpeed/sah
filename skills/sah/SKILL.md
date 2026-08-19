@@ -12,9 +12,11 @@ that stops before code.
 
 For repeated product work, use the separate schema-validated iteration loop: `sah loop` routes a
 declared task to `fast`, `reasoning`, or `blocked`; `sah loop-checks --cwd <target>` executes its
-declared checks and emits evidence; and `sah loop-record` atomically records an outcome and projects
-a proposed next task. The loop selects work and gates evidence; S0–S13 remains the authority for
-material architecture decisions and S13 completion.
+declared checks and emits evidence; `sah loop-record` atomically records an outcome; and
+`sah loop-accept-next` explicitly creates the next planned task (`--repair` is required from a
+blocked iteration). `sah loop-complete` closes the local direction only when every success
+criterion references recorded passing evidence. The loop selects work and gates evidence; S0–S13
+remains the authority for material architecture decisions and S13 completion.
 
 ## Required references
 
