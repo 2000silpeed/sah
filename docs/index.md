@@ -32,6 +32,9 @@ read [vision](vision.md), [principles](principles.md), and the
 - [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
   progressive questioning, and the natural-language-to-implementation experience.
 - [Session resume](session-resume.md) — owns the local, model-neutral cross-session resume view.
+- [Frontier-first loop](frontier-first.md) — owns fast-path execution, escalation, and learning
+  around strong coding agents.
+- [Linting contract](linting.md) — owns target-repository lint evidence and failure semantics.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -75,6 +78,8 @@ read [vision](vision.md), [principles](principles.md), and the
   implementation and S13 verification.
 - [ADR-0016](adr/0016-resume-from-canonical-bundle-projection.md) — adds a regenerable resume
   projection without introducing a second lifecycle authority or coordination service.
+- [ADR-0017](adr/0017-frontier-first-feedback-and-target-linting.md) — makes target-owned linting
+  a first-class feedback check without adding a universal linter engine.
 
 ## JSON Schema contracts
 

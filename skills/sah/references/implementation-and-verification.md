@@ -68,7 +68,8 @@ the result is still change-scoped evidence. It never authorizes S13 completion. 
 - `operational-error` as an invocation, input, adapter, or record failure.
 
 Also run the target's own formatter, linter, typechecker, tests, build, migration checks, and other
-acceptance commands. SAH verification complements them; it does not replace functional correctness.
+acceptance commands. Record the exact command and outcome in the iteration handoff or outcome
+view. A required non-zero lint result blocks the iteration's done contract, but is a target-check failure rather than an SAH architecture violation. SAH verification complements these checks; it does not replace functional correctness.
 
 ## Full S13 evidence
 

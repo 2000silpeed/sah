@@ -36,7 +36,8 @@ Unless the user explicitly narrows the task, continue through this whole loop:
    implementation forms;
 5. compare credible architecture candidates and record consequential decisions;
 6. produce a dependency-ordered implementation handoff;
-7. implement every ready in-scope slice and run its acceptance checks;
+7. implement every ready in-scope slice and run its acceptance checks, including the target's
+   formatter/linter when the repository defines one;
 8. verify observable architecture constraints and report deterministic, assisted, and judgment
    results separately;
 9. advance lifecycle only through supported public gates and only when their evidence qualifies.
@@ -145,8 +146,10 @@ work. Implement dependency-ordered ready slices using the target repository's no
 Keep scope tied to accepted decisions, but allow evidence from implementation to reopen an earlier
 stage.
 
-Run target tests and static checks throughout. Use changed-scoped SAH verification only for fast
-feedback. Final S13 eligibility requires a new full verification record and an atomic
+Run the target's formatter/linter, typechecker, tests, and build throughout the implementation
+loop. Record exact commands and outcomes; a required non-zero lint result blocks the iteration's
+done contract, but is not automatically an SAH architecture violation. Use changed-scoped SAH
+verification only for fast feedback. Final S13 eligibility requires a new full verification record and an atomic
 `S12 -> S13` advance. `incomplete`, `violations`, `operational-error`, changed scope, and
 `full-fallback` selected from a changed request never satisfy completion.
 

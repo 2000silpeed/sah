@@ -72,6 +72,8 @@ describe("portable SAH Agent Skill", () => {
     expect(implementation).toContain("`tsconfig.sah.json`");
     expect(implementation).toContain("`full-fallback`");
     expect(implementation).toContain("S13 lifecycle");
+    expect(skill).toContain("formatter/linter");
+    expect(implementation).toContain("target-check failure");
   });
 
   it("keeps the package concise, placeholder-free, and linked from product docs", async () => {

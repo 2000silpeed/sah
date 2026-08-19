@@ -159,3 +159,50 @@ Existing lifecycle authority, library/CLI boundary, and exit codes remain unchan
 Run 16 is complete. A later session runs `npm exec -- sah resume <bundle> --json`, checks the
 fingerprint, and continues the model-neutral next action. The canonical bundle and S13 evidence
 remain authoritative; no push was performed.
+
+## Run 17 ExecPlan — 2026-08-19
+
+### Outcome
+
+Frontier-first SAH treats linting as a first-class, target-owned feedback signal in every coding
+loop while preserving the deterministic SAH verification boundary. Agents may run the target's
+configured linter early and repeatedly; lint failures block the iteration's completion contract,
+but are not misclassified as architecture violations.
+
+### Scope and constraints
+
+Included: frontier-first/linting authority documentation, skill workflow wording, ADR-0017,
+focused contract coverage, full validation, and a milestone commit. Excluded: a universal linter
+engine, language-specific parser adapters, automatic lint-rule invention, benchmark changes,
+hosted coordination, and changes to S13 exit meanings or lifecycle authority.
+
+### Milestones
+
+| Phase | Milestone | Status |
+| --- | --- | --- |
+| 0 | Inspect current agent loop, target checks, and SAH boundary | complete |
+| 1 | Record Run 17 plan and ADR-0017 | complete |
+| 2 | Document frontier-first loop and lint contract | complete |
+| 3 | Update portable skill and contract tests | complete |
+| 4 | Run full verification, review diff, and commit | complete |
+
+### Decision and discovery log
+
+- Linting is a target acceptance check, not a new universal SAH semantic validator. The target
+  owns its command, configuration, rule set, and output; SAH owns whether the declared check ran
+  and whether its result satisfies the iteration contract.
+- Fast-path work may run lint before deep S0–S13 reasoning. Material risks still route to the
+  existing reasoning path, and S13 remains the architecture-evidence gate.
+
+### Handoff
+
+Run 17 is complete. The indexed frontier-first/linting guides and ADR-0017 define target-owned
+lint evidence, fast-path escalation, and the boundary between target-check failures and SAH
+architecture violations. The portable skill and contract tests enforce the workflow.
+
+### Verification log and handoff
+
+- An initial contract assertion failed because Markdown wrapped the phrase across lines; the
+  reference wording was repaired and the supported checks were rerun.
+- Format, lint, strict typecheck, build, schema audit, `git diff --check`, and all 229 tests passed.
+- No runtime CLI, schema, lifecycle, exit-code, benchmark, or target adapter behavior changed.
