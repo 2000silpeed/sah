@@ -140,6 +140,8 @@ npm run build
 npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
 npm exec -- sah advance /path/to/disposable-s11-bundle S12 --json
+npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
+npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json

@@ -35,6 +35,8 @@ read [vision](vision.md), [principles](principles.md), and the
 - [Frontier-first loop](frontier-first.md) — owns fast-path execution, escalation, and learning
   around strong coding agents.
 - [Linting contract](linting.md) — owns target-repository lint evidence and failure semantics.
+- [Iteration loop](iteration-loop.md) — owns the canonical fast/reasoning route, outcome recording,
+  and learning-to-next-task projection above S0–S13.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -80,6 +82,8 @@ read [vision](vision.md), [principles](principles.md), and the
   projection without introducing a second lifecycle authority or coordination service.
 - [ADR-0017](adr/0017-frontier-first-feedback-and-target-linting.md) — makes target-owned linting
   a first-class feedback check without adding a universal linter engine.
+- [ADR-0018](adr/0018-add-an-executable-iteration-loop.md) — adds a separate canonical loop
+  artifact for risk routing, atomic outcomes, and proposed next tasks.
 
 ## JSON Schema contracts
 
@@ -109,6 +113,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   — validate the complete runtime evidence envelope used by the S13 completion gate.
 - [Resume result](../schemas/resume-result.schema.json) — validates the cross-session handoff
   projection emitted by `sah resume`.
+- [Iteration loop](../schemas/iteration-loop.schema.json), [outcome](../schemas/iteration-outcome.schema.json),
+  and [result](../schemas/iteration-loop-result.schema.json) — validate loop policy, recorded
+  learning, and model-neutral route/next-task projections.
 
 ## Runtime implementation and executable fixture
 
@@ -128,6 +135,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   `verifyBundle`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
+- [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome artifacts, routes
+  risk, records outcomes atomically, and projects the next task contract.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,
@@ -152,7 +161,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
   [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
-  [skill contract tests](../test/skill-contracts.test.ts)
+  [skill contract tests](../test/skill-contracts.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   host-workflow packaging, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
@@ -161,6 +170,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [decisions](../fixtures/simple-crud/architecture-decision.json), and [handoff](../fixtures/simple-crud/implementation-handoff.json)
   — form the valid external equipment-register fixture derived from the dogfood walkthrough,
   outside benchmark inputs.
+- [Iteration loop fixture](../fixtures/iteration-loop/sah.loop.json) and [outcome](../fixtures/iteration-loop/iteration-001.outcome.json)
+  — provide a schema-valid fast-path route and learning projection example.
 - [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —
   gives filesystem-presence tests one inert target-local regular file outside benchmark data.
 - [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json),

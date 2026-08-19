@@ -28,6 +28,9 @@ export type VerificationCheckStatus =
 export type VerificationStatus =
   "passed" | "violations" | "incomplete" | "operational-error";
 export type ResumeStatus = "ready" | "blocked" | "operational-error";
+export type LoopRoute = "fast" | "reasoning" | "blocked";
+export type LoopResultStatus =
+  "ready" | "escalate" | "blocked" | "operational-error";
 
 export type SourceLocation = {
   line: number;
@@ -161,6 +164,51 @@ export type ResumeResult = {
   dependencyOrder: string[];
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
+};
+
+export type IterationTaskContract = {
+  goal: string;
+  context: string[];
+  constraints: string[];
+  doneWhen: string[];
+};
+
+export type IterationLoopResult = {
+  $schema: "https://sah.dev/schemas/iteration-loop-result/v0.1.0";
+  resultVersion: "0.1.0";
+  operation: "evaluated" | "recorded";
+  status: LoopResultStatus;
+  loopFile: string;
+  loopId?: string;
+  route?: LoopRoute;
+  escalation: {
+    triggered: boolean;
+    ruleRefs: string[];
+    reasons: string[];
+  };
+  currentTask?: IterationTaskContract;
+  nextTask?: IterationTaskContract;
+  learningSourceIterationId?: string;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
+export type IterationOutcome = {
+  $schema: "https://sah.dev/schemas/iteration-outcome/v0.1.0";
+  outcomeVersion: "0.1.0";
+  iterationId: string;
+  status: "succeeded" | "partial" | "failed";
+  checkResults: Array<{
+    checkId: string;
+    status: "passed" | "failed" | "incomplete";
+    observed?: string;
+  }>;
+  learnings: Array<{
+    id: string;
+    observation: string;
+    priority: "must" | "should" | "could";
+    nextTask: IterationTaskContract;
+  }>;
 };
 
 export type VerificationOptions = {

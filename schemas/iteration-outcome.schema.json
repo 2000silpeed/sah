@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+  "title": "SAH Iteration Outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "outcomeVersion",
+    "iterationId",
+    "status",
+    "checkResults",
+    "learnings"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["iteration outcome recorder"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "outcomeVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["iteration outcome recorder"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "iterationId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["coding agent"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "status": {
+      "enum": ["succeeded", "partial", "failed"],
+      "x-sah-trace": {
+        "writtenBy": ["coding agent"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "checkResults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["checkId", "status"],
+        "properties": {
+          "checkId": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["coding agent"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "status": {
+            "enum": ["passed", "failed", "incomplete"],
+            "x-sah-trace": {
+              "writtenBy": ["target check"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "observed": {
+            "type": "string",
+            "x-sah-trace": {
+              "writtenBy": ["target check"],
+              "readBy": ["loop evaluator"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["coding agent"],
+          "readBy": ["loop evaluator"]
+        },
+        "required": ["checkId", "status"]
+      },
+      "x-sah-trace": {
+        "writtenBy": ["coding agent"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "learnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "observation", "priority", "nextTask"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["coding agent"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "observation": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["coding agent"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "priority": {
+            "enum": ["must", "should", "could"],
+            "x-sah-trace": {
+              "writtenBy": ["product owner", "coding agent"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "nextTask": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["goal", "context", "constraints", "doneWhen"],
+            "properties": {
+              "goal": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": ["next-task projection"]
+                }
+              },
+              "context": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": ["next-task projection"]
+                }
+              },
+              "constraints": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": ["next-task projection"]
+                }
+              },
+              "doneWhen": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": ["next-task projection"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["coding agent"],
+              "readBy": ["next-task projection"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["coding agent"],
+          "readBy": ["loop evaluator"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["coding agent"],
+        "readBy": ["loop evaluator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+      "outcomeVersion": "0.1.0",
+      "iterationId": "iteration-001",
+      "status": "succeeded",
+      "checkResults": [
+        { "checkId": "lint", "status": "passed", "observed": "0 findings" }
+      ],
+      "learnings": [
+        {
+          "id": "learn-001",
+          "observation": "The first-run copy remains unclear.",
+          "priority": "should",
+          "nextTask": {
+            "goal": "Clarify first-run copy",
+            "context": ["src/onboarding"],
+            "constraints": ["preserve existing route"],
+            "doneWhen": ["lint passes", "onboarding test passes"]
+          }
+        }
+      ]
+    }
+  ]
+}

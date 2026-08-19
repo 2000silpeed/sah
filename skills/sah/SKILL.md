@@ -10,6 +10,11 @@ JSON bundle and CLI as the durable evidence and deterministic gate. The goal is 
 whose important structural choices remain explainable and checkable—not an architecture report
 that stops before code.
 
+For repeated product work, use the separate schema-validated iteration loop: `sah loop` routes a
+declared task to `fast`, `reasoning`, or `blocked`, and `sah loop-record` atomically records an
+outcome and projects a proposed next task. The loop selects work; S0–S13 remains the authority for
+material architecture decisions and S13 completion.
+
 ## Required references
 
 Read these files from this skill package at the point named below:

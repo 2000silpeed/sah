@@ -1,0 +1,26 @@
+{
+  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.1.0",
+  "outcomeVersion": "0.1.0",
+  "iterationId": "iteration-001",
+  "status": "succeeded",
+  "checkResults": [
+    {
+      "checkId": "lint",
+      "status": "passed",
+      "observed": "0 findings"
+    }
+  ],
+  "learnings": [
+    {
+      "id": "learn-001",
+      "observation": "The first-run copy remains unclear.",
+      "priority": "should",
+      "nextTask": {
+        "goal": "Clarify first-run copy",
+        "context": ["src/onboarding"],
+        "constraints": ["preserve existing route"],
+        "doneWhen": ["lint passes", "onboarding test passes"]
+      }
+    }
+  ]
+}

@@ -26,6 +26,11 @@ export type {
   VerificationSummary,
   ResumeResult,
   ResumeStatus,
+  IterationLoopResult,
+  IterationOutcome,
+  IterationTaskContract,
+  LoopRoute,
+  LoopResultStatus,
 } from "./contracts.js";
 export { verificationRecordSchemaId } from "./contracts.js";
 export {
@@ -34,3 +39,7 @@ export {
   verifyBundle,
   resumeBundle,
 } from "./model-repository.js";
+export {
+  evaluateIterationLoop,
+  recordIterationOutcome,
+} from "./iteration-loop.js";

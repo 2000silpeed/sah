@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+  "title": "SAH Iteration Loop Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "resultVersion",
+    "operation",
+    "status",
+    "loopFile",
+    "loopId",
+    "route",
+    "escalation",
+    "diagnostics",
+    "summary"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "resultVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "operation": {
+      "enum": ["evaluated", "recorded"],
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator", "loop recorder"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "status": {
+      "enum": ["ready", "escalate", "blocked", "operational-error"],
+      "x-sah-trace": {
+        "writtenBy": ["risk router"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "loopFile": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "loopId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "route": {
+      "enum": ["fast", "reasoning", "blocked"],
+      "x-sah-trace": {
+        "writtenBy": ["risk router"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triggered", "ruleRefs", "reasons"],
+      "properties": {
+        "triggered": {
+          "type": "boolean",
+          "x-sah-trace": {
+            "writtenBy": ["risk router"],
+            "readBy": ["CLI", "session consumer"]
+          }
+        },
+        "ruleRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["risk router"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["risk router"],
+            "readBy": ["session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["risk router"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "currentTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "context", "constraints", "doneWhen"],
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "context": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "doneWhen": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["coding agent"]
+      }
+    },
+    "nextTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "context", "constraints", "doneWhen"],
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "context": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent"]
+          }
+        },
+        "doneWhen": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["learning projector"],
+        "readBy": ["coding agent"]
+      }
+    },
+    "learningSourceIterationId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["learning projector"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "type": "object" },
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["errors", "warnings"],
+      "properties": {
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["CLI", "session consumer"]
+          }
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["CLI", "session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["CLI", "session consumer"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/iteration-loop-result/v0.1.0",
+      "resultVersion": "0.1.0",
+      "operation": "evaluated",
+      "status": "ready",
+      "loopFile": ".sah/sah.loop.json",
+      "loopId": "reservation-product",
+      "route": "fast",
+      "escalation": { "triggered": false, "ruleRefs": [], "reasons": [] },
+      "currentTask": {
+        "goal": "Improve first reservation feedback.",
+        "context": ["src/reservations"],
+        "constraints": ["preserve reservation authority"],
+        "doneWhen": ["lint passes", "reservation tests pass"]
+      },
+      "diagnostics": [],
+      "summary": { "errors": 0, "warnings": 0 }
+    }
+  ]
+}

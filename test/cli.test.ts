@@ -9,8 +9,10 @@ import {
   cleanupFixtures,
   cliPath,
   copyFixture,
+  copyIterationLoop,
   copyTypeScriptTarget,
   fixtureDirectory,
+  iterationLoopFixtureDirectory,
   mutateJson,
   typescriptTargetDirectory,
   verificationTargetDirectory,
@@ -62,6 +64,44 @@ describe("sah resume CLI", () => {
     expect(output.bundleFingerprint).toMatch(/^sha256:[a-f0-9]{64}$/u);
     expect(output.nextAction).toBe("implement-ready-slices");
     expect(output.readySliceRefs).toContain("implement-equipment-operations");
+  });
+});
+
+describe("sah loop CLI", () => {
+  it("routes a declared local task to the fast path", async () => {
+    const execution = await runCli([
+      "loop",
+      join(iterationLoopFixtureDirectory, "sah.loop.json"),
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      route: string;
+      escalation: { triggered: boolean };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("ready");
+    expect(output.route).toBe("fast");
+    expect(output.escalation.triggered).toBe(false);
+  });
+
+  it("records an outcome and returns the learned next task", async () => {
+    const loopDirectory = await copyIterationLoop();
+    const execution = await runCli([
+      "loop-record",
+      join(loopDirectory, "sah.loop.json"),
+      join(loopDirectory, "iteration-001.outcome.json"),
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      operation: string;
+      nextTask?: { goal: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.operation).toBe("recorded");
+    expect(output.nextTask?.goal).toBe("Clarify first-run copy");
   });
 });
 

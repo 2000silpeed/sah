@@ -15,6 +15,11 @@ export const typescriptTargetDirectory = join(
   "fixtures",
   "s13-typescript-target",
 );
+export const iterationLoopFixtureDirectory = join(
+  repositoryRoot,
+  "fixtures",
+  "iteration-loop",
+);
 export const cliPath = join(repositoryRoot, "dist", "cli.js");
 
 const temporaryDirectories: string[] = [];
@@ -41,6 +46,14 @@ export async function copyTypeScriptTarget(): Promise<string> {
   await cp(typescriptTargetDirectory, target, { recursive: true });
   temporaryDirectories.push(root);
   return target;
+}
+
+export async function copyIterationLoop(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-loop-test-"));
+  const loop = join(root, "loop");
+  await cp(iterationLoopFixtureDirectory, loop, { recursive: true });
+  temporaryDirectories.push(root);
+  return loop;
 }
 
 export async function mutateJson<T>(

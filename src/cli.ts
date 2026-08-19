@@ -13,6 +13,7 @@ import {
   type VerificationResult,
   type VerificationSelection,
   type ResumeResult,
+  type IterationLoopResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -21,12 +22,18 @@ import {
   verifyBundle,
   resumeBundle,
 } from "./model-repository.js";
+import {
+  evaluateIterationLoop,
+  recordIterationOutcome,
+} from "./iteration-loop.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]",
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
+  "       sah loop <sah.loop.json> [--json]",
+  "       sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]",
 ].join("\n");
 
 type ParsedArguments = {
@@ -273,13 +280,20 @@ export function formatVerificationHuman(
 }
 
 function exitCode(
-  outcome: ValidationResult | AdvanceResult | VerificationResult | ResumeResult,
+  outcome:
+    | ValidationResult
+    | AdvanceResult
+    | VerificationResult
+    | ResumeResult
+    | IterationLoopResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
     case "advanced":
     case "ready":
       return 0;
+    case "escalate":
+      return 1;
     case "violations":
     case "blocked":
       return 1;
@@ -287,6 +301,40 @@ function exitCode(
     case "operational-error":
       return 2;
   }
+}
+
+function formatLoopHuman(loop: IterationLoopResult): string {
+  const title =
+    loop.status === "ready"
+      ? "SAH iteration ready for fast path"
+      : loop.status === "escalate"
+        ? "SAH iteration requires reasoning path"
+        : loop.status === "blocked"
+          ? "SAH iteration blocked"
+          : "SAH iteration loop could not run";
+  return [
+    title,
+    ...(loop.loopId === undefined ? [] : [`Loop: ${loop.loopId}`]),
+    ...(loop.route === undefined ? [] : [`Route: ${loop.route}`]),
+    `Escalation: ${loop.escalation.triggered ? "yes" : "no"}`,
+    ...(loop.escalation.ruleRefs.length === 0
+      ? []
+      : [`Rules: ${loop.escalation.ruleRefs.join(", ")}`]),
+    ...(loop.escalation.reasons.length === 0
+      ? []
+      : [`Reasons: ${loop.escalation.reasons.join(" | ")}`]),
+    ...(loop.currentTask === undefined
+      ? []
+      : [`Current task: ${loop.currentTask.goal}`]),
+    ...(loop.nextTask === undefined
+      ? []
+      : [`Next task: ${loop.nextTask.goal}`]),
+    ...(loop.learningSourceIterationId === undefined
+      ? []
+      : [`Learned from: ${loop.learningSourceIterationId}`]),
+    ...loop.diagnostics.map(humanDiagnostic),
+    `Summary: ${loop.summary.errors} error(s), ${loop.summary.warnings} warning(s)`,
+  ].join("\n\n");
 }
 
 function formatResumeHuman(resume: ResumeResult): string {
@@ -418,6 +466,39 @@ async function main(arguments_: string[]): Promise<number> {
       `${typeof output === "string" ? output : JSON.stringify(output, null, 2)}\n`,
     );
     return exitCode(resume);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "loop" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const loop = await evaluateIterationLoop(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+    );
+    return exitCode(loop);
+  }
+
+  if (
+    positional.length === 3 &&
+    positional[0] === "loop-record" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const loop = await recordIterationOutcome(
+      positional[1] ?? "",
+      positional[2] ?? "",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+    );
+    return exitCode(loop);
   }
 
   const invalid = invocationError(

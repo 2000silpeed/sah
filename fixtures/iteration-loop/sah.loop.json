@@ -1,0 +1,53 @@
+{
+  "$schema": "https://sah.dev/schemas/iteration-loop/v0.1.0",
+  "loopVersion": "0.1.0",
+  "loopId": "reservation-product",
+  "direction": {
+    "goal": "Make reservation creation reliable and understandable.",
+    "successCriteria": [
+      {
+        "id": "success-1",
+        "description": "A user can create one valid reservation."
+      }
+    ]
+  },
+  "policy": {
+    "defaultRoute": "fast",
+    "rules": [
+      {
+        "id": "risk-invariant",
+        "signal": "critical-invariant",
+        "route": "reasoning",
+        "trigger": "Reopen S0-S13 before changing reservation legality."
+      },
+      {
+        "id": "risk-failure",
+        "signal": "repeated-failure",
+        "route": "reasoning",
+        "trigger": "Stop fast loop and inspect the earliest failed premise."
+      }
+    ]
+  },
+  "currentIteration": {
+    "id": "iteration-001",
+    "goal": "Improve first reservation feedback.",
+    "status": "planned",
+    "riskSignals": ["local-reversible"],
+    "taskContract": {
+      "goal": "Improve first reservation feedback.",
+      "context": ["src/reservations"],
+      "constraints": ["preserve reservation authority"],
+      "doneWhen": ["lint passes", "reservation tests pass"]
+    },
+    "checks": [
+      {
+        "id": "lint",
+        "kind": "lint",
+        "command": "npm run lint",
+        "expected": "exit 0",
+        "required": true
+      }
+    ]
+  },
+  "outcomes": []
+}

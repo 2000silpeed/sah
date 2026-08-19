@@ -28,6 +28,8 @@ An installed package exposes:
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
+sah loop <sah.loop.json> [--json]
+sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -44,9 +46,11 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
+npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
+npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
 ```
 
-`advance` mutates a successful bundle, so examples deliberately name a disposable copy rather
+`advance` and `loop-record` mutate their canonical files, so examples deliberately name a disposable copy or an intended working artifact rather
 than the checked-in fixture. `verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
 Default output is human-readable. `--json` writes exactly one `ValidationResult`,
@@ -75,6 +79,10 @@ previously published evidence.
 |    0 | Validation passed, advancement committed, or all selected verification checks passed.                                        |
 |    1 | Valid input has validation/gate errors, advancement is blocked, or target facts violate a deterministic constraint.          |
 |    2 | Invocation/operation failed, or verification is incomplete because a review, blocker, unsafe binding, or adapter is pending. |
+
+The loop command maps `fast`/ready to exit 0, `reasoning`/escalate and `blocked` to exit 1, and
+malformed or inaccessible loop/outcome artifacts to exit 2. These additions do not change the
+existing validation, advancement, or verification meanings.
 
 The root [manifest schema](../schemas/design-bundle-manifest.schema.json) defines lifecycle and
 artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR. Declared
@@ -211,6 +219,8 @@ The package exports the framework-neutral function and result types:
 ```ts
 import {
   advanceBundle,
+  evaluateIterationLoop,
+  recordIterationOutcome,
   validateBundle,
   verifyBundle,
   type AdvanceOptions,
@@ -236,6 +246,11 @@ const advancement: AdvanceResult = await advanceBundle(
     verificationRecordPath: "verification-record.json",
   } satisfies AdvanceOptions,
 );
+const loop = await evaluateIterationLoop(".sah/sah.loop.json");
+const next = await recordIterationOutcome(
+  ".sah/sah.loop.json",
+  ".sah/iteration-001.outcome.json",
+);
 ```
 
 Validation `status` is `passed`, `violations`, or `operational-error`. Advancement `status` is
@@ -247,6 +262,11 @@ are returned rather than thrown. Verification `status` is `passed`, `violations`
 declarations contain no Ajv or filesystem types. Change-scoped results add framework-neutral
 `VerificationSelection` metadata; ordinary full verification omits it. `VerificationRecord`
 is the schema-matched persisted envelope; callers still receive the ordinary result directly.
+
+`evaluateIterationLoop` reads and validates the separate loop artifact. `recordIterationOutcome`
+validates an outcome, rejects duplicate/current-ID mismatches, atomically appends it, and returns
+the route plus proposed next task. Loop output is schema-tagged and does not alter design-bundle
+lifecycle or S13 evidence.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in

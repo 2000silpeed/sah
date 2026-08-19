@@ -206,3 +206,56 @@ architecture violations. The portable skill and contract tests enforce the workf
   reference wording was repaired and the supported checks were rerun.
 - Format, lint, strict typecheck, build, schema audit, `git diff --check`, and all 229 tests passed.
 - No runtime CLI, schema, lifecycle, exit-code, benchmark, or target adapter behavior changed.
+
+## Run 18 ExecPlan — 2026-08-19
+
+### Outcome
+
+SAH has an executable iterative product loop: a schema-validated canonical loop artifact routes a
+current task to `fast`, `reasoning`, or `blocked`; an atomic outcome record feeds the next task
+contract; and a read-only result lets any supported agent/session resume the same loop.
+
+### Scope and constraints
+
+Included: one canonical `sah.loop.json` contract containing direction, risk rules, escalation
+triggers, current task/checks, and outcome history; public library operations; `sah loop` and
+`sah loop-record`; fast/reasoning/blocked routing; deterministic learning-to-next-task projection;
+docs, tests, ADR, and full verification. Excluded: hosted coordination, autonomous product
+direction changes, universal lint/test execution, LLM judge behavior, benchmark changes, and
+changes to existing S0–S13 lifecycle authority or exit meanings.
+
+### Milestones
+
+| Phase | Milestone | Status |
+| --- | --- | --- |
+| 0 | Inspect lifecycle, resume, lint, and atomic-write boundaries | complete |
+| 1 | Record Run 18 plan and ADR-0018 | complete |
+| 2 | Add loop/outcome/result schemas and canonical examples | complete |
+| 3 | Implement routing, learning projection, atomic outcome recording, CLI/library | complete |
+| 4 | Document fast path, risk escalation, and learning workflow | complete |
+| 5 | Tests, full verification, diff review, and commit | complete |
+
+### Decision and discovery log
+
+- Keep loop control separate from the semantic design bundle: the loop selects and records work;
+  S0–S13 remains the architecture/evidence authority for material changes and S13 completion.
+- Risk rules are explicit canonical inputs. The router is deterministic only after the agent or
+  stakeholder declares observable risk signals; it does not infer domain risk from prose.
+- Learning produces a proposed next task, never an automatic product-direction mutation. A human
+  or authorized owner can accept or edit the proposed contract before execution.
+
+### Handoff
+
+Run 18 is complete. The loop artifact, outcome recording, route projection, and next-task learning
+surface are implemented and documented. Next-task output remains a proposed contract; it does not
+silently mutate product direction or bypass S0–S13.
+
+### Verification log and handoff
+
+- Schema examples and field traces pass Draft 2020-12 validation; all 234 tests pass, including
+  fast-route, escalation, atomic outcome recording, and next-task projection coverage.
+- Format, lint, strict typecheck, build, schema audit, production CLI loop/loop-record smoke checks,
+  and `git diff --check` passed.
+- Existing validate/advance/verify/resume behavior, S13 evidence rules, exit meanings, benchmarks,
+  and hosted-coordination exclusions remain unchanged.
+- Milestone committed as `a14863a` (`feat: add executable iteration loop`); no push was performed.

@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-loop/v0.1.0",
+  "title": "SAH Iteration Loop",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "loopVersion",
+    "loopId",
+    "direction",
+    "policy",
+    "currentIteration",
+    "outcomes"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/iteration-loop/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop author"],
+        "readBy": ["loop evaluator", "loop recorder"]
+      }
+    },
+    "loopVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["loop author"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "loopId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["product owner"],
+        "readBy": ["loop evaluator", "session consumer"]
+      }
+    },
+    "direction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "successCriteria"],
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["product owner"],
+            "readBy": ["loop evaluator"]
+          }
+        },
+        "successCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["product owner"],
+                  "readBy": ["loop evaluator"]
+                }
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["product owner"],
+                  "readBy": ["loop evaluator"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["product owner"],
+              "readBy": ["loop evaluator"]
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["product owner"],
+            "readBy": ["loop evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["product owner"],
+        "readBy": ["loop evaluator"]
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["defaultRoute", "rules"],
+      "properties": {
+        "defaultRoute": {
+          "enum": ["fast", "reasoning", "blocked"],
+          "x-sah-trace": {
+            "writtenBy": ["architecture authority"],
+            "readBy": ["risk router"]
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "signal", "route", "trigger"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["architecture authority"],
+                  "readBy": ["risk router"]
+                }
+              },
+              "signal": {
+                "enum": [
+                  "local-reversible",
+                  "cross-boundary",
+                  "critical-invariant",
+                  "data-migration",
+                  "security-privacy",
+                  "external-consistency",
+                  "repeated-failure",
+                  "unknown"
+                ],
+                "x-sah-trace": {
+                  "writtenBy": ["product owner", "coding agent"],
+                  "readBy": ["risk router"]
+                }
+              },
+              "route": {
+                "enum": ["fast", "reasoning", "blocked"],
+                "x-sah-trace": {
+                  "writtenBy": ["architecture authority"],
+                  "readBy": ["risk router"]
+                }
+              },
+              "trigger": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["architecture authority"],
+                  "readBy": ["risk router", "session consumer"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["architecture authority"],
+              "readBy": ["risk router"]
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["architecture authority"],
+            "readBy": ["risk router"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["architecture authority"],
+        "readBy": ["risk router"]
+      }
+    },
+    "currentIteration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "goal",
+        "status",
+        "riskSignals",
+        "taskContract",
+        "checks"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["iteration planner"],
+            "readBy": ["loop evaluator", "loop recorder"]
+          }
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["iteration planner"],
+            "readBy": ["loop evaluator"]
+          }
+        },
+        "status": {
+          "enum": ["planned", "in-progress", "completed", "blocked"],
+          "x-sah-trace": {
+            "writtenBy": ["iteration planner", "loop recorder"],
+            "readBy": ["risk router", "loop evaluator"]
+          }
+        },
+        "riskSignals": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "local-reversible",
+              "cross-boundary",
+              "critical-invariant",
+              "data-migration",
+              "security-privacy",
+              "external-consistency",
+              "repeated-failure",
+              "unknown"
+            ]
+          },
+          "x-sah-trace": {
+            "writtenBy": ["product owner", "coding agent"],
+            "readBy": ["risk router"]
+          }
+        },
+        "taskContract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["goal", "context", "constraints", "doneWhen"],
+          "properties": {
+            "goal": {
+              "type": "string",
+              "minLength": 1,
+              "x-sah-trace": {
+                "writtenBy": ["iteration planner"],
+                "readBy": ["coding agent"]
+              }
+            },
+            "context": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "x-sah-trace": {
+                "writtenBy": ["iteration planner"],
+                "readBy": ["coding agent"]
+              }
+            },
+            "constraints": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "x-sah-trace": {
+                "writtenBy": ["iteration planner"],
+                "readBy": ["coding agent"]
+              }
+            },
+            "doneWhen": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "x-sah-trace": {
+                "writtenBy": ["iteration planner"],
+                "readBy": ["coding agent", "loop evaluator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["iteration planner"],
+            "readBy": ["coding agent", "loop evaluator"]
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "command", "expected", "required"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["iteration planner"],
+                  "readBy": ["coding agent", "loop evaluator"]
+                }
+              },
+              "kind": {
+                "enum": [
+                  "format",
+                  "lint",
+                  "typecheck",
+                  "test",
+                  "build",
+                  "sah-verify",
+                  "other"
+                ],
+                "x-sah-trace": {
+                  "writtenBy": ["iteration planner"],
+                  "readBy": ["coding agent", "loop evaluator"]
+                }
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["iteration planner"],
+                  "readBy": ["coding agent"]
+                }
+              },
+              "expected": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["iteration planner"],
+                  "readBy": ["coding agent", "loop evaluator"]
+                }
+              },
+              "required": {
+                "type": "boolean",
+                "x-sah-trace": {
+                  "writtenBy": ["iteration planner"],
+                  "readBy": ["loop evaluator"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["iteration planner"],
+              "readBy": ["coding agent", "loop evaluator"]
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["iteration planner"],
+            "readBy": ["coding agent", "loop evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["iteration planner"],
+        "readBy": ["loop evaluator", "loop recorder"]
+      }
+    },
+    "outcomes": {
+      "type": "array",
+      "items": { "$ref": "https://sah.dev/schemas/iteration-outcome/v0.1.0" },
+      "x-sah-trace": {
+        "writtenBy": ["loop recorder"],
+        "readBy": ["loop evaluator", "session consumer"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/iteration-loop/v0.1.0",
+      "loopVersion": "0.1.0",
+      "loopId": "reservation-product",
+      "direction": {
+        "goal": "Make reservation creation reliable and understandable.",
+        "successCriteria": [
+          {
+            "id": "success-1",
+            "description": "A user can create one valid reservation."
+          }
+        ]
+      },
+      "policy": {
+        "defaultRoute": "fast",
+        "rules": [
+          {
+            "id": "risk-invariant",
+            "signal": "critical-invariant",
+            "route": "reasoning",
+            "trigger": "Reopen S0-S13 before changing reservation legality."
+          },
+          {
+            "id": "risk-failure",
+            "signal": "repeated-failure",
+            "route": "reasoning",
+            "trigger": "Stop fast loop and inspect the earliest failed premise."
+          }
+        ]
+      },
+      "currentIteration": {
+        "id": "iteration-001",
+        "goal": "Improve first reservation feedback.",
+        "status": "planned",
+        "riskSignals": ["local-reversible"],
+        "taskContract": {
+          "goal": "Improve first reservation feedback.",
+          "context": ["src/reservations"],
+          "constraints": ["preserve reservation authority"],
+          "doneWhen": ["lint passes", "reservation tests pass"]
+        },
+        "checks": [
+          {
+            "id": "lint",
+            "kind": "lint",
+            "command": "npm run lint",
+            "expected": "exit 0",
+            "required": true
+          }
+        ]
+      },
+      "outcomes": []
+    }
+  ]
+}

@@ -20,6 +20,11 @@ With the skill, the host coding agent becomes SAH's conversational and implement
 6. runs target tests plus changed and full SAH verification; and
 7. advances S13 only with eligible full evidence.
 
+For repeated product iterations, keep a schema-validated `.sah/sah.loop.json` beside the design
+bundle. Run `npm exec -- sah loop .sah/sah.loop.json --json` to select the fast/reasoning route and
+`sah loop-record` after an outcome to generate the next task. The loop is a work selector; the
+design bundle remains the architecture and S13 authority.
+
 The skill does not contain or call a hosted model. Codex or Claude Code supplies the model, tools,
 conversation, and existing permissions. SAH supplies the reusable method and evidence protocol.
 This matches the skill model documented by [OpenAI](https://developers.openai.com/codex/skills)
