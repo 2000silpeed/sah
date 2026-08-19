@@ -29,9 +29,10 @@ sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
-sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]
+sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
+sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
-sah loop-accept-next <sah.loop.json> [--repair] [--json]
+sah loop-accept-next <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--repair] [--json]
 sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]
 ```
 
@@ -50,17 +51,21 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
-npm exec -- sah loop-checks /path/to/target/.sah/sah.loop.json --cwd /path/to/target --json
+npm exec -- sah loop-bind /path/to/target/.sah/sah.loop.json --target-revision git:abc123 --design-fingerprint sha256:<64-lowercase-hex> --json
+npm exec -- sah loop-checks /path/to/target/.sah/sah.loop.json --cwd /path/to/target --target-revision git:abc123 --design-fingerprint sha256:<64-lowercase-hex> --json
 npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.sah/outcome.json --json
-npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --json
-npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --repair --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --target-revision git:def456 --design-fingerprint sha256:<64-lowercase-hex> --json
+npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --repair --target-revision git:def456 --design-fingerprint sha256:<64-lowercase-hex> --json
 npm exec -- sah loop-complete /path/to/target/.sah/sah.loop.json /path/to/target/.sah/completion.json --json
 ```
 
-`advance`, `loop-record`, `loop-accept-next`, and `loop-complete` mutate their canonical files, so
+`advance`, `loop-bind`, `loop-record`, `loop-accept-next`, and `loop-complete` mutate their canonical files, so
 examples deliberately name a disposable copy or an intended working artifact rather than the
-checked-in fixture. `loop-checks` is read-only with respect to the loop but executes the declared
-target commands in the explicit `--cwd` and emits a schema-valid outcome template.
+checked-in fixture. `loop-bind` and `loop-accept-next` atomically bind a caller-supplied target
+revision and design fingerprint. `loop-checks` is read-only with respect to the loop but executes
+the declared target commands in the explicit `--cwd` and emits a schema-valid outcome template.
+Context mismatches are deterministic blocked results and do not write files. SAH never infers Git
+state or hashes target source trees.
 `verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
 Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
@@ -234,6 +239,8 @@ The package exports the framework-neutral function and result types:
 import {
   advanceBundle,
   evaluateIterationLoop,
+  bindIterationContext,
+  runIterationChecks,
   recordIterationOutcome,
   validateBundle,
   verifyBundle,
@@ -261,6 +268,12 @@ const advancement: AdvanceResult = await advanceBundle(
   } satisfies AdvanceOptions,
 );
 const loop = await evaluateIterationLoop(".sah/sah.loop.json");
+const context = {
+  targetRevision: "git:abc123",
+  designFingerprint: "sha256:<64-lowercase-hex>",
+};
+await bindIterationContext(".sah/sah.loop.json", context);
+const checks = await runIterationChecks(".sah/sah.loop.json", "/absolute/project", context);
 const next = await recordIterationOutcome(
   ".sah/sah.loop.json",
   ".sah/iteration-001.outcome.json",
@@ -279,7 +292,10 @@ is the schema-matched persisted envelope; callers still receive the ordinary res
 
 `evaluateIterationLoop` reads and validates the separate loop artifact. `recordIterationOutcome`
 validates an outcome, rejects duplicate/current-ID mismatches, atomically appends it, and returns
-the route plus proposed next task. Loop output is schema-tagged and does not alter design-bundle
+the route plus proposed next task. `bindIterationContext` updates only the explicit revision and
+design fingerprint for a planned/in-progress iteration. `runIterationChecks` requires the same
+context and a matching target root; outcomes carry that context so stale evidence cannot be
+recorded or complete the loop. Loop output is schema-tagged and does not alter design-bundle
 lifecycle or S13 evidence.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers

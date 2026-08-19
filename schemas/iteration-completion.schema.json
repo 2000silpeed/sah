@@ -1,20 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-completion/v0.1.0",
+  "$id": "https://sah.dev/schemas/iteration-completion/v0.2.0",
   "title": "SAH Iteration Completion Request",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "completionVersion", "status", "criterionResults"],
+  "required": [
+    "$schema",
+    "completionVersion",
+    "status",
+    "workContext",
+    "criterionResults"
+  ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-completion/v0.1.0",
+      "const": "https://sah.dev/schemas/iteration-completion/v0.2.0",
       "x-sah-trace": {
         "writtenBy": ["loop completion author"],
         "readBy": ["loop completion gate"]
       }
     },
     "completionVersion": {
-      "const": "0.1.0",
+      "const": "0.2.0",
       "x-sah-trace": {
         "writtenBy": ["loop completion author"],
         "readBy": ["loop completion gate"]
@@ -22,6 +28,33 @@
     },
     "status": {
       "const": "completed",
+      "x-sah-trace": {
+        "writtenBy": ["loop completion author"],
+        "readBy": ["loop completion gate"]
+      }
+    },
+    "workContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetRevision", "designFingerprint"],
+      "properties": {
+        "targetRevision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop completion author"],
+            "readBy": ["loop completion gate"]
+          }
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["loop completion author"],
+            "readBy": ["loop completion gate"]
+          }
+        }
+      },
       "x-sah-trace": {
         "writtenBy": ["loop completion author"],
         "readBy": ["loop completion gate"]
@@ -66,9 +99,13 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-completion/v0.1.0",
-      "completionVersion": "0.1.0",
+      "$schema": "https://sah.dev/schemas/iteration-completion/v0.2.0",
+      "completionVersion": "0.2.0",
       "status": "completed",
+      "workContext": {
+        "targetRevision": "git:initial",
+        "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
       "criterionResults": [
         {
           "criterionId": "success-1",

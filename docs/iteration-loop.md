@@ -9,10 +9,12 @@ criterion points to recorded passing evidence.
 
 Create a schema-valid `.sah/sah.loop.json` containing product direction and success criteria, risk
 rules, the current task and checks, an open completion record, and append-only outcomes. The
-current loop schema is v0.3.0. Each actionable learning must include a `nextTask.checks` array;
+current loop schema is v0.4.0. Its required `workContext` binds the target root, a caller-owned
+target revision token, the design-bundle path, and the `sha256:` fingerprint emitted by `sah
+resume` or verification. Each actionable learning must include a `nextTask.checks` array;
 each check has an ID, kind, exact command, expected result, and `required` flag.
 
-An outcome is v0.3.0 evidence. Every declared check carries its exact command, explicit working
+An outcome is v0.4.0 evidence. Every declared check carries its exact command, explicit working
 directory, timestamps, exit code, and SHA-256 digests for captured stdout/stderr. A coding agent
 must not hand-write a successful check claim. The design bundle remains the authority for
 architecture decisions, constraints, and S13 evidence.
@@ -25,12 +27,24 @@ Evaluate the current route without changing files:
 npm exec -- sah loop .sah/sah.loop.json --json
 ```
 
-Run the declared target checks in order. The working directory is explicit; SAH does not infer a
-project root or inspect Git state. The command emits an outcome template with an empty learning
-array for the agent to complete:
+Before the first check, bind the planned iteration to the exact target revision and design
+fingerprint. SAH treats both values as opaque caller-supplied tokens; it never discovers Git state
+or hashes the source tree:
 
 ```text
-npm exec -- sah loop-checks .sah/sah.loop.json --cwd /absolute/project --json > .sah/iteration-001.outcome.json
+npm exec -- sah loop-bind .sah/sah.loop.json \
+  --target-revision git:abc123 \
+  --design-fingerprint sha256:<64-lowercase-hex> --json
+```
+
+Run the declared target checks in order. The working directory is explicit and must equal the loop
+target root; revision and fingerprint must match the binding. The command emits an outcome template
+with an empty learning array for the agent to complete:
+
+```text
+npm exec -- sah loop-checks .sah/sah.loop.json --cwd /absolute/project \
+  --target-revision git:abc123 \
+  --design-fingerprint sha256:<64-lowercase-hex> --json > .sah/iteration-001.outcome.json
 ```
 
 Record the outcome with an atomic append:
@@ -45,15 +59,22 @@ Missing, unknown, duplicate, command-mismatched, incomplete, or failed required 
 After a successful outcome, accept the highest-priority latest learning as a new planned
 iteration. This is an explicit transition; it never changes product direction implicitly:
 
+The next transition must state the binding for the new iteration. It may be unchanged or reflect an
+authorized target/design change:
+
 ```text
-npm exec -- sah loop-accept-next .sah/sah.loop.json --json
+npm exec -- sah loop-accept-next .sah/sah.loop.json \
+  --target-revision git:def456 \
+  --design-fingerprint sha256:<64-lowercase-hex> --json
 ```
 
 After failed or partial evidence, the current loop is blocked. `--repair` is required and marks
 the new iteration with `repeated-failure` so the risk router can escalate it:
 
 ```text
-npm exec -- sah loop-accept-next .sah/sah.loop.json --repair --json
+npm exec -- sah loop-accept-next .sah/sah.loop.json --repair \
+  --target-revision git:def456 \
+  --design-fingerprint sha256:<64-lowercase-hex> --json
 ```
 
 The transition requires a latest learning with at least one unique required check. Invalid states,
@@ -66,9 +87,13 @@ criterion must contain one or more evidence references in the form `iterationId:
 
 ```json
 {
-  "$schema": "https://sah.dev/schemas/iteration-completion/v0.1.0",
-  "completionVersion": "0.1.0",
+  "$schema": "https://sah.dev/schemas/iteration-completion/v0.2.0",
+  "completionVersion": "0.2.0",
   "status": "completed",
+  "workContext": {
+    "targetRevision": "git:abc123",
+    "designFingerprint": "sha256:<64-lowercase-hex>"
+  },
   "criterionResults": [
     { "criterionId": "success-1", "evidenceRefs": ["iteration-001:lint"] }
   ]
@@ -81,7 +106,8 @@ Close the loop atomically:
 npm exec -- sah loop-complete .sah/sah.loop.json .sah/completion.json --json
 ```
 
-The gate requires a completed current iteration, a succeeded latest outcome, no unresolved latest
+The gate requires a completed current iteration, a succeeded latest outcome, matching loop,
+latest-outcome, and completion-request contexts, no unresolved latest
 `must` learning, and a recorded `passed`/exit-zero check for every referenced item. Unknown,
 duplicate, missing, or non-passing references leave the loop unchanged. Completion is a local
 deterministic product-direction terminal state; it is not S13, deployment, release approval, or

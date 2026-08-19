@@ -9,8 +9,10 @@ import {
   runIterationChecks,
   recordIterationOutcome,
   acceptNextIteration,
+  bindIterationContext,
   completeIterationLoop,
 } from "../src/iteration-loop.js";
+import type { IterationContextOptions } from "../src/contracts.js";
 import { loadSchemaRegistry } from "../src/schema-validation.js";
 
 const temporaryDirectories: string[] = [];
@@ -27,19 +29,31 @@ async function createLoop(signal = "local-reversible"): Promise<{
   directory: string;
   loop: string;
   outcome: string;
+  context: IterationContextOptions;
 }> {
   const directory = await mkdtemp(join(tmpdir(), "sah-loop-test-"));
   temporaryDirectories.push(directory);
   const loop = join(directory, "sah.loop.json");
   const outcome = join(directory, "outcome.json");
+  const context: IterationContextOptions = {
+    targetRevision: "git:test",
+    designFingerprint:
+      "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  };
   await writeFile(
     loop,
     `${JSON.stringify(
       {
-        $schema: "https://sah.dev/schemas/iteration-loop/v0.3.0",
-        loopVersion: "0.3.0",
+        $schema: "https://sah.dev/schemas/iteration-loop/v0.4.0",
+        loopVersion: "0.4.0",
         loopId: "test-loop",
         status: "active",
+        workContext: {
+          targetRoot: process.cwd(),
+          targetRevision: context.targetRevision,
+          designBundlePath: "/workspace/design",
+          designFingerprint: context.designFingerprint,
+        },
         direction: {
           goal: "Improve the product",
           successCriteria: [
@@ -79,8 +93,9 @@ async function createLoop(signal = "local-reversible"): Promise<{
           ],
         },
         completion: {
-          completionVersion: "0.1.0",
+          completionVersion: "0.2.0",
           status: "open",
+          workContext: context,
           criterionResults: [],
         },
         outcomes: [],
@@ -93,22 +108,23 @@ async function createLoop(signal = "local-reversible"): Promise<{
     outcome,
     `${JSON.stringify(
       {
-        $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0",
-        outcomeVersion: "0.3.0",
+        $schema: "https://sah.dev/schemas/iteration-outcome/v0.4.0",
+        outcomeVersion: "0.4.0",
         iterationId: "iteration-1",
         status: "succeeded",
         evidence: {
           executor: { name: "sah-loop-checks", version: "0.1.0" },
-          cwd: "/workspace/product",
+          cwd: process.cwd(),
           startedAt: "2026-08-19T00:00:00.000Z",
           finishedAt: "2026-08-19T00:00:01.000Z",
+          workContext: context,
         },
         checkResults: [
           {
             checkId: "lint",
             status: "passed",
             command: "npm run lint",
-            cwd: "/workspace/product",
+            cwd: process.cwd(),
             startedAt: "2026-08-19T00:00:00.000Z",
             finishedAt: "2026-08-19T00:00:01.000Z",
             exitCode: 0,
@@ -146,7 +162,7 @@ async function createLoop(signal = "local-reversible"): Promise<{
       2,
     )}\n`,
   );
-  return { directory, loop, outcome };
+  return { directory, loop, outcome, context };
 }
 
 describe("iteration loop", () => {
@@ -164,7 +180,7 @@ describe("iteration loop", () => {
     if (registry.ok)
       expect(
         registry.registry.validate(
-          "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
+          "https://sah.dev/schemas/iteration-loop-result/v0.3.0",
           result,
           "iteration-loop-result",
         ),
@@ -179,6 +195,46 @@ describe("iteration loop", () => {
     expect(result.status).toBe("escalate");
     expect(result.route).toBe("reasoning");
     expect(result.escalation.ruleRefs).toEqual(["critical-rule"]);
+  });
+
+  it("binds a new explicit revision and rejects stale evidence atomically", async () => {
+    const { loop, outcome } = await createLoop();
+    const nextContext: IterationContextOptions = {
+      targetRevision: "git:next",
+      designFingerprint:
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    };
+
+    const bound = await bindIterationContext(loop, nextContext);
+    expect(bound.operation).toBe("bound");
+    expect(bound.status).toBe("ready");
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      workContext: IterationContextOptions;
+      outcomes: unknown[];
+    };
+    expect(persisted.workContext.targetRevision).toBe("git:next");
+    expect(persisted.outcomes).toHaveLength(0);
+
+    const stale = await recordIterationOutcome(loop, outcome);
+    expect(stale.status).toBe("blocked");
+    expect(stale.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_OUTCOME_CONTEXT_MISMATCH",
+    );
+    expect(
+      (JSON.parse(await readFile(loop, "utf8")) as { outcomes: unknown[] })
+        .outcomes,
+    ).toHaveLength(0);
+  });
+
+  it("requires explicit context before running checks", async () => {
+    const { loop } = await createLoop();
+
+    const result = await runIterationChecks(loop, process.cwd());
+
+    expect(result.status).toBe("blocked");
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_CONTEXT_ARGUMENTS_MISSING",
+    );
   });
 
   it("atomically records an outcome and projects its highest-priority next task", async () => {
@@ -199,10 +255,10 @@ describe("iteration loop", () => {
   });
 
   it("accepts a declared next task as a new planned iteration", async () => {
-    const { loop, outcome } = await createLoop();
+    const { loop, outcome, context } = await createLoop();
 
     await recordIterationOutcome(loop, outcome);
-    const result = await acceptNextIteration(loop);
+    const result = await acceptNextIteration(loop, { context });
     const persisted = JSON.parse(await readFile(loop, "utf8")) as {
       status: string;
       currentIteration: {
@@ -223,7 +279,7 @@ describe("iteration loop", () => {
   });
 
   it("requires an explicit repair transition after failed evidence", async () => {
-    const { loop, outcome } = await createLoop();
+    const { loop, outcome, context } = await createLoop();
     const failed = JSON.parse(await readFile(outcome, "utf8")) as {
       status: string;
       checkResults: Array<{ status: string; exitCode: number | null }>;
@@ -237,13 +293,13 @@ describe("iteration loop", () => {
     await writeFile(outcome, `${JSON.stringify(failed, null, 2)}\n`);
 
     await recordIterationOutcome(loop, outcome);
-    const withoutRepair = await acceptNextIteration(loop);
+    const withoutRepair = await acceptNextIteration(loop, { context });
     expect(withoutRepair.status).toBe("blocked");
     expect(withoutRepair.diagnostics.map(({ code }) => code)).toContain(
       "ITERATION_REPAIR_FLAG_REQUIRED",
     );
 
-    const repaired = await acceptNextIteration(loop, { repair: true });
+    const repaired = await acceptNextIteration(loop, { repair: true, context });
     const persisted = JSON.parse(await readFile(loop, "utf8")) as {
       currentIteration: { status: string; riskSignals: string[] };
     };
@@ -255,7 +311,7 @@ describe("iteration loop", () => {
   });
 
   it("completes only when every success criterion references passed evidence", async () => {
-    const { loop, outcome, directory } = await createLoop();
+    const { loop, outcome, directory, context } = await createLoop();
     const succeeded = JSON.parse(await readFile(outcome, "utf8")) as {
       learnings: Array<{ priority: string }>;
     };
@@ -268,9 +324,10 @@ describe("iteration loop", () => {
       completion,
       `${JSON.stringify(
         {
-          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
-          completionVersion: "0.1.0",
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0",
+          completionVersion: "0.2.0",
           status: "completed",
+          workContext: context,
           criterionResults: [
             {
               criterionId: "criterion-1",
@@ -302,7 +359,7 @@ describe("iteration loop", () => {
   });
 
   it("does not write a completion with unknown evidence", async () => {
-    const { loop, outcome, directory } = await createLoop();
+    const { loop, outcome, directory, context } = await createLoop();
     const succeeded = JSON.parse(await readFile(outcome, "utf8")) as {
       learnings: Array<{ priority: string }>;
     };
@@ -315,9 +372,10 @@ describe("iteration loop", () => {
       completion,
       `${JSON.stringify(
         {
-          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
-          completionVersion: "0.1.0",
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0",
+          completionVersion: "0.2.0",
           status: "completed",
+          workContext: context,
           criterionResults: [
             {
               criterionId: "criterion-1",
@@ -339,6 +397,49 @@ describe("iteration loop", () => {
       "ITERATION_COMPLETION_EVIDENCE_UNKNOWN",
     );
     expect(persisted.status).toBe("active");
+  });
+
+  it("does not complete when the request context is stale", async () => {
+    const { loop, outcome, directory, context } = await createLoop();
+    const succeeded = JSON.parse(await readFile(outcome, "utf8")) as {
+      learnings: Array<{ priority: string }>;
+    };
+    const learning = succeeded.learnings[0];
+    if (learning !== undefined) learning.priority = "should";
+    await writeFile(outcome, `${JSON.stringify(succeeded, null, 2)}\n`);
+    await recordIterationOutcome(loop, outcome);
+    const completion = join(directory, "stale-completion.json");
+    await writeFile(
+      completion,
+      `${JSON.stringify(
+        {
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0",
+          completionVersion: "0.2.0",
+          status: "completed",
+          workContext: {
+            ...context,
+            targetRevision: "git:stale",
+          },
+          criterionResults: [
+            {
+              criterionId: "criterion-1",
+              evidenceRefs: ["iteration-1:lint"],
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const result = await completeIterationLoop(loop, completion);
+    expect(result.status).toBe("blocked");
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_COMPLETION_CONTEXT_MISMATCH",
+    );
+    expect(
+      (JSON.parse(await readFile(loop, "utf8")) as { status: string }).status,
+    ).toBe("active");
   });
 
   it("rejects a succeeded outcome when a required check is missing", async () => {
@@ -363,9 +464,8 @@ describe("iteration loop", () => {
   });
 
   it("runs declared checks and emits execution evidence", async () => {
-    const { loop } = await createLoop();
-
-    const result = await runIterationChecks(loop, process.cwd());
+    const { loop, context } = await createLoop();
+    const result = await runIterationChecks(loop, process.cwd(), context);
 
     expect(result.status).toBe("passed");
     expect(result.outcome?.evidence.executor.name).toBe("sah-loop-checks");
@@ -383,7 +483,7 @@ describe("iteration loop", () => {
     if (registry.ok && result.outcome !== undefined)
       expect(
         registry.registry.validate(
-          "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+          "https://sah.dev/schemas/iteration-outcome/v0.4.0",
           result.outcome,
           "iteration-outcome",
         ),

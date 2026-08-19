@@ -26,6 +26,9 @@ type ProcessResult = {
   stderr: string;
 };
 
+const initialDesignFingerprint =
+  "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
 async function runCli(arguments_: string[]): Promise<ProcessResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [cliPath, ...arguments_], {
@@ -86,6 +89,29 @@ describe("sah loop CLI", () => {
     expect(output.escalation.triggered).toBe(false);
   });
 
+  it("binds an explicit revision and design fingerprint", async () => {
+    const loopDirectory = await copyIterationLoop();
+    const execution = await runCli([
+      "loop-bind",
+      join(loopDirectory, "sah.loop.json"),
+      "--target-revision",
+      "git:next",
+      "--design-fingerprint",
+      initialDesignFingerprint,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      operation: string;
+      status: string;
+      workContext: { targetRevision: string };
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.operation).toBe("bound");
+    expect(output.status).toBe("ready");
+    expect(output.workContext.targetRevision).toBe("git:next");
+  });
+
   it("records an outcome and returns the learned next task", async () => {
     const loopDirectory = await copyIterationLoop();
     const execution = await runCli([
@@ -117,6 +143,10 @@ describe("sah loop CLI", () => {
     const execution = await runCli([
       "loop-accept-next",
       join(loopDirectory, "sah.loop.json"),
+      "--target-revision",
+      "git:initial",
+      "--design-fingerprint",
+      initialDesignFingerprint,
       "--json",
     ]);
     const output = JSON.parse(execution.stdout) as {
@@ -146,9 +176,13 @@ describe("sah loop CLI", () => {
       completionFile,
       `${JSON.stringify(
         {
-          $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0",
-          completionVersion: "0.1.0",
+          $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0",
+          completionVersion: "0.2.0",
           status: "completed",
+          workContext: {
+            targetRevision: "git:initial",
+            designFingerprint: initialDesignFingerprint,
+          },
           criterionResults: [
             {
               criterionId: "success-1",
@@ -180,11 +214,23 @@ describe("sah loop CLI", () => {
   });
 
   it("runs declared checks only with an explicit working directory", async () => {
+    const loopDirectory = await copyIterationLoop();
+    await mutateJson<{ workContext: { targetRoot: string } }>(
+      loopDirectory,
+      "sah.loop.json",
+      (loop) => {
+        loop.workContext.targetRoot = process.cwd();
+      },
+    );
     const execution = await runCli([
       "loop-checks",
-      join(iterationLoopFixtureDirectory, "sah.loop.json"),
+      join(loopDirectory, "sah.loop.json"),
       "--cwd",
       process.cwd(),
+      "--target-revision",
+      "git:initial",
+      "--design-fingerprint",
+      initialDesignFingerprint,
       "--json",
     ]);
     const output = JSON.parse(execution.stdout) as {
@@ -200,9 +246,9 @@ describe("sah loop CLI", () => {
 
     expect(execution.code).toBe(0);
     expect(output.$schema).toBe(
-      "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+      "https://sah.dev/schemas/iteration-outcome/v0.4.0",
     );
-    expect(output.outcomeVersion).toBe("0.3.0");
+    expect(output.outcomeVersion).toBe("0.4.0");
     expect(output.evidence.executor.name).toBe("sah-loop-checks");
     expect(output.evidence.cwd).toBe(process.cwd());
     expect(output.checkResults[0]).toMatchObject({

@@ -15,20 +15,23 @@ import type {
   IterationCheckContract,
   IterationCompletion,
   IterationCompletionRequest,
+  IterationContextOptions,
+  IterationEvidenceContext,
   IterationLoopResult,
   IterationChecksResult,
   IterationOutcome,
   IterationTaskContract,
+  IterationWorkContext,
   LoopRoute,
   SahDiagnostic,
 } from "./contracts.js";
 import { summarize } from "./diagnostics.js";
 import { loadSchemaRegistry } from "./schema-validation.js";
 
-const loopSchemaId = "https://sah.dev/schemas/iteration-loop/v0.3.0";
-const outcomeSchemaId = "https://sah.dev/schemas/iteration-outcome/v0.3.0";
+const loopSchemaId = "https://sah.dev/schemas/iteration-loop/v0.4.0";
+const outcomeSchemaId = "https://sah.dev/schemas/iteration-outcome/v0.4.0";
 const completionSchemaId =
-  "https://sah.dev/schemas/iteration-completion/v0.1.0";
+  "https://sah.dev/schemas/iteration-completion/v0.2.0";
 const iterationRunnerVersion = "0.1.0";
 
 type RiskSignal =
@@ -43,9 +46,10 @@ type RiskSignal =
 
 type LoopModel = {
   $schema: typeof loopSchemaId;
-  loopVersion: "0.3.0";
+  loopVersion: "0.4.0";
   loopId: string;
   status: "active" | "blocked" | "completed";
+  workContext: IterationWorkContext;
   direction: {
     goal: string;
     successCriteria: Array<{ id: string; description: string }>;
@@ -232,8 +236,8 @@ function result(
       ),
   );
   return {
-    $schema: "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
-    resultVersion: "0.2.0",
+    $schema: "https://sah.dev/schemas/iteration-loop-result/v0.3.0",
+    resultVersion: "0.3.0",
     operation,
     status,
     loopFile,
@@ -304,6 +308,138 @@ function routeRank(route: LoopRoute): number {
   return route === "blocked" ? 3 : route === "reasoning" ? 2 : 1;
 }
 
+function evidenceContext(loop: LoopModel): IterationEvidenceContext {
+  return {
+    targetRevision: loop.workContext.targetRevision,
+    designFingerprint: loop.workContext.designFingerprint,
+  };
+}
+
+function contextMatches(
+  left: IterationEvidenceContext,
+  right: IterationEvidenceContext,
+): boolean {
+  return (
+    left.targetRevision === right.targetRevision &&
+    left.designFingerprint === right.designFingerprint
+  );
+}
+
+function contextInputDiagnostics(
+  context: IterationContextOptions | undefined,
+  path: string,
+): SahDiagnostic[] {
+  const diagnostics: SahDiagnostic[] = [];
+  if (
+    typeof context?.targetRevision !== "string" ||
+    context.targetRevision.trim() === ""
+  )
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_TARGET_REVISION_MISSING",
+        path,
+        message: "The target revision binding is empty.",
+        expected: "a caller-supplied non-empty target revision",
+        repair: "Provide the target revision token from the target workflow.",
+      }),
+    );
+  if (
+    typeof context?.designFingerprint !== "string" ||
+    context.designFingerprint.trim() === ""
+  )
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_DESIGN_FINGERPRINT_MISSING",
+        path,
+        message: "The design-bundle fingerprint binding is empty.",
+        expected: "a sha256: design-bundle fingerprint",
+        repair: "Use the fingerprint emitted by sah resume or verification.",
+      }),
+    );
+  if (
+    context !== undefined &&
+    (typeof context.designFingerprint !== "string" ||
+      !/^sha256:[0-9a-f]{64}$/u.test(context.designFingerprint))
+  )
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_DESIGN_FINGERPRINT_INVALID",
+        path,
+        message:
+          "The design-bundle fingerprint is not a lowercase SHA-256 digest.",
+        expected: "sha256:<64 lowercase hexadecimal characters>",
+        repair:
+          "Copy the canonical fingerprint from sah resume or verification output.",
+      }),
+    );
+  if (context === undefined)
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_CONTEXT_ARGUMENTS_MISSING",
+        path,
+        message:
+          "No explicit target revision and design fingerprint were supplied.",
+        expected: "targetRevision and designFingerprint context arguments",
+        repair:
+          "Supply both values from the target workflow and design bundle.",
+      }),
+    );
+  return diagnostics;
+}
+
+function targetRootDiagnostics(
+  loop: LoopModel,
+  cwd: string,
+  path: string,
+): SahDiagnostic[] {
+  const expected = resolve(loop.workContext.targetRoot);
+  const observed = resolve(cwd);
+  return expected === observed
+    ? []
+    : [
+        diagnostic({
+          code: "ITERATION_TARGET_ROOT_MISMATCH",
+          path,
+          message: `The check working directory ${observed} does not match the loop target root ${expected}.`,
+          expected,
+          repair: "Run the check with --cwd equal to the bound target root.",
+        }),
+      ];
+}
+
+function loopContextDiagnostics(
+  loop: LoopModel,
+  context: IterationContextOptions | undefined,
+  path: string,
+): SahDiagnostic[] {
+  const diagnostics = contextInputDiagnostics(context, path);
+  if (context === undefined) return diagnostics;
+  if (context.targetRevision !== loop.workContext.targetRevision)
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_TARGET_REVISION_MISMATCH",
+        path,
+        message: "The supplied target revision differs from the loop binding.",
+        expected: loop.workContext.targetRevision,
+        repair:
+          "Rebind the planned iteration explicitly before executing checks, or use the matching revision.",
+      }),
+    );
+  if (context.designFingerprint !== loop.workContext.designFingerprint)
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_DESIGN_FINGERPRINT_MISMATCH",
+        path,
+        message:
+          "The supplied design fingerprint differs from the loop binding.",
+        expected: loop.workContext.designFingerprint,
+        repair:
+          "Use the fingerprint bound to this iteration or run loop-bind for a planned iteration.",
+      }),
+    );
+  return diagnostics;
+}
+
 type SelectedLearning = {
   learning: IterationOutcome["learnings"][number];
   sourceIterationId?: string;
@@ -334,6 +470,7 @@ function evaluateLoadedLoop(
       route: "complete",
       escalation: { triggered: false, ruleRefs: [], reasons: [] },
       currentTask: loop.currentIteration.taskContract,
+      workContext: loop.workContext,
     });
   }
 
@@ -404,6 +541,7 @@ function evaluateLoadedLoop(
             }
           : escalation,
       currentTask: current.taskContract,
+      workContext: loop.workContext,
       ...(learning === undefined
         ? {}
         : { nextTask: learning.learning.nextTask }),
@@ -439,6 +577,7 @@ export async function evaluateIterationLoop(
 export async function runIterationChecks(
   loopFile: string,
   cwd: string,
+  context?: IterationContextOptions,
 ): Promise<IterationChecksResult> {
   const loaded = await readJson<LoopModel>(
     loopFile,
@@ -495,7 +634,15 @@ export async function runIterationChecks(
       }),
     ]);
 
+  const contextDiagnostics = [
+    ...targetRootDiagnostics(loop, cwd, loaded.loaded.path),
+    ...loopContextDiagnostics(loop, context, loaded.loaded.path),
+  ];
+  if (context === undefined || contextDiagnostics.length > 0)
+    return checksResult("blocked", loaded.loaded.path, contextDiagnostics);
+
   const resolvedCwd = resolve(cwd);
+  const boundContext = context;
   const startedAt = new Date().toISOString();
   const checkResults: IterationOutcome["checkResults"] = [];
   for (const check of loop.currentIteration.checks) {
@@ -532,8 +679,8 @@ export async function runIterationChecks(
       ? "failed"
       : "succeeded";
   const outcome: IterationOutcome = {
-    $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0",
-    outcomeVersion: "0.3.0",
+    $schema: "https://sah.dev/schemas/iteration-outcome/v0.4.0",
+    outcomeVersion: "0.4.0",
     iterationId: loop.currentIteration.id,
     status,
     evidence: {
@@ -541,6 +688,10 @@ export async function runIterationChecks(
       cwd: resolvedCwd,
       startedAt,
       finishedAt,
+      workContext: {
+        targetRevision: boundContext.targetRevision,
+        designFingerprint: boundContext.designFingerprint,
+      },
     },
     checkResults,
     learnings: [],
@@ -608,6 +759,32 @@ function validateOutcomeAgainstLoop(
   outcomeFile: string,
 ): SahDiagnostic[] {
   const diagnostics: SahDiagnostic[] = [];
+  if (!contextMatches(evidenceContext(loop), outcome.evidence.workContext)) {
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_OUTCOME_CONTEXT_MISMATCH",
+        path: outcomeFile,
+        message:
+          "Outcome evidence is bound to a different target revision or design fingerprint than the loop.",
+        expected: `${loop.workContext.targetRevision} and ${loop.workContext.designFingerprint}`,
+        repair:
+          "Run checks with the current loop binding, or bind a planned iteration before recording evidence.",
+      }),
+    );
+  }
+  if (resolve(outcome.evidence.cwd) !== resolve(loop.workContext.targetRoot)) {
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_OUTCOME_TARGET_ROOT_MISMATCH",
+        path: outcomeFile,
+        message:
+          "Outcome evidence was collected outside the target root bound to the loop.",
+        expected: resolve(loop.workContext.targetRoot),
+        repair:
+          "Run checks from the loop target root and record the new outcome.",
+      }),
+    );
+  }
   if (outcome.evidence.executor.name !== "sah-loop-checks") {
     diagnostics.push(
       diagnostic({
@@ -808,6 +985,7 @@ export async function recordIterationOutcome(
           ruleRefs: [],
           reasons: ["The iteration loop is already product-complete."],
         },
+        workContext: loop.workContext,
       },
     );
   const diagnostics: SahDiagnostic[] = [];
@@ -846,6 +1024,7 @@ export async function recordIterationOutcome(
         ruleRefs: [],
         reasons: diagnostics.map(({ message }) => message),
       },
+      workContext: loop.workContext,
     });
 
   loop.outcomes.push(outcome);
@@ -863,6 +1042,73 @@ export async function recordIterationOutcome(
       writeDiagnostic,
     ]);
   return evaluateLoadedLoop(loop, loadedLoop.loaded.path, "recorded");
+}
+
+export async function bindIterationContext(
+  loopFile: string,
+  context: IterationContextOptions,
+): Promise<IterationLoopResult> {
+  const loadedLoop = await readJson<LoopModel>(
+    loopFile,
+    loopSchemaId,
+    "iteration loop",
+  );
+  if (!loadedLoop.ok)
+    return result(
+      "bound",
+      "operational-error",
+      resolve(loopFile),
+      loadedLoop.diagnostics,
+    );
+
+  const loop = loadedLoop.loaded.data;
+  if (loop.status === "completed")
+    return transitionBlocked("bound", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_LOOP_ALREADY_COMPLETED",
+        path: loadedLoop.loaded.path,
+        message: "A completed iteration loop cannot be rebound.",
+        expected: "an active planned or in-progress iteration loop",
+        repair: "Create a new loop artifact for a new product direction.",
+      }),
+    ]);
+  if (loop.currentIteration.status === "blocked")
+    return transitionBlocked("bound", loop, loadedLoop.loaded.path, [
+      diagnostic({
+        code: "ITERATION_BIND_BLOCKED_ITERATION",
+        path: loadedLoop.loaded.path,
+        message: "A blocked iteration requires an explicit repair transition.",
+        expected: "a planned or in-progress current iteration",
+        repair: "Use loop-accept-next --repair with the new context.",
+      }),
+    ]);
+
+  const diagnostics = contextInputDiagnostics(context, loadedLoop.loaded.path);
+  if (diagnostics.length > 0)
+    return transitionBlocked(
+      "bound",
+      loop,
+      loadedLoop.loaded.path,
+      diagnostics,
+    );
+
+  loop.workContext = {
+    ...loop.workContext,
+    targetRevision: context.targetRevision,
+    designFingerprint: context.designFingerprint,
+  };
+  loop.completion.workContext = evidenceContext(loop);
+  const writeDiagnostic = await replaceLoopAtomically({
+    path: loadedLoop.loaded.path,
+    expectedSource: loadedLoop.loaded.source,
+    mode: loadedLoop.loaded.mode,
+    data: loop,
+  });
+  if (writeDiagnostic !== undefined)
+    return result("bound", "operational-error", loadedLoop.loaded.path, [
+      writeDiagnostic,
+    ]);
+  return evaluateLoadedLoop(loop, loadedLoop.loaded.path, "bound");
 }
 
 function nextTaskDiagnostics(
@@ -926,6 +1172,7 @@ function transitionBlocked(
       reasons: diagnostics.map(({ message }) => message),
     },
     currentTask: loop.currentIteration.taskContract,
+    workContext: loop.workContext,
   });
 }
 
@@ -945,7 +1192,7 @@ function proposedIterationId(loop: LoopModel): string {
 
 export async function acceptNextIteration(
   loopFile: string,
-  options: { repair?: boolean } = {},
+  options: { repair?: boolean; context?: IterationContextOptions } = {},
 ): Promise<IterationLoopResult> {
   const loadedLoop = await readJson<LoopModel>(
     loopFile,
@@ -971,6 +1218,18 @@ export async function acceptNextIteration(
         repair: "Create a new loop artifact for a new product direction.",
       }),
     ]);
+
+  const contextDiagnostics = contextInputDiagnostics(
+    options.context,
+    loadedLoop.loaded.path,
+  );
+  if (options.context === undefined || contextDiagnostics.length > 0)
+    return transitionBlocked(
+      "advanced",
+      loop,
+      loadedLoop.loaded.path,
+      contextDiagnostics,
+    );
 
   const repair = options.repair === true;
   if (loop.currentIteration.status === "blocked" && !repair)
@@ -1025,6 +1284,13 @@ export async function acceptNextIteration(
 
   const task = selected.learning.nextTask;
   const checks = task.checks?.map((check) => ({ ...check })) ?? [];
+  const nextContext = options.context;
+  loop.workContext = {
+    ...loop.workContext,
+    targetRevision: nextContext.targetRevision,
+    designFingerprint: nextContext.designFingerprint,
+  };
+  loop.completion.workContext = evidenceContext(loop);
   loop.currentIteration = {
     id: proposedIterationId(loop),
     goal: task.goal,
@@ -1241,6 +1507,41 @@ export async function completeIterationLoop(
       }),
     ]);
 
+  const completionContext = loadedCompletion.loaded.data.workContext;
+  const currentContext = evidenceContext(loop);
+  const contextDiagnostics: SahDiagnostic[] = [];
+  if (!contextMatches(currentContext, latest.evidence.workContext))
+    contextDiagnostics.push(
+      diagnostic({
+        code: "ITERATION_LATEST_OUTCOME_CONTEXT_MISMATCH",
+        path: loadedLoop.loaded.path,
+        message:
+          "The latest succeeded outcome is not bound to the loop's current work context.",
+        expected: `${currentContext.targetRevision} and ${currentContext.designFingerprint}`,
+        repair:
+          "Record evidence for the currently bound iteration before completing.",
+      }),
+    );
+  if (!contextMatches(currentContext, completionContext))
+    contextDiagnostics.push(
+      diagnostic({
+        code: "ITERATION_COMPLETION_CONTEXT_MISMATCH",
+        path: completionFile,
+        message:
+          "The completion request is bound to a different target revision or design fingerprint than the loop.",
+        expected: `${currentContext.targetRevision} and ${currentContext.designFingerprint}`,
+        repair:
+          "Regenerate the completion request from the current loop binding.",
+      }),
+    );
+  if (contextDiagnostics.length > 0)
+    return transitionBlocked(
+      "completed",
+      loop,
+      loadedLoop.loaded.path,
+      contextDiagnostics,
+    );
+
   const diagnostics = completionDiagnostics(
     loop,
     loadedCompletion.loaded.data,
@@ -1256,8 +1557,9 @@ export async function completeIterationLoop(
 
   loop.status = "completed";
   loop.completion = {
-    completionVersion: "0.1.0",
+    completionVersion: "0.2.0",
     status: "completed",
+    workContext: { ...completionContext },
     criterionResults: loadedCompletion.loaded.data.criterionResults.map(
       ({ criterionId, evidenceRefs }) => ({
         criterionId,

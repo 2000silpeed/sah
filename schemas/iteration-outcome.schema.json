@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+  "$id": "https://sah.dev/schemas/iteration-outcome/v0.4.0",
   "title": "SAH Iteration Outcome",
   "type": "object",
   "additionalProperties": false,
@@ -15,14 +15,14 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
+      "const": "https://sah.dev/schemas/iteration-outcome/v0.4.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
         "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "outcomeVersion": {
-      "const": "0.3.0",
+      "const": "0.4.0",
       "x-sah-trace": {
         "writtenBy": ["iteration outcome recorder"],
         "readBy": ["loop evaluator", "loop recorder"]
@@ -46,7 +46,7 @@
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["executor", "cwd", "startedAt", "finishedAt"],
+      "required": ["executor", "cwd", "startedAt", "finishedAt", "workContext"],
       "properties": {
         "executor": {
           "type": "object",
@@ -96,6 +96,33 @@
           "x-sah-trace": {
             "writtenBy": ["SAH check runner"],
             "readBy": ["loop recorder", "session consumer"]
+          }
+        },
+        "workContext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["targetRevision", "designFingerprint"],
+          "properties": {
+            "targetRevision": {
+              "type": "string",
+              "minLength": 1,
+              "x-sah-trace": {
+                "writtenBy": ["SAH check runner"],
+                "readBy": ["loop recorder", "completion gate"]
+              }
+            },
+            "designFingerprint": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "x-sah-trace": {
+                "writtenBy": ["SAH check runner"],
+                "readBy": ["loop recorder", "completion gate"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["SAH check runner"],
+            "readBy": ["loop recorder", "completion gate"]
           }
         }
       },
@@ -361,15 +388,19 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.3.0",
-      "outcomeVersion": "0.3.0",
+      "$schema": "https://sah.dev/schemas/iteration-outcome/v0.4.0",
+      "outcomeVersion": "0.4.0",
       "iterationId": "iteration-001",
       "status": "succeeded",
       "evidence": {
         "executor": { "name": "sah-loop-checks", "version": "0.1.0" },
         "cwd": "/workspace/product",
         "startedAt": "2026-08-19T00:00:00.000Z",
-        "finishedAt": "2026-08-19T00:00:01.000Z"
+        "finishedAt": "2026-08-19T00:00:01.000Z",
+        "workContext": {
+          "targetRevision": "git:initial",
+          "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        }
       },
       "checkResults": [
         {

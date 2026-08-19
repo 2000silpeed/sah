@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-loop/v0.3.0",
+  "$id": "https://sah.dev/schemas/iteration-loop/v0.4.0",
   "title": "SAH Iteration Loop",
   "type": "object",
   "additionalProperties": false,
@@ -9,6 +9,7 @@
     "loopVersion",
     "loopId",
     "status",
+    "workContext",
     "direction",
     "policy",
     "currentIteration",
@@ -17,14 +18,14 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-loop/v0.3.0",
+      "const": "https://sah.dev/schemas/iteration-loop/v0.4.0",
       "x-sah-trace": {
         "writtenBy": ["loop author"],
         "readBy": ["loop evaluator", "loop recorder"]
       }
     },
     "loopVersion": {
-      "const": "0.3.0",
+      "const": "0.4.0",
       "x-sah-trace": {
         "writtenBy": ["loop author"],
         "readBy": ["loop evaluator"]
@@ -42,6 +43,54 @@
       "enum": ["active", "blocked", "completed"],
       "x-sah-trace": {
         "writtenBy": ["loop recorder", "iteration transition"],
+        "readBy": ["loop evaluator", "loop transition", "session consumer"]
+      }
+    },
+    "workContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetRoot",
+        "targetRevision",
+        "designBundlePath",
+        "designFingerprint"
+      ],
+      "properties": {
+        "targetRoot": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop binder"],
+            "readBy": ["loop check runner", "loop recorder", "session consumer"]
+          }
+        },
+        "targetRevision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["target workflow", "loop binder"],
+            "readBy": ["loop check runner", "loop recorder", "completion gate"]
+          }
+        },
+        "designBundlePath": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop binder"],
+            "readBy": ["session consumer", "completion gate"]
+          }
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["verification/resume projection", "loop binder"],
+            "readBy": ["loop check runner", "loop recorder", "completion gate"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop binder"],
         "readBy": ["loop evaluator", "loop transition", "session consumer"]
       }
     },
@@ -402,10 +451,15 @@
     "completion": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["completionVersion", "status", "criterionResults"],
+      "required": [
+        "completionVersion",
+        "status",
+        "workContext",
+        "criterionResults"
+      ],
       "properties": {
         "completionVersion": {
-          "const": "0.1.0",
+          "const": "0.2.0",
           "x-sah-trace": {
             "writtenBy": ["loop completion command"],
             "readBy": ["loop evaluator", "session consumer"]
@@ -416,6 +470,33 @@
           "x-sah-trace": {
             "writtenBy": ["loop completion command"],
             "readBy": ["loop evaluator", "session consumer"]
+          }
+        },
+        "workContext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["targetRevision", "designFingerprint"],
+          "properties": {
+            "targetRevision": {
+              "type": "string",
+              "minLength": 1,
+              "x-sah-trace": {
+                "writtenBy": ["loop completion command"],
+                "readBy": ["loop evaluator", "completion gate"]
+              }
+            },
+            "designFingerprint": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "x-sah-trace": {
+                "writtenBy": ["loop completion command"],
+                "readBy": ["loop evaluator", "completion gate"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["loop completion command"],
+            "readBy": ["loop evaluator", "completion gate"]
           }
         },
         "criterionResults": {
@@ -469,7 +550,7 @@
     },
     "outcomes": {
       "type": "array",
-      "items": { "$ref": "https://sah.dev/schemas/iteration-outcome/v0.3.0" },
+      "items": { "$ref": "https://sah.dev/schemas/iteration-outcome/v0.4.0" },
       "x-sah-trace": {
         "writtenBy": ["loop recorder"],
         "readBy": ["loop evaluator", "session consumer"]
@@ -478,10 +559,16 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-loop/v0.3.0",
-      "loopVersion": "0.3.0",
+      "$schema": "https://sah.dev/schemas/iteration-loop/v0.4.0",
+      "loopVersion": "0.4.0",
       "loopId": "reservation-product",
       "status": "active",
+      "workContext": {
+        "targetRoot": "/workspace/product",
+        "targetRevision": "git:initial",
+        "designBundlePath": "/workspace/design",
+        "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
       "direction": {
         "goal": "Make reservation creation reliable and understandable.",
         "successCriteria": [
@@ -530,8 +617,12 @@
         ]
       },
       "completion": {
-        "completionVersion": "0.1.0",
+        "completionVersion": "0.2.0",
         "status": "open",
+        "workContext": {
+          "targetRevision": "git:initial",
+          "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        },
         "criterionResults": []
       },
       "outcomes": []

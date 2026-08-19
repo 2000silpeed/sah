@@ -183,22 +183,37 @@ export type IterationCheckContract = {
   required: boolean;
 };
 
+export type IterationWorkContext = {
+  targetRoot: string;
+  targetRevision: string;
+  designBundlePath: string;
+  designFingerprint: string;
+};
+
+export type IterationEvidenceContext = Pick<
+  IterationWorkContext,
+  "targetRevision" | "designFingerprint"
+>;
+
+export type IterationContextOptions = IterationEvidenceContext;
+
 export type IterationCriterionEvidence = {
   criterionId: string;
   evidenceRefs: string[];
 };
 
 export type IterationCompletion = {
-  completionVersion: "0.1.0";
+  completionVersion: "0.2.0";
   status: "open" | "completed";
+  workContext: IterationEvidenceContext;
   criterionResults: IterationCriterionEvidence[];
   completedAt?: string;
 };
 
 export type IterationLoopResult = {
-  $schema: "https://sah.dev/schemas/iteration-loop-result/v0.2.0";
-  resultVersion: "0.2.0";
-  operation: "evaluated" | "recorded" | "advanced" | "completed";
+  $schema: "https://sah.dev/schemas/iteration-loop-result/v0.3.0";
+  resultVersion: "0.3.0";
+  operation: "evaluated" | "recorded" | "advanced" | "completed" | "bound";
   status: LoopResultStatus;
   loopFile: string;
   loopId?: string;
@@ -210,14 +225,15 @@ export type IterationLoopResult = {
   };
   currentTask?: IterationTaskContract;
   nextTask?: IterationTaskContract;
+  workContext?: IterationWorkContext;
   learningSourceIterationId?: string;
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
 };
 
 export type IterationOutcome = {
-  $schema: "https://sah.dev/schemas/iteration-outcome/v0.3.0";
-  outcomeVersion: "0.3.0";
+  $schema: "https://sah.dev/schemas/iteration-outcome/v0.4.0";
+  outcomeVersion: "0.4.0";
   iterationId: string;
   status: "succeeded" | "partial" | "failed";
   evidence: {
@@ -228,6 +244,7 @@ export type IterationOutcome = {
     cwd: string;
     startedAt: string;
     finishedAt: string;
+    workContext: IterationEvidenceContext;
   };
   checkResults: Array<{
     checkId: string;
@@ -258,9 +275,10 @@ export type IterationChecksResult = {
 };
 
 export type IterationCompletionRequest = {
-  $schema: "https://sah.dev/schemas/iteration-completion/v0.1.0";
-  completionVersion: "0.1.0";
+  $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0";
+  completionVersion: "0.2.0";
   status: "completed";
+  workContext: IterationEvidenceContext;
   criterionResults: IterationCriterionEvidence[];
 };
 

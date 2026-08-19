@@ -28,6 +28,7 @@ import {
   runIterationChecks,
   recordIterationOutcome,
   acceptNextIteration,
+  bindIterationContext,
   completeIterationLoop,
 } from "./iteration-loop.js";
 
@@ -37,9 +38,10 @@ const usage = [
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
   "       sah loop <sah.loop.json> [--json]",
-  "       sah loop-checks <sah.loop.json> --cwd <target-directory> [--json]",
+  "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
+  "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]",
-  "       sah loop-accept-next <sah.loop.json> [--repair] [--json]",
+  "       sah loop-accept-next <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--repair] [--json]",
   "       sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]",
 ].join("\n");
 
@@ -51,6 +53,8 @@ type ParsedArguments = {
   recordPath?: string;
   verificationRecordPath?: string;
   cwd?: string;
+  targetRevision?: string;
+  designFingerprint?: string;
   repair?: boolean;
   error?: string;
 };
@@ -62,6 +66,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let recordPath: string | undefined;
   let verificationRecordPath: string | undefined;
   let cwd: string | undefined;
+  let targetRevision: string | undefined;
+  let designFingerprint: string | undefined;
   let repair = false;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -131,6 +137,32 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       index += 1;
       continue;
     }
+    if (
+      argument === "--target-revision" ||
+      argument === "--design-fingerprint"
+    ) {
+      const current =
+        argument === "--target-revision" ? targetRevision : designFingerprint;
+      if (current !== undefined) {
+        return {
+          positional,
+          json,
+          error: `${argument} may be supplied only once.`,
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: `${argument} requires one value.`,
+        };
+      }
+      if (argument === "--target-revision") targetRevision = value;
+      else designFingerprint = value;
+      index += 1;
+      continue;
+    }
     if (argument === "--record" || argument === "--verification-record") {
       const current =
         argument === "--record" ? recordPath : verificationRecordPath;
@@ -164,6 +196,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     ...(recordPath === undefined ? {} : { recordPath }),
     ...(verificationRecordPath === undefined ? {} : { verificationRecordPath }),
     ...(cwd === undefined ? {} : { cwd }),
+    ...(targetRevision === undefined ? {} : { targetRevision }),
+    ...(designFingerprint === undefined ? {} : { designFingerprint }),
     ...(repair ? { repair: true } : {}),
   };
 }
@@ -361,6 +395,12 @@ function formatLoopHuman(loop: IterationLoopResult): string {
   return [
     title,
     ...(loop.loopId === undefined ? [] : [`Loop: ${loop.loopId}`]),
+    ...(loop.workContext === undefined
+      ? []
+      : [
+          `Target revision: ${loop.workContext.targetRevision}`,
+          `Design fingerprint: ${loop.workContext.designFingerprint}`,
+        ]),
     ...(loop.route === undefined ? [] : [`Route: ${loop.route}`]),
     `Escalation: ${loop.escalation.triggered ? "yes" : "no"}`,
     ...(loop.escalation.ruleRefs.length === 0
@@ -402,6 +442,8 @@ function formatChecksHuman(checks: IterationChecksResult): string {
       : [
           `Iteration: ${checks.outcome.iterationId}`,
           `Evidence cwd: ${checks.outcome.evidence.cwd}`,
+          `Target revision: ${checks.outcome.evidence.workContext.targetRevision}`,
+          `Design fingerprint: ${checks.outcome.evidence.workContext.designFingerprint}`,
           ...checks.outcome.checkResults.map(
             (check) =>
               `Check ${check.checkId}: ${check.status} (exit ${String(check.exitCode)})`,
@@ -460,6 +502,21 @@ async function main(arguments_: string[]): Promise<number> {
 
   if (parsed.cwd !== undefined && positional[0] !== "loop-checks") {
     const invalid = invocationError("--cwd is supported only by loop-checks.");
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  if (
+    (parsed.targetRevision !== undefined ||
+      parsed.designFingerprint !== undefined) &&
+    !["loop-bind", "loop-checks", "loop-accept-next"].includes(
+      positional[0] ?? "",
+    )
+  ) {
+    const invalid = invocationError(
+      "--target-revision and --design-fingerprint are supported only by loop-bind, loop-checks, and loop-accept-next.",
+    );
     process.stdout.write(
       `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
     );
@@ -577,6 +634,26 @@ async function main(arguments_: string[]): Promise<number> {
 
   if (
     positional.length === 2 &&
+    positional[0] === "loop-bind" &&
+    parsed.cwd === undefined &&
+    parsed.repair !== true &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const loop = await bindIterationContext(positional[1] ?? "", {
+      targetRevision: parsed.targetRevision ?? "",
+      designFingerprint: parsed.designFingerprint ?? "",
+    });
+    process.stdout.write(
+      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+    );
+    return exitCode(loop);
+  }
+
+  if (
+    positional.length === 2 &&
     positional[0] === "loop-accept-next" &&
     parsed.cwd === undefined &&
     parsed.sourceMappingPath === undefined &&
@@ -586,6 +663,10 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const loop = await acceptNextIteration(positional[1] ?? "", {
       ...(parsed.repair === true ? { repair: true } : {}),
+      context: {
+        targetRevision: parsed.targetRevision ?? "",
+        designFingerprint: parsed.designFingerprint ?? "",
+      },
     });
     process.stdout.write(
       `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
@@ -622,7 +703,10 @@ async function main(arguments_: string[]): Promise<number> {
     parsed.recordPath === undefined &&
     parsed.verificationRecordPath === undefined
   ) {
-    const checks = await runIterationChecks(positional[1] ?? "", parsed.cwd);
+    const checks = await runIterationChecks(positional[1] ?? "", parsed.cwd, {
+      targetRevision: parsed.targetRevision ?? "",
+      designFingerprint: parsed.designFingerprint ?? "",
+    });
     const output =
       json && checks.outcome !== undefined ? checks.outcome : checks;
     process.stdout.write(

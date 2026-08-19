@@ -8,7 +8,8 @@ read [vision](vision.md), [principles](principles.md), and the
 [the ExecPlan](../.agent/PLANS.md) records live status, decisions, discoveries, and checks;
 [Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md),
 [Runs 8–10](../.agent/plans/run-8-10.md), and
-[Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history.
+[Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history; the
+[Run 21 plan](../.agent/plans/run-21.md) is the active revision-binding handoff.
 
 ## Product and reasoning authority
 
@@ -35,8 +36,8 @@ read [vision](vision.md), [principles](principles.md), and the
 - [Frontier-first loop](frontier-first.md) — owns fast-path execution, escalation, and learning
   around strong coding agents.
 - [Linting contract](linting.md) — owns target-repository lint evidence and failure semantics.
-- [Iteration loop](iteration-loop.md) — owns the canonical fast/reasoning route, outcome recording,
-  and learning-to-next-task projection above S0–S13.
+- [Iteration loop](iteration-loop.md) — owns the canonical fast/reasoning route, explicit
+  revision/fingerprint binding, outcome recording, and learning-to-next-task projection above S0–S13.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -88,6 +89,8 @@ read [vision](vision.md), [principles](principles.md), and the
   successful iteration recording and adds the explicit local check runner.
 - [ADR-0020](adr/0020-close-the-iteration-lifecycle.md) — adds explicit accept/repair transitions
   and a deterministic evidence-backed local product-complete gate.
+- [ADR-0021](adr/0021-bind-iterations-to-explicit-revisions.md) — binds iteration evidence to
+  explicit target and design-bundle revisions without Git discovery.
 
 ## JSON Schema contracts
 
@@ -142,8 +145,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
 - [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome/completion artifacts,
-  executes declared checks, routes risk, records outcomes atomically, accepts/repairs the next
-  task, and enforces the local completion gate.
+  binds explicit target/design context, executes declared checks, routes risk, records outcomes
+  atomically, accepts/repairs the next task, and enforces the local completion gate.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,

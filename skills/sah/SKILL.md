@@ -11,12 +11,15 @@ whose important structural choices remain explainable and checkable—not an arc
 that stops before code.
 
 For repeated product work, use the separate schema-validated iteration loop: `sah loop` routes a
-declared task to `fast`, `reasoning`, or `blocked`; `sah loop-checks --cwd <target>` executes its
-declared checks and emits evidence; `sah loop-record` atomically records an outcome; and
-`sah loop-accept-next` explicitly creates the next planned task (`--repair` is required from a
-blocked iteration). `sah loop-complete` closes the local direction only when every success
-criterion references recorded passing evidence. The loop selects work and gates evidence; S0–S13
-remains the authority for material architecture decisions and S13 completion.
+declared task to `fast`, `reasoning`, or `blocked`; `sah loop-bind` records the caller-supplied
+target revision and design-bundle fingerprint; `sah loop-checks --cwd <target>
+--target-revision <revision> --design-fingerprint <sha256>` executes its declared checks with the
+same explicit context; `sah loop-record` atomically records an outcome;
+and `sah loop-accept-next` explicitly creates the next planned task with its new context (`--repair`
+is required from a blocked iteration). `sah loop-complete` closes the local direction only when
+every success criterion references recorded passing evidence with matching context. The loop
+selects work and gates evidence; S0–S13 remains the authority for material architecture decisions
+and S13 completion.
 
 ## Required references
 
@@ -155,8 +158,10 @@ Keep scope tied to accepted decisions, but allow evidence from implementation to
 stage.
 
 Run the target's formatter/linter, typechecker, tests, and build throughout the implementation
-loop. Use `sah loop-checks --cwd <target>` when the current loop declares these commands; it records
-the exact command, working directory, timestamps, exit code, and output digests. A required
+loop. Bind each iteration to the target revision and design fingerprint, then use
+`sah loop-checks --cwd <target> --target-revision <revision> --design-fingerprint <sha256>` when
+the current loop declares these commands; it records the exact command, working directory,
+timestamps, exit code, and output digests. A required
 non-zero lint result blocks the iteration's done contract, but is not automatically an SAH
 architecture violation. Use changed-scoped SAH
 verification only for fast feedback. Final S13 eligibility requires a new full verification record and an atomic

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
+  "$id": "https://sah.dev/schemas/iteration-loop-result/v0.3.0",
   "title": "SAH Iteration Loop Result",
   "type": "object",
   "additionalProperties": false,
@@ -18,23 +18,23 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
+      "const": "https://sah.dev/schemas/iteration-loop-result/v0.3.0",
       "x-sah-trace": {
         "writtenBy": ["loop evaluator"],
         "readBy": ["CLI", "session consumer"]
       }
     },
     "resultVersion": {
-      "const": "0.2.0",
+      "const": "0.3.0",
       "x-sah-trace": {
         "writtenBy": ["loop evaluator"],
         "readBy": ["CLI", "session consumer"]
       }
     },
     "operation": {
-      "enum": ["evaluated", "recorded", "advanced", "completed"],
+      "enum": ["evaluated", "recorded", "advanced", "completed", "bound"],
       "x-sah-trace": {
-        "writtenBy": ["loop evaluator", "loop recorder"],
+        "writtenBy": ["loop evaluator", "loop recorder", "loop binder"],
         "readBy": ["CLI", "session consumer"]
       }
     },
@@ -58,6 +58,54 @@
       "minLength": 1,
       "x-sah-trace": {
         "writtenBy": ["loop evaluator"],
+        "readBy": ["session consumer"]
+      }
+    },
+    "workContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetRoot",
+        "targetRevision",
+        "designBundlePath",
+        "designFingerprint"
+      ],
+      "properties": {
+        "targetRoot": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator", "loop binder"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "targetRevision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator", "loop binder"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "designBundlePath": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator", "loop binder"],
+            "readBy": ["session consumer"]
+          }
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator", "loop binder"],
+            "readBy": ["session consumer"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator", "loop binder"],
         "readBy": ["session consumer"]
       }
     },
@@ -348,12 +396,18 @@
   },
   "examples": [
     {
-      "$schema": "https://sah.dev/schemas/iteration-loop-result/v0.2.0",
-      "resultVersion": "0.2.0",
+      "$schema": "https://sah.dev/schemas/iteration-loop-result/v0.3.0",
+      "resultVersion": "0.3.0",
       "operation": "evaluated",
       "status": "ready",
       "loopFile": ".sah/sah.loop.json",
       "loopId": "reservation-product",
+      "workContext": {
+        "targetRoot": "/workspace/product",
+        "targetRevision": "git:initial",
+        "designBundlePath": "/workspace/design",
+        "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
       "route": "fast",
       "escalation": { "triggered": false, "ruleRefs": [], "reasons": [] },
       "currentTask": {
