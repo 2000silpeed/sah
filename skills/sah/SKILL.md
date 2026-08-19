@@ -31,6 +31,8 @@ Read these files from this skill package at the point named below:
   changing a design bundle.
 - Read [implementation-and-verification.md](references/implementation-and-verification.md)
   before changing product code or claiming completion.
+- Read [checker-review.md](references/checker-review.md) when the Task contract or risk route
+  requires an independent Checker review before handoff.
 
 Do not load unrelated repository documents speculatively. When the SAH source checkout is
 available, treat its `AGENTS.md`, schemas, and linked authority documents as canonical over these
@@ -51,7 +53,9 @@ Unless the user explicitly narrows the task, continue through this whole loop:
    formatter/linter when the repository defines one;
 8. verify observable architecture constraints and report deterministic, assisted, and judgment
    results separately;
-9. advance lifecycle only through supported public gates and only when their evidence qualifies.
+9. when required by the Task, delegate a read-only independent Checker, validate its
+   revision-bound record, and report its judgment separately;
+10. advance lifecycle only through supported public gates and only when their evidence qualifies.
 
 Do not stop after producing suggestions or JSON when safe, authorized implementation work remains.
 Do not implement a slice whose consequential decision is unresolved.

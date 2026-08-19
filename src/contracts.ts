@@ -28,6 +28,10 @@ export type VerificationCheckStatus =
 export type VerificationStatus =
   "passed" | "violations" | "incomplete" | "operational-error";
 export type ResumeStatus = "ready" | "blocked" | "operational-error";
+export type CheckerReviewVerdict =
+  "approve" | "request-changes" | "blocked" | "incomplete";
+export type CheckerReviewStatus =
+  "passed" | "violations" | "incomplete" | "operational-error";
 export type LoopRoute = "fast" | "reasoning" | "blocked";
 export type LoopResultRoute = LoopRoute | "complete";
 export type LoopResultStatus =
@@ -165,6 +169,68 @@ export type ResumeResult = {
   dependencyOrder: string[];
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
+};
+
+export const checkerReviewSchemaId =
+  "https://sah.dev/schemas/checker-review/v0.1.0" as const;
+
+export type CheckerReview = {
+  $schema: typeof checkerReviewSchemaId;
+  reviewVersion: "0.1.0";
+  reviewId: string;
+  target: {
+    targetRoot: string;
+    targetRevision: string;
+    designFingerprint: string;
+  };
+  scope: {
+    taskRef: string;
+    artifactRefs: string[];
+  };
+  reviewer: {
+    role: "independent-checker";
+    id: string;
+    independent: true;
+    readOnly: true;
+    mutatedTarget: false;
+    benchmarkExpectationsRead: false;
+  };
+  checks: Array<{
+    id: string;
+    classification: ValidationClassification;
+    command: string;
+    cwd: string;
+    status:
+      "passed" | "failed" | "incomplete" | "unsupported" | "operational-error";
+    exitCode: number | null;
+    evidenceRef: string;
+    observed?: string;
+  }>;
+  findings: Array<{
+    id: string;
+    classification: ValidationClassification;
+    severity: "high" | "medium" | "low" | "info";
+    status: "open" | "resolved" | "accepted" | "deferred";
+    message: string;
+    evidenceRefs?: string[];
+  }>;
+  residualRisks: string[];
+  verdict: CheckerReviewVerdict;
+  reviewedAt: string;
+};
+
+export type CheckerReviewResult = {
+  status: CheckerReviewStatus;
+  reviewPath: string;
+  reviewId?: string;
+  verdict?: CheckerReviewVerdict;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
+export type CheckerReviewValidationOptions = {
+  targetRevision?: string;
+  designFingerprint?: string;
 };
 
 export type IterationTaskContract = {

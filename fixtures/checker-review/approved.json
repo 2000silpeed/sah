@@ -1,0 +1,38 @@
+{
+  "$schema": "https://sah.dev/schemas/checker-review/v0.1.0",
+  "reviewVersion": "0.1.0",
+  "reviewId": "fixture-checker-approval",
+  "target": {
+    "targetRoot": "/workspace/target",
+    "targetRevision": "caller:fixture-revision",
+    "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "scope": {
+    "taskRef": "fixture-task",
+    "artifactRefs": ["harness/STATE.md"]
+  },
+  "reviewer": {
+    "role": "independent-checker",
+    "id": "fixture-checker",
+    "independent": true,
+    "readOnly": true,
+    "mutatedTarget": false,
+    "benchmarkExpectationsRead": false
+  },
+  "checks": [
+    {
+      "id": "fixture-full-gate",
+      "classification": "deterministic",
+      "command": "printf fixture",
+      "cwd": "/workspace/target",
+      "status": "passed",
+      "exitCode": 0,
+      "evidenceRef": "artifact://fixture/full-gate",
+      "observed": "fixture check passed"
+    }
+  ],
+  "findings": [],
+  "residualRisks": ["Fixture evidence is not product evidence."],
+  "verdict": "approve",
+  "reviewedAt": "2026-08-20T00:00:00Z"
+}

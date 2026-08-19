@@ -9,7 +9,7 @@ read [vision](vision.md), [principles](principles.md), and the
 [Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md),
 [Runs 8–10](../.agent/plans/run-8-10.md), and
 [Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history; the
-[Run 21 plan](../.agent/plans/run-21.md) is the active revision-binding handoff.
+[Run 22 plan](../.agent/plans/run-22.md) is the completed independent-Checker handoff.
 
 ## Product and reasoning authority
 
@@ -38,6 +38,8 @@ read [vision](vision.md), [principles](principles.md), and the
 - [Linting contract](linting.md) — owns target-repository lint evidence and failure semantics.
 - [Iteration loop](iteration-loop.md) — owns the canonical fast/reasoning route, explicit
   revision/fingerprint binding, outcome recording, and learning-to-next-task projection above S0–S13.
+- [Independent Checker review](checker-review.md) — owns the revision-bound, read-only judgment
+  handoff and its mechanical approval gate.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -91,6 +93,8 @@ read [vision](vision.md), [principles](principles.md), and the
   and a deterministic evidence-backed local product-complete gate.
 - [ADR-0021](adr/0021-bind-iterations-to-explicit-revisions.md) — binds iteration evidence to
   explicit target and design-bundle revisions without Git discovery.
+- [ADR-0022](adr/0022-independent-checker-review-as-a-judgment-gate.md) — promotes a separate
+  read-only Checker review into a portable judgment-gate contract without changing lifecycle authority.
 
 ## JSON Schema contracts
 
@@ -125,13 +129,16 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [result](../schemas/iteration-loop-result.schema.json) — validate loop policy, executable check
   evidence, explicit lifecycle transitions, local completion evidence, and model-neutral
   route/next-task projections.
+- [Checker review](../schemas/checker-review.schema.json) — validates a revision-bound independent
+  read-only review record without promoting judgment to deterministic architecture validation.
 
 ## Runtime implementation and executable fixture
 
 - [Portable SAH skill](../skills/sah/SKILL.md), [host metadata](../skills/sah/agents/openai.yaml),
   and its [elicitation](../skills/sah/references/elicitation-and-method-selection.md),
   [artifact lifecycle](../skills/sah/references/artifacts-and-lifecycle.md), and
-  [implementation/verification](../skills/sah/references/implementation-and-verification.md)
+  [implementation/verification](../skills/sah/references/implementation-and-verification.md), and
+  [Checker review](../skills/sah/references/checker-review.md)
   references — form the shared Codex/Claude Code orchestration package.
 
 - [Package manifest](../package.json) and [lockfile](../package-lock.json) — own exact npm
@@ -141,12 +148,15 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [ESLint configuration](../eslint.config.js) — owns typed lint rules for runtime and tests.
 - [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
   framework-neutral diagnostics, results, stages, `validateBundle`, `advanceBundle`, `verifyBundle`,
-  `runIterationChecks`, `acceptNextIteration`, and `completeIterationLoop`.
+  `runIterationChecks`, `acceptNextIteration`, `completeIterationLoop`, and
+  `validateCheckerReview`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
 - [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome/completion artifacts,
   binds explicit target/design context, executes declared checks, routes risk, records outcomes
   atomically, accepts/repairs the next task, and enforces the local completion gate.
+- [Checker review runtime](../src/checker-review.ts) — validates revision-bound independent review
+  records and reports their mechanical gate without mutating lifecycle state.
 - [Atomic manifest replacement](../src/atomic-manifest.ts) — owns exclusive temporary writes,
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,
@@ -182,6 +192,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   outside benchmark inputs.
 - [Iteration loop fixture](../fixtures/iteration-loop/sah.loop.json) and [outcome](../fixtures/iteration-loop/iteration-001.outcome.json)
   — provide a schema-valid fast-path route and learning projection example.
+- [Checker review fixture](../fixtures/checker-review/approved.json) — provides a minimal valid
+  independent-review record for contract and CLI tests.
 - [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —
   gives filesystem-presence tests one inert target-local regular file outside benchmark data.
 - [TypeScript target mapping](../fixtures/s13-typescript-target/sah.source-map.json),

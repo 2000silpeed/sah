@@ -26,6 +26,11 @@ export type {
   VerificationSummary,
   ResumeResult,
   ResumeStatus,
+  CheckerReview,
+  CheckerReviewResult,
+  CheckerReviewStatus,
+  CheckerReviewVerdict,
+  CheckerReviewValidationOptions,
   IterationCheckContract,
   IterationCompletion,
   IterationCompletionRequest,
@@ -42,6 +47,7 @@ export type {
   LoopResultStatus,
 } from "./contracts.js";
 export { verificationRecordSchemaId } from "./contracts.js";
+export { checkerReviewSchemaId } from "./contracts.js";
 export {
   advanceBundle,
   validateBundle,
@@ -56,3 +62,4 @@ export {
   bindIterationContext,
   completeIterationLoop,
 } from "./iteration-loop.js";
+export { validateCheckerReview } from "./checker-review.js";

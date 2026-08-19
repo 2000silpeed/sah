@@ -15,6 +15,7 @@ import {
   type ResumeResult,
   type IterationChecksResult,
   type IterationLoopResult,
+  type CheckerReviewResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -31,6 +32,7 @@ import {
   bindIterationContext,
   completeIterationLoop,
 } from "./iteration-loop.js";
+import { validateCheckerReview } from "./checker-review.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -43,6 +45,7 @@ const usage = [
   "       sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]",
   "       sah loop-accept-next <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--repair] [--json]",
   "       sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]",
+  "       sah checker-review <checker-review.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]",
 ].join("\n");
 
 type ParsedArguments = {
@@ -359,7 +362,8 @@ function exitCode(
     | VerificationResult
     | ResumeResult
     | IterationChecksResult
-    | IterationLoopResult,
+    | IterationLoopResult
+    | CheckerReviewResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -454,6 +458,25 @@ function formatChecksHuman(checks: IterationChecksResult): string {
   ].join("\n\n");
 }
 
+function formatCheckerReviewHuman(review: CheckerReviewResult): string {
+  const title =
+    review.status === "passed"
+      ? "SAH Checker review passed"
+      : review.status === "violations"
+        ? "SAH Checker review found violations"
+        : review.status === "incomplete"
+          ? "SAH Checker review is incomplete"
+          : "SAH Checker review could not run";
+  return [
+    title,
+    `Review: ${review.reviewPath}`,
+    ...(review.reviewId === undefined ? [] : [`Review id: ${review.reviewId}`]),
+    ...(review.verdict === undefined ? [] : [`Verdict: ${review.verdict}`]),
+    ...review.diagnostics.map(humanDiagnostic),
+    `Summary: ${review.summary.errors} error(s), ${review.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 function formatResumeHuman(resume: ResumeResult): string {
   return [
     resume.status === "ready"
@@ -510,12 +533,15 @@ async function main(arguments_: string[]): Promise<number> {
   if (
     (parsed.targetRevision !== undefined ||
       parsed.designFingerprint !== undefined) &&
-    !["loop-bind", "loop-checks", "loop-accept-next"].includes(
-      positional[0] ?? "",
-    )
+    ![
+      "loop-bind",
+      "loop-checks",
+      "loop-accept-next",
+      "checker-review",
+    ].includes(positional[0] ?? "")
   ) {
     const invalid = invocationError(
-      "--target-revision and --design-fingerprint are supported only by loop-bind, loop-checks, and loop-accept-next.",
+      "--target-revision and --design-fingerprint are supported only by loop-bind, loop-checks, loop-accept-next, and checker-review.",
     );
     process.stdout.write(
       `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
@@ -731,6 +757,30 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "checker-review" &&
+    parsed.cwd === undefined &&
+    parsed.repair !== true &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined
+  ) {
+    const review = await validateCheckerReview(positional[1] ?? "", {
+      ...(parsed.targetRevision === undefined
+        ? {}
+        : { targetRevision: parsed.targetRevision }),
+      ...(parsed.designFingerprint === undefined
+        ? {}
+        : { designFingerprint: parsed.designFingerprint }),
+    });
+    process.stdout.write(
+      `${json ? JSON.stringify(review, null, 2) : formatCheckerReviewHuman(review)}\n`,
+    );
+    return exitCode(review);
   }
 
   const invalid = invocationError(

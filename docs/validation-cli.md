@@ -34,6 +34,7 @@ sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <targ
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
 sah loop-accept-next <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--repair] [--json]
 sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]
+sah checker-review <checker-review.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -57,6 +58,8 @@ npm exec -- sah loop-record /path/to/target/.sah/sah.loop.json /path/to/target/.
 npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --target-revision git:def456 --design-fingerprint sha256:<64-lowercase-hex> --json
 npm exec -- sah loop-accept-next /path/to/target/.sah/sah.loop.json --repair --target-revision git:def456 --design-fingerprint sha256:<64-lowercase-hex> --json
 npm exec -- sah loop-complete /path/to/target/.sah/sah.loop.json /path/to/target/.sah/completion.json --json
+npm exec -- sah checker-review /path/to/target/.sah/checker-review.json --json
+npm exec -- sah checker-review /path/to/target/.sah/checker-review.json --target-revision git:abc123 --design-fingerprint sha256:<64-lowercase-hex> --json
 ```
 
 `advance`, `loop-bind`, `loop-record`, `loop-accept-next`, and `loop-complete` mutate their canonical files, so
@@ -68,8 +71,17 @@ Context mismatches are deterministic blocked results and do not write files. SAH
 state or hashes target source trees.
 `verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
+`checker-review` is read-only and validates one caller-produced, revision-bound independent
+Checker record. It does not run the recorded commands, invoke a reviewer, mutate a loop, or
+advance a lifecycle stage. Its `passed` result is limited to a mechanically consistent
+`approve` verdict: every listed check must have status `passed` and exit code `0`, and no open
+high/medium finding may remain. The verdict is judgment evidence and remains separate from
+deterministic architecture validation. When supplied, `--target-revision` and
+`--design-fingerprint` are explicit expected context and any mismatch is a non-passing result;
+SAH never discovers either value.
 Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
-`AdvanceResult`, `VerificationResult`, `IterationLoopResult`, or a schema-valid iteration outcome)
+`AdvanceResult`, `VerificationResult`, `IterationLoopResult`, `CheckerReviewResult`, or a
+schema-valid iteration outcome)
 and no prose. Validation diagnostics preserve stable
 code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
 repair, and owning stage when applicable. Verification checks preserve constraint, decision,
@@ -92,9 +104,9 @@ previously published evidence.
 
 | Exit | Meaning                                                                                                                      |
 | ---: | ---------------------------------------------------------------------------------------------------------------------------- |
-|    0 | Validation passed, advancement committed, or all selected verification checks passed.                                        |
-|    1 | Valid input has validation/gate errors, advancement is blocked, or target facts violate a deterministic constraint.          |
-|    2 | Invocation/operation failed, or verification is incomplete because a review, blocker, unsafe binding, or adapter is pending. |
+|    0 | Validation passed, advancement committed, all selected verification checks passed, or a Checker approval passed its mechanical gate. |
+|    1 | Valid input has validation/gate errors, advancement is blocked, target facts violate a deterministic constraint, or a Checker requests changes. |
+|    2 | Invocation/operation failed, or verification/review is incomplete because a blocker, unsafe binding, missing evidence, or adapter is pending. |
 
 The loop command maps `fast`/ready, an accepted next iteration, and `complete` to exit 0;
 `reasoning`/escalate, blocked transitions, and completion-gate failures to exit 1; and malformed
@@ -242,6 +254,7 @@ import {
   bindIterationContext,
   runIterationChecks,
   recordIterationOutcome,
+  validateCheckerReview,
   validateBundle,
   verifyBundle,
   type AdvanceOptions,
@@ -278,6 +291,9 @@ const next = await recordIterationOutcome(
   ".sah/sah.loop.json",
   ".sah/iteration-001.outcome.json",
 );
+const checker = await validateCheckerReview(
+  ".sah/checker-review.json",
+);
 ```
 
 Validation `status` is `passed`, `violations`, or `operational-error`. Advancement `status` is
@@ -297,6 +313,11 @@ design fingerprint for a planned/in-progress iteration. `runIterationChecks` req
 context and a matching target root; outcomes carry that context so stale evidence cannot be
 recorded or complete the loop. Loop output is schema-tagged and does not alter design-bundle
 lifecycle or S13 evidence.
+
+`validateCheckerReview` reads and validates the independent Checker record without running its
+commands or mutating any file. Its `CheckerReviewResult` status is `passed`, `violations`,
+`incomplete`, or `operational-error`; it reports the supplied judgment verdict and deterministic
+mechanical diagnostics separately.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in

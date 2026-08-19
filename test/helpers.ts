@@ -20,6 +20,12 @@ export const iterationLoopFixtureDirectory = join(
   "fixtures",
   "iteration-loop",
 );
+export const checkerReviewFixturePath = join(
+  repositoryRoot,
+  "fixtures",
+  "checker-review",
+  "approved.json",
+);
 export const cliPath = join(repositoryRoot, "dist", "cli.js");
 
 const temporaryDirectories: string[] = [];
@@ -54,6 +60,14 @@ export async function copyIterationLoop(): Promise<string> {
   await cp(iterationLoopFixtureDirectory, loop, { recursive: true });
   temporaryDirectories.push(root);
   return loop;
+}
+
+export async function copyCheckerReview(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-checker-review-test-"));
+  const review = join(root, "checker-review.json");
+  await cp(checkerReviewFixturePath, review);
+  temporaryDirectories.push(root);
+  return review;
 }
 
 export async function mutateJson<T>(

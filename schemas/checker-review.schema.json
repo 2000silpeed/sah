@@ -1,0 +1,397 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/checker-review/v0.1.0",
+  "title": "SAH Independent Checker Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "reviewVersion",
+    "reviewId",
+    "target",
+    "scope",
+    "reviewer",
+    "checks",
+    "findings",
+    "residualRisks",
+    "verdict",
+    "reviewedAt"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/checker-review/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner", "session consumer"]
+      }
+    },
+    "reviewVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "session consumer"]
+      }
+    },
+    "reviewId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner"]
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetRoot", "targetRevision", "designFingerprint"],
+      "properties": {
+        "targetRoot": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["independent Checker"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "targetRevision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["independent Checker"],
+            "readBy": [
+              "SAH review validator",
+              "target owner",
+              "session consumer"
+            ]
+          }
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["independent Checker"],
+            "readBy": [
+              "SAH review validator",
+              "target owner",
+              "session consumer"
+            ]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner", "session consumer"]
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskRef", "artifactRefs"],
+      "properties": {
+        "taskRef": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["independent Checker"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "artifactRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["independent Checker"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner"]
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "id",
+        "independent",
+        "readOnly",
+        "mutatedTarget",
+        "benchmarkExpectationsRead"
+      ],
+      "properties": {
+        "role": {
+          "const": "independent-checker",
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "independent": {
+          "const": true,
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "readOnly": {
+          "const": true,
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "mutatedTarget": {
+          "const": false,
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        },
+        "benchmarkExpectationsRead": {
+          "const": false,
+          "x-sah-trace": {
+            "writtenBy": ["review host"],
+            "readBy": ["SAH review validator", "target owner"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["review host"],
+        "readBy": ["SAH review validator", "target owner"]
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "classification",
+          "command",
+          "cwd",
+          "status",
+          "exitCode",
+          "evidenceRef"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "classification": {
+            "enum": ["deterministic", "assisted", "judgment"],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "incomplete",
+              "unsupported",
+              "operational-error"
+            ],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "exitCode": {
+            "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "evidenceRef": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "observed": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["independent Checker"],
+          "readBy": ["SAH review validator", "target owner"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner"]
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classification", "severity", "status", "message"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "classification": {
+            "enum": ["deterministic", "assisted", "judgment"],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "severity": {
+            "enum": ["high", "medium", "low", "info"],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "status": {
+            "enum": ["open", "resolved", "accepted", "deferred"],
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker", "target owner"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["independent Checker"],
+              "readBy": ["SAH review validator", "target owner"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["independent Checker"],
+          "readBy": ["SAH review validator", "target owner"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "target owner"]
+      }
+    },
+    "residualRisks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["target owner", "session consumer"]
+      }
+    },
+    "verdict": {
+      "enum": ["approve", "request-changes", "blocked", "incomplete"],
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["target owner", "session consumer"]
+      }
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-sah-trace": {
+        "writtenBy": ["independent Checker"],
+        "readBy": ["SAH review validator", "session consumer"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/checker-review/v0.1.0",
+      "reviewVersion": "0.1.0",
+      "reviewId": "f-001-checker-835e4fe",
+      "target": {
+        "targetRoot": "/workspace/target",
+        "targetRevision": "git:835e4fe",
+        "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "scope": {
+        "taskRef": "F-001",
+        "artifactRefs": ["harness/STATE.md", "harness/feature-list.json"]
+      },
+      "reviewer": {
+        "role": "independent-checker",
+        "id": "checker-session-001",
+        "independent": true,
+        "readOnly": true,
+        "mutatedTarget": false,
+        "benchmarkExpectationsRead": false
+      },
+      "checks": [
+        {
+          "id": "full-gate",
+          "classification": "deterministic",
+          "command": "bash scripts/verify.sh full",
+          "cwd": "/workspace/target",
+          "status": "passed",
+          "exitCode": 0,
+          "evidenceRef": "ci://harness-audit/1",
+          "observed": "full gate passed"
+        }
+      ],
+      "findings": [],
+      "residualRisks": ["External integrations remain deferred."],
+      "verdict": "approve",
+      "reviewedAt": "2026-08-20T00:00:00Z"
+    }
+  ]
+}

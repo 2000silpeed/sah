@@ -13,6 +13,7 @@ const skillFiles = [
   "references/elicitation-and-method-selection.md",
   "references/artifacts-and-lifecycle.md",
   "references/implementation-and-verification.md",
+  "references/checker-review.md",
 ] as const;
 
 async function readSkillFile(
@@ -74,6 +75,11 @@ describe("portable SAH Agent Skill", () => {
     expect(implementation).toContain("S13 lifecycle");
     expect(skill).toContain("formatter/linter");
     expect(implementation).toContain("target-check failure");
+    const checkerReview = await readSkillFile("references/checker-review.md");
+    expect(skill).toContain("references/checker-review.md");
+    expect(checkerReview).toContain("independent-checker");
+    expect(checkerReview).toContain("sah checker-review");
+    expect(checkerReview).toContain("read-only");
   });
 
   it("keeps the package concise, placeholder-free, and linked from product docs", async () => {
@@ -104,6 +110,7 @@ describe("portable SAH Agent Skill", () => {
     expect(guide).toContain("npm exec -- sah validate");
     expect(guide).toContain("Use $sah");
     expect(guide).toContain("/sah");
+    expect(index).toContain("checker-review.md");
 
     for (const landingPage of [readme, koreanReadme]) {
       expect(landingPage).toContain("~/.agents/skills");

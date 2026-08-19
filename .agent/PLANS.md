@@ -394,7 +394,7 @@ review triggers.
 ### Handoff
 
 After Run 20, local continuation and termination are explicit and evidence-backed. Run 21 may bind iterations to repository/design-bundle revisions, but must not fold that authority into this slice.
-
 ## Run 21 ExecPlan — 2026-08-19
 
 See the [Run 21 plan](plans/run-21.md) for the completed binding, no-Git, atomicity, and verification contract; the Run 21 milestone commit records this handoff.
+## Run 22 ExecPlan — 2026-08-20 ([plan](plans/run-22.md); complete)

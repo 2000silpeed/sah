@@ -30,6 +30,7 @@ const schemaFiles = [
   "iteration-outcome.schema.json",
   "iteration-loop.schema.json",
   "iteration-loop-result.schema.json",
+  "checker-review.schema.json",
 ] as const;
 
 const schemaDirectory = fileURLToPath(new URL("../schemas/", import.meta.url));

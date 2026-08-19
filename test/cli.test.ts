@@ -8,6 +8,8 @@ import type { Stage } from "../src/contracts.js";
 import {
   cleanupFixtures,
   cliPath,
+  checkerReviewFixturePath,
+  copyCheckerReview,
   copyFixture,
   copyIterationLoop,
   copyTypeScriptTarget,
@@ -67,6 +69,59 @@ describe("sah resume CLI", () => {
     expect(output.bundleFingerprint).toMatch(/^sha256:[a-f0-9]{64}$/u);
     expect(output.nextAction).toBe("implement-ready-slices");
     expect(output.readySliceRefs).toContain("implement-equipment-operations");
+  });
+});
+
+describe("sah checker-review CLI", () => {
+  it("validates a revision-bound independent approval", async () => {
+    const execution = await runCli([
+      "checker-review",
+      checkerReviewFixturePath,
+      "--target-revision",
+      "caller:fixture-revision",
+      "--design-fingerprint",
+      "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      reviewId: string;
+      verdict: string;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.status).toBe("passed");
+    expect(output.reviewId).toBe("fixture-checker-approval");
+    expect(output.verdict).toBe("approve");
+  });
+
+  it("returns exit 1 for an approval with an open high finding", async () => {
+    const reviewPath = await copyCheckerReview();
+    const review = JSON.parse(await readFile(reviewPath, "utf8")) as {
+      findings: Array<Record<string, unknown>>;
+    };
+    review.findings = [
+      {
+        id: "open-security-finding",
+        classification: "judgment",
+        severity: "high",
+        status: "open",
+        message: "The review scope leaves a security boundary unresolved.",
+      },
+    ];
+    await writeFile(reviewPath, `${JSON.stringify(review)}\n`);
+
+    const execution = await runCli(["checker-review", reviewPath, "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("violations");
+    expect(output.diagnostics.map(({ code }) => code)).toContain(
+      "CHECKER_REVIEW_APPROVAL_OPEN_FINDING",
+    );
   });
 });
 

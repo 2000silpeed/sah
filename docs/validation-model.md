@@ -61,6 +61,8 @@ has no complete observable specification.
 | Implementation dependency order                                  |     D | Slice references resolve with no self-dependency or cycle.                                                                 |
 | Implementation handoff adequacy                                  |     J | Judge slice cohesion, acceptance checks, migration, rollback, and executable usefulness.                                   |
 | Verification record integrity                                    |     D | Record schema, byte digest, bundle metadata, invocation scope, result summaries, and design fingerprint.                   |
+| Checker review record integrity                                  |     D | Require revision/fingerprint context, independent read-only flags, exact check evidence, and a valid verdict shape.    |
+| Checker review adequacy                                           |     J | Judge residual risks, counter-evidence, and whether the independent review actually covers the Task scope.              |
 | S13 completion evidence                                          |     D | Full passed record with one current passing check per S12-assigned constraint; changed scope cannot qualify.               |
 | Source-to-element mapping syntax                                 |     D | Configured path/symbol selectors resolve uniquely or fail as unsupported.                                                  |
 | Source-to-element mapping inference                              |     A | Suggest mappings from paths/symbols/ownership; human confirms before hard checks.                                          |
@@ -104,7 +106,9 @@ than silently accepting.
    decision and evidence fingerprint.
 4. Schedule judgment review when an assumption is falsified, a quality threshold trends out
    of bounds, repeated exceptions accumulate, or a decision's review trigger fires.
-5. Route a code contradiction to implementation repair, a mapping gap to adapter backlog,
+5. When a Task requires a second pair of eyes, delegate a read-only independent Checker and
+   validate its revision-bound record; keep its adequacy as judgment evidence.
+6. Route a code contradiction to implementation repair, a mapping gap to adapter backlog,
    and changed design forces to the earliest S0–S10 stage.
 
 ## Executable structural slice
