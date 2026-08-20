@@ -48,7 +48,7 @@ expectations, and changes to S0–S13 or S13 completion authority.
 | 2 | Add scenario/slice schemas, types, examples, and traces | complete |
 | 3 | Implement runtime evidence and completion gates | complete |
 | 4 | Update CLI projections, skill/docs, and focused tests | complete |
-| 5 | Full verification, independent Checker, commit, and push | in_progress |
+| 5 | Full verification, independent Checker, commit, and push | complete |
 
 ## Decision and discovery log
 
@@ -82,10 +82,18 @@ error results. Preserve benchmark files unchanged.
   remains honestly `incomplete` where its adapter is unsupported.
 - Markdown links (57 files), document budgets, and `git diff --check` pass. No benchmark file was
   changed.
+- 2026-08-20: Independent Checker `R-023-checker-a0db4a8` approved the exact implementation
+  revision `a0db4a84a4244589aed07da870e93dc4bcc35215` with fingerprint
+  `sha256:cc8663147472dc70644fd5feb6aabac0bfd0cc6dd4403bad7cc4ee419d9fa261`. It re-ran 259
+  tests, schema/trace and static gates, disposable CLI adversarial cases, delimiter-bearing IDs,
+  stale-context atomicity, and exit 0/1/2 checks without mutating the target or reading benchmarks.
+- 2026-08-20: Exact-context `sah checker-review` returned `status=passed`, `verdict=approve`, and
+  zero diagnostics. Review artifacts are the canonical JSON plus its Markdown view under
+  `harness/reviews/`.
 
 ## Handoff
 
-Before implementation, read this plan and ADR-0023. After each milestone update this plan with
-discoveries and exact evidence. The next agent/session can resume from the schema-valid loop file,
-its explicit work context, current slice, and structured scenario evidence without relying on
-conversation memory.
+Run 23 is complete. The next agent/session can resume from the schema-valid loop file, its explicit
+work context, current slice, and structured scenario evidence without relying on conversation
+memory. Future changes must reread this plan and ADR-0023, preserve the additive compatibility
+contract, and reopen the earliest invalid premise if scenario evidence semantics change.

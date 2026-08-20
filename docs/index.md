@@ -140,6 +140,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   and acceptance-check references carried by an iteration task.
 - [Checker review](../schemas/checker-review.schema.json) — validates a revision-bound independent
   read-only review record without promoting judgment to deterministic architecture validation.
+- [Run 23 Checker review](../harness/reviews/R-023-checker-a0db4a8.json) — records the exact
+  independent approval for the scenario-centered loop implementation; Markdown is its human view.
 
 ## Runtime implementation and executable fixture
 
