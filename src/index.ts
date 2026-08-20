@@ -40,13 +40,20 @@ export type {
   IterationLoopResult,
   IterationChecksResult,
   IterationOutcome,
+  IterationScenario,
+  IterationScenarioEvidence,
+  IterationSliceContract,
   IterationTaskContract,
   IterationWorkContext,
   LoopRoute,
   LoopResultRoute,
   LoopResultStatus,
 } from "./contracts.js";
-export { verificationRecordSchemaId } from "./contracts.js";
+export {
+  iterationScenarioSchemaId,
+  iterationSliceSchemaId,
+  verificationRecordSchemaId,
+} from "./contracts.js";
 export { checkerReviewSchemaId } from "./contracts.js";
 export {
   advanceBundle,

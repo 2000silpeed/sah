@@ -406,6 +406,13 @@ function formatLoopHuman(loop: IterationLoopResult): string {
           `Design fingerprint: ${loop.workContext.designFingerprint}`,
         ]),
     ...(loop.route === undefined ? [] : [`Route: ${loop.route}`]),
+    ...(loop.scenarios === undefined
+      ? []
+      : [
+          `Scenarios: ${loop.scenarios
+            .map(({ id, expectedOutcome }) => `${id} (${expectedOutcome})`)
+            .join(" | ")}`,
+        ]),
     `Escalation: ${loop.escalation.triggered ? "yes" : "no"}`,
     ...(loop.escalation.ruleRefs.length === 0
       ? []
@@ -416,9 +423,19 @@ function formatLoopHuman(loop: IterationLoopResult): string {
     ...(loop.currentTask === undefined
       ? []
       : [`Current task: ${loop.currentTask.goal}`]),
+    ...(loop.currentTask?.slice === undefined
+      ? []
+      : [
+          `Current slice: ${loop.currentTask.slice.id} scenarios=${loop.currentTask.slice.scenarioRefs.join(",")} acceptance=${loop.currentTask.slice.acceptanceCheckIds.join(",")}`,
+        ]),
     ...(loop.nextTask === undefined
       ? []
       : [`Next task: ${loop.nextTask.goal}`]),
+    ...(loop.nextTask?.slice === undefined
+      ? []
+      : [
+          `Next slice: ${loop.nextTask.slice.id} scenarios=${loop.nextTask.slice.scenarioRefs.join(",")} acceptance=${loop.nextTask.slice.acceptanceCheckIds.join(",")}`,
+        ]),
     ...(loop.learningSourceIterationId === undefined
       ? []
       : [`Learned from: ${loop.learningSourceIterationId}`]),
@@ -448,6 +465,16 @@ function formatChecksHuman(checks: IterationChecksResult): string {
           `Evidence cwd: ${checks.outcome.evidence.cwd}`,
           `Target revision: ${checks.outcome.evidence.workContext.targetRevision}`,
           `Design fingerprint: ${checks.outcome.evidence.workContext.designFingerprint}`,
+          ...(checks.outcome.sliceEvidence === undefined
+            ? []
+            : [
+                `Slice evidence: ${checks.outcome.sliceEvidence
+                  .map(
+                    ({ scenarioId, evidenceRefs }) =>
+                      `${scenarioId}=${evidenceRefs.join(",")}`,
+                  )
+                  .join(" | ")}`,
+              ]),
           ...checks.outcome.checkResults.map(
             (check) =>
               `Check ${check.checkId}: ${check.status} (exit ${String(check.exitCode)})`,

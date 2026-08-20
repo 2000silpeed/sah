@@ -16,10 +16,12 @@ target revision and design-bundle fingerprint; `sah loop-checks --cwd <target>
 --target-revision <revision> --design-fingerprint <sha256>` executes its declared checks with the
 same explicit context; `sah loop-record` atomically records an outcome;
 and `sah loop-accept-next` explicitly creates the next planned task with its new context (`--repair`
-is required from a blocked iteration). `sah loop-complete` closes the local direction only when
-every success criterion references recorded passing evidence with matching context. The loop
-selects work and gates evidence; S0–S13 remains the authority for material architecture decisions
-and S13 completion.
+is required from a blocked iteration). For agile product work, declare user-observable
+`direction.scenarios` and select them in a task `slice` with explicit acceptance check IDs;
+`sah loop-checks` emits their structured evidence and `sah loop-record` gates a succeeded slice on
+passing exit-zero acceptance checks. `sah loop-complete` additionally requires exact scenario
+coverage when scenarios are declared. The loop selects work and gates evidence; S0–S13 remains
+the authority for material architecture decisions and S13 completion.
 
 ## Required references
 
@@ -105,7 +107,8 @@ evidence for answers already present. Then follow the question loop in the elici
 
 Ask one or two questions at a time, prioritized by decision impact, uncertainty, and inability to
 observe the answer locally. Explain briefly what decision the answer affects. Use each response to
-choose the next question; do not dump a generic questionnaire.
+choose the next question; do not dump a generic questionnaire. For a missing user scenario or
+acceptance boundary, ask before inventing an outcome.
 
 Continue asking while a missing answer could change scope, a critical invariant, consistency,
 authority, security/privacy, failure recovery, a hard constraint, or an expensive architecture
@@ -165,7 +168,7 @@ Run the target's formatter/linter, typechecker, tests, and build throughout the 
 loop. Bind each iteration to the target revision and design fingerprint, then use
 `sah loop-checks --cwd <target> --target-revision <revision> --design-fingerprint <sha256>` when
 the current loop declares these commands; it records the exact command, working directory,
-timestamps, exit code, and output digests. A required
+timestamps, exit code, output digests, and any declared slice evidence. A required
 non-zero lint result blocks the iteration's done contract, but is not automatically an SAH
 architecture violation. Use changed-scoped SAH
 verification only for fast feedback. Final S13 eligibility requires a new full verification record and an atomic

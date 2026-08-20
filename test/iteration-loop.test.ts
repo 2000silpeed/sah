@@ -12,7 +12,13 @@ import {
   bindIterationContext,
   completeIterationLoop,
 } from "../src/iteration-loop.js";
-import type { IterationContextOptions } from "../src/contracts.js";
+import type {
+  IterationCheckContract,
+  IterationCompletionRequest,
+  IterationContextOptions,
+  IterationScenario,
+  IterationSliceContract,
+} from "../src/contracts.js";
 import { loadSchemaRegistry } from "../src/schema-validation.js";
 
 const temporaryDirectories: string[] = [];
@@ -163,6 +169,50 @@ async function createLoop(signal = "local-reversible"): Promise<{
     )}\n`,
   );
   return { directory, loop, outcome, context };
+}
+
+async function createScenarioLoop(): Promise<{
+  directory: string;
+  loop: string;
+  outcome: string;
+  context: IterationContextOptions;
+}> {
+  const created = await createLoop();
+  const model = JSON.parse(await readFile(created.loop, "utf8")) as {
+    direction: { scenarios?: IterationScenario[] };
+    currentIteration: {
+      taskContract: {
+        checks?: IterationCheckContract[];
+        slice?: IterationSliceContract;
+      };
+      checks: IterationCheckContract[];
+    };
+  };
+  const scenario: IterationScenario = {
+    id: "create-reservation",
+    description: "A user creates one reservation from the first-run flow.",
+    expectedOutcome:
+      "A confirmation is visible after the reservation is accepted.",
+  };
+  const scenarioCheck: IterationCheckContract = {
+    id: "reservation-e2e",
+    kind: "test",
+    command: 'node -e "process.exit(0)"',
+    expected: "exit 0",
+    required: true,
+  };
+  model.direction.scenarios = [scenario];
+  model.currentIteration.checks.push(scenarioCheck);
+  model.currentIteration.taskContract.checks = [
+    ...model.currentIteration.checks,
+  ];
+  model.currentIteration.taskContract.slice = {
+    id: "reservation-first-run",
+    scenarioRefs: [scenario.id],
+    acceptanceCheckIds: [scenarioCheck.id],
+  };
+  await writeFile(created.loop, `${JSON.stringify(model, null, 2)}\n`);
+  return created;
 }
 
 describe("iteration loop", () => {
@@ -488,6 +538,109 @@ describe("iteration loop", () => {
           "iteration-outcome",
         ),
       ).toEqual([]);
+  });
+
+  it("emits scenario evidence and rejects a succeeded slice without it", async () => {
+    const { loop, outcome, context } = await createScenarioLoop();
+    const checks = await runIterationChecks(loop, process.cwd(), context);
+
+    expect(checks.status).toBe("passed");
+    expect(checks.outcome?.sliceEvidence).toEqual([
+      {
+        scenarioId: "create-reservation",
+        evidenceRefs: ["iteration-1:reservation-e2e"],
+      },
+    ]);
+
+    const invalid = checks.outcome;
+    expect(invalid).toBeDefined();
+    if (invalid === undefined) return;
+    delete invalid.sliceEvidence;
+    await writeFile(outcome, `${JSON.stringify(invalid, null, 2)}\n`);
+    const result = await recordIterationOutcome(loop, outcome);
+
+    expect(result.status).toBe("blocked");
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_SLICE_SCENARIO_EVIDENCE_MISSING",
+    );
+    expect(
+      (JSON.parse(await readFile(loop, "utf8")) as { outcomes: unknown[] })
+        .outcomes,
+    ).toHaveLength(0);
+  });
+
+  it("projects a selected slice across sessions and gates scenario completion", async () => {
+    const { loop, outcome, directory, context } = await createScenarioLoop();
+    const checks = await runIterationChecks(loop, process.cwd(), context);
+    expect(checks.outcome).toBeDefined();
+    if (checks.outcome === undefined) return;
+    checks.outcome.learnings = [
+      {
+        id: "learning-scenario",
+        observation: "The next increment should preserve the reservation flow.",
+        priority: "should",
+        nextTask: {
+          goal: "Preserve the reservation flow",
+          context: ["src/reservations"],
+          constraints: ["preserve reservation authority"],
+          doneWhen: ["the reservation scenario passes"],
+          checks: [
+            {
+              id: "reservation-e2e",
+              kind: "test",
+              command: 'node -e "process.exit(0)"',
+              expected: "exit 0",
+              required: true,
+            },
+          ],
+          slice: {
+            id: "reservation-first-run-next",
+            scenarioRefs: ["create-reservation"],
+            acceptanceCheckIds: ["reservation-e2e"],
+          },
+        },
+      },
+    ];
+    await writeFile(outcome, `${JSON.stringify(checks.outcome, null, 2)}\n`);
+    const recorded = await recordIterationOutcome(loop, outcome);
+    expect(recorded.status).toBe("ready");
+    expect(recorded.scenarios?.[0]?.id).toBe("create-reservation");
+    expect(recorded.nextTask?.slice?.scenarioRefs).toEqual([
+      "create-reservation",
+    ]);
+
+    const completion = join(directory, "scenario-completion.json");
+    const request: IterationCompletionRequest = {
+      $schema: "https://sah.dev/schemas/iteration-completion/v0.2.0",
+      completionVersion: "0.2.0",
+      status: "completed" as const,
+      workContext: context,
+      criterionResults: [
+        { criterionId: "criterion-1", evidenceRefs: ["iteration-1:lint"] },
+      ],
+    };
+    await writeFile(completion, `${JSON.stringify(request, null, 2)}\n`);
+    const missingScenario = await completeIterationLoop(loop, completion);
+    expect(missingScenario.status).toBe("blocked");
+    expect(missingScenario.diagnostics.map(({ code }) => code)).toContain(
+      "ITERATION_COMPLETION_SCENARIO_MISSING",
+    );
+
+    request.scenarioResults = [
+      {
+        scenarioId: "create-reservation",
+        evidenceRefs: ["iteration-1:reservation-e2e"],
+      },
+    ];
+    await writeFile(completion, `${JSON.stringify(request, null, 2)}\n`);
+    const completed = await completeIterationLoop(loop, completion);
+    expect(completed.status).toBe("complete");
+    const persisted = JSON.parse(await readFile(loop, "utf8")) as {
+      completion: { scenarioResults?: Array<{ scenarioId: string }> };
+    };
+    expect(persisted.completion.scenarioResults?.[0]?.scenarioId).toBe(
+      "create-reservation",
+    );
   });
 
   it("retains failed evidence as blocked instead of completing the iteration", async () => {

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-slice/v0.1.0",
+  "title": "SAH Iteration Vertical Slice Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scenarioRefs", "acceptanceCheckIds"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["iteration planner", "coding agent"],
+        "readBy": ["loop evaluator", "loop recorder", "session consumer"]
+      }
+    },
+    "scenarioRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["iteration planner", "coding agent"],
+        "readBy": ["loop evaluator", "loop recorder", "completion gate"]
+      }
+    },
+    "acceptanceCheckIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "x-sah-trace": {
+        "writtenBy": ["iteration planner", "coding agent"],
+        "readBy": ["loop evaluator", "loop recorder", "completion gate"]
+      }
+    }
+  },
+  "x-sah-trace": {
+    "writtenBy": ["iteration planner", "coding agent"],
+    "readBy": ["loop evaluator", "loop recorder", "session consumer"]
+  },
+  "examples": [
+    {
+      "id": "reservation-first-run",
+      "scenarioRefs": ["create-reservation"],
+      "acceptanceCheckIds": ["reservation-e2e"]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://sah.dev/schemas/iteration-loop/v0.4.0",
+  "loopVersion": "0.4.0",
+  "loopId": "reservation-scenario-product",
+  "status": "active",
+  "workContext": {
+    "targetRoot": "/workspace/product",
+    "targetRevision": "git:initial",
+    "designBundlePath": "/workspace/design",
+    "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "direction": {
+    "goal": "Make reservation creation understandable.",
+    "successCriteria": [
+      {
+        "id": "success-1",
+        "description": "A user can create one valid reservation."
+      }
+    ],
+    "scenarios": [
+      {
+        "id": "create-reservation",
+        "description": "A user creates one reservation from the first-run flow.",
+        "expectedOutcome": "A confirmation is visible after the reservation is accepted."
+      }
+    ]
+  },
+  "policy": {
+    "defaultRoute": "fast",
+    "rules": []
+  },
+  "currentIteration": {
+    "id": "iteration-001",
+    "goal": "Make the first reservation flow usable.",
+    "status": "planned",
+    "riskSignals": ["local-reversible"],
+    "taskContract": {
+      "goal": "Make the first reservation flow usable.",
+      "context": ["src/reservations"],
+      "constraints": ["preserve reservation authority"],
+      "doneWhen": ["the reservation scenario passes"],
+      "checks": [
+        {
+          "id": "reservation-e2e",
+          "kind": "test",
+          "command": "npm test -- reservation",
+          "expected": "exit 0",
+          "required": true
+        }
+      ],
+      "slice": {
+        "id": "reservation-first-run",
+        "scenarioRefs": ["create-reservation"],
+        "acceptanceCheckIds": ["reservation-e2e"]
+      }
+    },
+    "checks": [
+      {
+        "id": "reservation-e2e",
+        "kind": "test",
+        "command": "npm test -- reservation",
+        "expected": "exit 0",
+        "required": true
+      }
+    ]
+  },
+  "completion": {
+    "completionVersion": "0.2.0",
+    "status": "open",
+    "workContext": {
+      "targetRevision": "git:initial",
+      "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "criterionResults": []
+  },
+  "outcomes": []
+}

@@ -9,7 +9,9 @@ read [vision](vision.md), [principles](principles.md), and the
 [Runs 1–3](../.agent/plans/run-1-3.md), [Runs 4–7](../.agent/plans/run-4-7.md),
 [Runs 8–10](../.agent/plans/run-8-10.md), and
 [Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history; the
-[Run 22 plan](../.agent/plans/run-22.md) is the completed independent-Checker handoff.
+[Run 22 plan](../.agent/plans/run-22.md) is the completed independent-Checker handoff; the
+[Run 23 plan](../.agent/plans/run-23.md) records the active scenario-centered vertical-slice
+extension.
 
 ## Product and reasoning authority
 
@@ -40,6 +42,8 @@ read [vision](vision.md), [principles](principles.md), and the
   revision/fingerprint binding, outcome recording, and learning-to-next-task projection above S0–S13.
 - [Independent Checker review](checker-review.md) — owns the revision-bound, read-only judgment
   handoff and its mechanical approval gate.
+- [Scenario-centered iteration](iteration-loop.md) — owns user-observable scenario contracts,
+  vertical-slice acceptance evidence, and cross-session slice continuation above S0–S13.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
@@ -95,6 +99,8 @@ read [vision](vision.md), [principles](principles.md), and the
   explicit target and design-bundle revisions without Git discovery.
 - [ADR-0022](adr/0022-independent-checker-review-as-a-judgment-gate.md) — promotes a separate
   read-only Checker review into a portable judgment-gate contract without changing lifecycle authority.
+- [ADR-0023](adr/0023-scenario-centered-vertical-slice-loop.md) — adds additive scenario and
+  vertical-slice evidence contracts without changing lifecycle or exit-code authority.
 
 ## JSON Schema contracts
 
@@ -129,6 +135,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [result](../schemas/iteration-loop-result.schema.json) — validate loop policy, executable check
   evidence, explicit lifecycle transitions, local completion evidence, and model-neutral
   route/next-task projections.
+- [Scenario](../schemas/iteration-scenario.schema.json) and
+  [slice](../schemas/iteration-slice.schema.json) — validate the stable user-observable intent
+  and acceptance-check references carried by an iteration task.
 - [Checker review](../schemas/checker-review.schema.json) — validates a revision-bound independent
   read-only review record without promoting judgment to deterministic architecture validation.
 
@@ -190,8 +199,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [decisions](../fixtures/simple-crud/architecture-decision.json), and [handoff](../fixtures/simple-crud/implementation-handoff.json)
   — form the valid external equipment-register fixture derived from the dogfood walkthrough,
   outside benchmark inputs.
-- [Iteration loop fixture](../fixtures/iteration-loop/sah.loop.json) and [outcome](../fixtures/iteration-loop/iteration-001.outcome.json)
-  — provide a schema-valid fast-path route and learning projection example.
+- [Iteration loop fixtures](../fixtures/iteration-loop/sah.loop.json), [outcome](../fixtures/iteration-loop/iteration-001.outcome.json),
+  [scenario loop](../fixtures/iteration-loop/scenario-loop.json), and
+  [scenario outcome](../fixtures/iteration-loop/scenario-iteration-001.outcome.json) — provide
+  backward-compatible fast-path and scenario-centered vertical-slice examples.
 - [Checker review fixture](../fixtures/checker-review/approved.json) — provides a minimal valid
   independent-review record for contract and CLI tests.
 - [S13 target artifact](../fixtures/s13-target/checks/equipment-operations.integration.txt) —

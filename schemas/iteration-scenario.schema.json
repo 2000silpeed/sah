@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/iteration-scenario/v0.1.0",
+  "title": "SAH Iteration User Scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "description", "expectedOutcome"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["product owner"],
+        "readBy": [
+          "iteration planner",
+          "loop evaluator",
+          "completion gate",
+          "session consumer"
+        ]
+      }
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["product owner"],
+        "readBy": ["coding agent", "session consumer"]
+      }
+    },
+    "expectedOutcome": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["product owner"],
+        "readBy": [
+          "coding agent",
+          "loop recorder",
+          "completion gate",
+          "session consumer"
+        ]
+      }
+    }
+  },
+  "x-sah-trace": {
+    "writtenBy": ["product owner"],
+    "readBy": ["iteration planner", "loop evaluator", "session consumer"]
+  },
+  "examples": [
+    {
+      "id": "create-reservation",
+      "description": "A new user creates one reservation from the first-run flow.",
+      "expectedOutcome": "The reservation is accepted and its confirmation is visible without exposing internal errors."
+    }
+  ]
+}

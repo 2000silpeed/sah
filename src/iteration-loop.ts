@@ -20,6 +20,9 @@ import type {
   IterationLoopResult,
   IterationChecksResult,
   IterationOutcome,
+  IterationScenario,
+  IterationScenarioEvidence,
+  IterationSliceContract,
   IterationTaskContract,
   IterationWorkContext,
   LoopRoute,
@@ -53,6 +56,7 @@ type LoopModel = {
   direction: {
     goal: string;
     successCriteria: Array<{ id: string; description: string }>;
+    scenarios?: IterationScenario[];
   };
   policy: {
     defaultRoute: LoopRoute;
@@ -250,6 +254,164 @@ function result(
     diagnostics: ordered,
     summary: summarize(ordered),
   };
+}
+
+function cloneSlice(
+  slice: IterationSliceContract | undefined,
+): IterationSliceContract | undefined {
+  return slice === undefined
+    ? undefined
+    : {
+        ...slice,
+        scenarioRefs: [...slice.scenarioRefs],
+        acceptanceCheckIds: [...slice.acceptanceCheckIds],
+      };
+}
+
+function cloneTask(task: IterationTaskContract): IterationTaskContract {
+  const slice = cloneSlice(task.slice);
+  return {
+    ...task,
+    context: [...task.context],
+    constraints: [...task.constraints],
+    doneWhen: [...task.doneWhen],
+    ...(task.checks === undefined
+      ? {}
+      : { checks: task.checks.map((check) => ({ ...check })) }),
+    ...(slice === undefined ? {} : { slice }),
+  };
+}
+
+function scenarioFields(
+  loop: LoopModel,
+): Pick<IterationLoopResult, "scenarios"> | Record<string, never> {
+  return loop.direction.scenarios === undefined
+    ? {}
+    : {
+        scenarios: loop.direction.scenarios.map((scenario) => ({
+          ...scenario,
+        })),
+      };
+}
+
+function scenarioIds(loop: LoopModel): Set<string> {
+  return new Set((loop.direction.scenarios ?? []).map(({ id }) => id));
+}
+
+function sliceDiagnostics(
+  loop: LoopModel,
+  task: IterationTaskContract,
+  path: string,
+): SahDiagnostic[] {
+  const slice = task.slice;
+  if (slice === undefined) return [];
+  const diagnostics: SahDiagnostic[] = [];
+  const declaredScenarios = scenarioIds(loop);
+  const seenScenarioRefs = new Set<string>();
+  for (const scenarioId of slice.scenarioRefs) {
+    if (seenScenarioRefs.has(scenarioId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_SCENARIO_DUPLICATE",
+          path,
+          message: `Slice ${slice.id} repeats scenario ${scenarioId}.`,
+          expected: "unique scenarioRefs declared by the direction",
+          repair: "Keep one reference for each selected user scenario.",
+        }),
+      );
+    seenScenarioRefs.add(scenarioId);
+    if (!declaredScenarios.has(scenarioId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_SCENARIO_UNKNOWN",
+          path,
+          message: `Slice ${slice.id} references unknown scenario ${scenarioId}.`,
+          expected: "scenarioRefs to exist in direction.scenarios",
+          repair:
+            "Declare the scenario in the product direction or remove the reference.",
+        }),
+      );
+  }
+  const declaredChecks = new Map(
+    (task.checks ?? loop.currentIteration.checks).map((check) => [
+      check.id,
+      check,
+    ]),
+  );
+  const seenChecks = new Set<string>();
+  for (const checkId of slice.acceptanceCheckIds) {
+    if (seenChecks.has(checkId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_CHECK_DUPLICATE",
+          path,
+          message: `Slice ${slice.id} repeats acceptance check ${checkId}.`,
+          expected: "unique acceptanceCheckIds declared by the task",
+          repair: "Keep one acceptance check reference per check.",
+        }),
+      );
+    seenChecks.add(checkId);
+    const check = declaredChecks.get(checkId);
+    if (check === undefined)
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_CHECK_UNKNOWN",
+          path,
+          message: `Slice ${slice.id} references unknown check ${checkId}.`,
+          expected: "acceptanceCheckIds to exist in the task checks",
+          repair:
+            "Declare the acceptance check on the task or remove the reference.",
+        }),
+      );
+    else if (!check.required)
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_CHECK_NOT_REQUIRED",
+          path,
+          message: `Slice acceptance check ${checkId} is not marked required.`,
+          expected: "every slice acceptance check to be required",
+          repair:
+            "Mark the acceptance check required or choose a different check.",
+        }),
+      );
+  }
+  if (declaredScenarios.size === 0)
+    diagnostics.push(
+      diagnostic({
+        code: "ITERATION_SLICE_SCENARIOS_MISSING",
+        path,
+        message: `Slice ${slice.id} selects scenarios but the direction declares none.`,
+        expected: "direction.scenarios to declare every selected scenario",
+        repair:
+          "Ask the product owner for observable scenario intent before slicing.",
+      }),
+    );
+  return diagnostics;
+}
+
+function loopScenarioDiagnostics(
+  loop: LoopModel,
+  path: string,
+): SahDiagnostic[] {
+  const diagnostics: SahDiagnostic[] = [];
+  const seen = new Set<string>();
+  for (const scenario of loop.direction.scenarios ?? []) {
+    if (seen.has(scenario.id))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SCENARIO_DUPLICATE",
+          path,
+          message: `Direction repeats scenario ${scenario.id}.`,
+          expected: "unique direction.scenarios IDs",
+          repair: "Keep one stable ID for each user-observable scenario.",
+        }),
+      );
+    seen.add(scenario.id);
+  }
+  diagnostics.push(
+    ...sliceDiagnostics(loop, loop.currentIteration.taskContract, path),
+  );
+  return diagnostics;
 }
 
 async function readJson<T>(
@@ -464,12 +626,27 @@ function evaluateLoadedLoop(
   loopFile: string,
   operation: IterationLoopResult["operation"],
 ): IterationLoopResult {
+  const semanticDiagnostics = loopScenarioDiagnostics(loop, loopFile);
+  if (semanticDiagnostics.length > 0)
+    return result(operation, "blocked", loopFile, semanticDiagnostics, {
+      loopId: loop.loopId,
+      route: "blocked",
+      escalation: {
+        triggered: true,
+        ruleRefs: [],
+        reasons: semanticDiagnostics.map(({ message }) => message),
+      },
+      currentTask: cloneTask(loop.currentIteration.taskContract),
+      ...scenarioFields(loop),
+      workContext: loop.workContext,
+    });
   if (loop.status === "completed") {
     return result(operation, "complete", loopFile, [], {
       loopId: loop.loopId,
       route: "complete",
       escalation: { triggered: false, ruleRefs: [], reasons: [] },
-      currentTask: loop.currentIteration.taskContract,
+      currentTask: cloneTask(loop.currentIteration.taskContract),
+      ...scenarioFields(loop),
       workContext: loop.workContext,
     });
   }
@@ -540,11 +717,12 @@ function evaluateLoadedLoop(
               ],
             }
           : escalation,
-      currentTask: current.taskContract,
+      currentTask: cloneTask(current.taskContract),
+      ...scenarioFields(loop),
       workContext: loop.workContext,
       ...(learning === undefined
         ? {}
-        : { nextTask: learning.learning.nextTask }),
+        : { nextTask: cloneTask(learning.learning.nextTask) }),
       ...(learning?.sourceIterationId === undefined
         ? {}
         : { learningSourceIterationId: learning.sourceIterationId }),
@@ -593,6 +771,9 @@ export async function runIterationChecks(
     );
 
   const loop = loaded.loaded.data;
+  const semanticDiagnostics = loopScenarioDiagnostics(loop, loaded.loaded.path);
+  if (semanticDiagnostics.length > 0)
+    return checksResult("blocked", loaded.loaded.path, semanticDiagnostics);
   if (loop.status === "completed")
     return checksResult("blocked", loaded.loaded.path, [
       diagnostic({
@@ -694,6 +875,20 @@ export async function runIterationChecks(
       },
     },
     checkResults,
+    ...(loop.currentIteration.taskContract.slice === undefined
+      ? {}
+      : {
+          sliceEvidence:
+            loop.currentIteration.taskContract.slice.scenarioRefs.map(
+              (scenarioId): IterationScenarioEvidence => ({
+                scenarioId,
+                evidenceRefs:
+                  loop.currentIteration.taskContract.slice?.acceptanceCheckIds.map(
+                    (checkId) => `${loop.currentIteration.id}:${checkId}`,
+                  ) ?? [],
+              }),
+            ),
+        }),
     learnings: [],
   };
   const resultStatus: IterationChecksResult["status"] =
@@ -753,12 +948,160 @@ async function replaceLoopAtomically(input: {
   }
 }
 
+function evidenceReference(
+  reference: string,
+): { iterationId: string; checkId: string } | undefined {
+  const separator = reference.indexOf(":");
+  if (separator < 1 || separator === reference.length - 1) return undefined;
+  return {
+    iterationId: reference.slice(0, separator),
+    checkId: reference.slice(separator + 1),
+  };
+}
+
+function sliceEvidenceDiagnostics(
+  loop: LoopModel,
+  outcome: IterationOutcome,
+  outcomeFile: string,
+): SahDiagnostic[] {
+  const slice = loop.currentIteration.taskContract.slice;
+  if (slice === undefined) {
+    return outcome.sliceEvidence === undefined
+      ? []
+      : [
+          diagnostic({
+            code: "ITERATION_SLICE_EVIDENCE_WITHOUT_SLICE",
+            path: outcomeFile,
+            message:
+              "Outcome contains slice evidence without a current task slice.",
+            expected:
+              "sliceEvidence to be present only for a declared task slice",
+            repair: "Remove sliceEvidence or declare the owning task slice.",
+          }),
+        ];
+  }
+  const diagnostics: SahDiagnostic[] = [];
+  const evidenceByCheck = new Map(
+    outcome.checkResults.map((check) => [check.checkId, check]),
+  );
+  const seenScenarioIds = new Set<string>();
+  const provided = new Map<string, IterationScenarioEvidence>();
+  for (const entry of outcome.sliceEvidence ?? []) {
+    if (seenScenarioIds.has(entry.scenarioId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_EVIDENCE_DUPLICATE",
+          path: outcomeFile,
+          message: `Scenario ${entry.scenarioId} has duplicate slice evidence entries.`,
+          expected: "one sliceEvidence entry per selected scenario",
+          repair: "Merge evidence references into one entry for the scenario.",
+        }),
+      );
+    seenScenarioIds.add(entry.scenarioId);
+    provided.set(entry.scenarioId, entry);
+    if (!slice.scenarioRefs.includes(entry.scenarioId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_SLICE_EVIDENCE_SCENARIO_UNKNOWN",
+          path: outcomeFile,
+          message: `Slice evidence references unselected scenario ${entry.scenarioId}.`,
+          expected: "only scenarios in the current task slice",
+          repair: "Record evidence for the selected scenario references only.",
+        }),
+      );
+    const seenRefs = new Set<string>();
+    for (const reference of entry.evidenceRefs) {
+      if (seenRefs.has(reference))
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_SLICE_EVIDENCE_REF_DUPLICATE",
+            path: outcomeFile,
+            message: `Slice evidence repeats ${reference}.`,
+            expected: "unique evidence references per scenario",
+            repair: "Keep one reference to each acceptance check.",
+          }),
+        );
+      seenRefs.add(reference);
+      const parsed = evidenceReference(reference);
+      const check =
+        parsed?.iterationId === outcome.iterationId
+          ? evidenceByCheck.get(parsed.checkId)
+          : undefined;
+      const isAcceptanceCheck =
+        parsed !== undefined &&
+        slice.acceptanceCheckIds.includes(parsed.checkId);
+      if (
+        parsed?.iterationId !== outcome.iterationId ||
+        !isAcceptanceCheck ||
+        check === undefined
+      )
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_SLICE_EVIDENCE_REF_UNKNOWN",
+            path: outcomeFile,
+            message: `Slice evidence reference ${reference} is not a current acceptance check.`,
+            expected: `${outcome.iterationId}:<acceptanceCheckId> with a recorded check result`,
+            repair:
+              "Use the exact iteration and acceptance check IDs emitted by sah loop-checks.",
+          }),
+        );
+      else if (
+        outcome.status === "succeeded" &&
+        (check.status !== "passed" || check.exitCode !== 0)
+      )
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_SLICE_EVIDENCE_NOT_PASSED",
+            path: outcomeFile,
+            message: `Slice evidence ${reference} did not pass with exit code 0.`,
+            expected: "all succeeded slice evidence checks to pass",
+            repair:
+              "Run the acceptance check successfully or record a partial/failed outcome.",
+          }),
+        );
+    }
+    for (const checkId of slice.acceptanceCheckIds) {
+      if (
+        !entry.evidenceRefs.some((reference) =>
+          reference.endsWith(`:${checkId}`),
+        )
+      )
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_SLICE_EVIDENCE_CHECK_MISSING",
+            path: outcomeFile,
+            message: `Scenario ${entry.scenarioId} has no evidence for acceptance check ${checkId}.`,
+            expected: "one evidence reference for every slice acceptance check",
+            repair: "Run and reference every declared acceptance check.",
+          }),
+        );
+    }
+  }
+  if (outcome.status === "succeeded") {
+    for (const scenarioId of slice.scenarioRefs) {
+      if (!provided.has(scenarioId))
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_SLICE_SCENARIO_EVIDENCE_MISSING",
+            path: outcomeFile,
+            message: `Succeeded slice outcome omits evidence for scenario ${scenarioId}.`,
+            expected: "sliceEvidence coverage for every selected scenario",
+            repair:
+              "Run the slice checks and keep the generated scenario evidence.",
+          }),
+        );
+    }
+  }
+  return diagnostics;
+}
+
 function validateOutcomeAgainstLoop(
   loop: LoopModel,
   outcome: IterationOutcome,
   outcomeFile: string,
 ): SahDiagnostic[] {
   const diagnostics: SahDiagnostic[] = [];
+  diagnostics.push(...sliceEvidenceDiagnostics(loop, outcome, outcomeFile));
   if (!contextMatches(evidenceContext(loop), outcome.evidence.workContext)) {
     diagnostics.push(
       diagnostic({
@@ -963,6 +1306,17 @@ export async function recordIterationOutcome(
 
   const loop = loadedLoop.loaded.data;
   const outcome = loadedOutcome.loaded.data;
+  const semanticDiagnostics = loopScenarioDiagnostics(
+    loop,
+    loadedLoop.loaded.path,
+  );
+  if (semanticDiagnostics.length > 0)
+    return transitionBlocked(
+      "recorded",
+      loop,
+      loadedLoop.loaded.path,
+      semanticDiagnostics,
+    );
   if (loop.status === "completed")
     return result(
       "recorded",
@@ -985,6 +1339,8 @@ export async function recordIterationOutcome(
           ruleRefs: [],
           reasons: ["The iteration loop is already product-complete."],
         },
+        currentTask: cloneTask(loop.currentIteration.taskContract),
+        ...scenarioFields(loop),
         workContext: loop.workContext,
       },
     );
@@ -1024,6 +1380,8 @@ export async function recordIterationOutcome(
         ruleRefs: [],
         reasons: diagnostics.map(({ message }) => message),
       },
+      currentTask: cloneTask(loop.currentIteration.taskContract),
+      ...scenarioFields(loop),
       workContext: loop.workContext,
     });
 
@@ -1062,6 +1420,17 @@ export async function bindIterationContext(
     );
 
   const loop = loadedLoop.loaded.data;
+  const semanticDiagnostics = loopScenarioDiagnostics(
+    loop,
+    loadedLoop.loaded.path,
+  );
+  if (semanticDiagnostics.length > 0)
+    return transitionBlocked(
+      "bound",
+      loop,
+      loadedLoop.loaded.path,
+      semanticDiagnostics,
+    );
   if (loop.status === "completed")
     return transitionBlocked("bound", loop, loadedLoop.loaded.path, [
       diagnostic({
@@ -1171,7 +1540,8 @@ function transitionBlocked(
       ruleRefs: [],
       reasons: diagnostics.map(({ message }) => message),
     },
-    currentTask: loop.currentIteration.taskContract,
+    currentTask: cloneTask(loop.currentIteration.taskContract),
+    ...scenarioFields(loop),
     workContext: loop.workContext,
   });
 }
@@ -1208,6 +1578,17 @@ export async function acceptNextIteration(
     );
 
   const loop = loadedLoop.loaded.data;
+  const semanticDiagnostics = loopScenarioDiagnostics(
+    loop,
+    loadedLoop.loaded.path,
+  );
+  if (semanticDiagnostics.length > 0)
+    return transitionBlocked(
+      "advanced",
+      loop,
+      loadedLoop.loaded.path,
+      semanticDiagnostics,
+    );
   if (loop.status === "completed")
     return transitionBlocked("advanced", loop, loadedLoop.loaded.path, [
       diagnostic({
@@ -1274,6 +1655,13 @@ export async function acceptNextIteration(
     selected.learning.nextTask,
     loadedLoop.loaded.path,
   );
+  taskDiagnostics.push(
+    ...sliceDiagnostics(
+      loop,
+      selected.learning.nextTask,
+      loadedLoop.loaded.path,
+    ),
+  );
   if (taskDiagnostics.length > 0)
     return transitionBlocked(
       "advanced",
@@ -1304,10 +1692,7 @@ export async function acceptNextIteration(
         )
       : [...loop.currentIteration.riskSignals],
     taskContract: {
-      ...task,
-      context: [...task.context],
-      constraints: [...task.constraints],
-      doneWhen: [...task.doneWhen],
+      ...cloneTask(task),
       checks,
     },
     checks,
@@ -1420,6 +1805,100 @@ function completionDiagnostics(
         }),
       );
   }
+  const declaredScenarios = loop.direction.scenarios ?? [];
+  if (declaredScenarios.length === 0) {
+    if (completion.scenarioResults !== undefined)
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_SCENARIO_UNDECLARED",
+          path: completionFile,
+          message:
+            "Completion supplies scenario results for a direction with no scenarios.",
+          expected: "scenarioResults only when direction.scenarios is declared",
+          repair: "Declare product scenarios or remove scenarioResults.",
+        }),
+      );
+    return diagnostics;
+  }
+  const declaredScenarioIds = new Set(declaredScenarios.map(({ id }) => id));
+  const seenScenarioIds = new Set<string>();
+  for (const scenarioResult of completion.scenarioResults ?? []) {
+    if (seenScenarioIds.has(scenarioResult.scenarioId))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_SCENARIO_DUPLICATE",
+          path: completionFile,
+          message: `Scenario ${scenarioResult.scenarioId} appears more than once.`,
+          expected: "one scenario result per declared scenario",
+          repair: "Merge evidence references under one scenario result.",
+        }),
+      );
+    seenScenarioIds.add(scenarioResult.scenarioId);
+    if (!declaredScenarioIds.has(scenarioResult.scenarioId)) {
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_SCENARIO_UNKNOWN",
+          path: completionFile,
+          message: `Completion references unknown scenario ${scenarioResult.scenarioId}.`,
+          expected: "scenario IDs from direction.scenarios",
+          repair: "Use a declared scenario ID and retry.",
+        }),
+      );
+      continue;
+    }
+    for (const reference of scenarioResult.evidenceRefs) {
+      const parsed = evidenceReference(reference);
+      const outcome =
+        parsed === undefined
+          ? undefined
+          : loop.outcomes.find(
+              ({ iterationId }) => iterationId === parsed.iterationId,
+            );
+      const check = outcome?.checkResults.find(
+        ({ checkId }) => checkId === parsed?.checkId,
+      );
+      const owned = outcome?.sliceEvidence?.some(
+        (entry) =>
+          entry.scenarioId === scenarioResult.scenarioId &&
+          entry.evidenceRefs.includes(reference),
+      );
+      if (parsed === undefined || check === undefined || !owned)
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_COMPLETION_SCENARIO_EVIDENCE_UNKNOWN",
+            path: completionFile,
+            message: `Scenario ${scenarioResult.scenarioId} references unowned evidence ${reference}.`,
+            expected:
+              "evidence from an iteration slice that selects this scenario",
+            repair:
+              "Use a scenario evidence reference emitted by sah loop-checks.",
+          }),
+        );
+      else if (check.status !== "passed" || check.exitCode !== 0)
+        diagnostics.push(
+          diagnostic({
+            code: "ITERATION_COMPLETION_SCENARIO_EVIDENCE_NOT_PASSED",
+            path: completionFile,
+            message: `Scenario evidence ${reference} did not pass with exit code 0.`,
+            expected: "scenario evidence to reference passing checks",
+            repair: "Run the owning slice acceptance check successfully.",
+          }),
+        );
+    }
+  }
+  for (const scenario of declaredScenarios) {
+    if (!seenScenarioIds.has(scenario.id))
+      diagnostics.push(
+        diagnostic({
+          code: "ITERATION_COMPLETION_SCENARIO_MISSING",
+          path: completionFile,
+          message: `Completion omits declared scenario ${scenario.id}.`,
+          expected: "one scenario result for every direction.scenarios entry",
+          repair:
+            "Add passing scenario evidence before completing the direction.",
+        }),
+      );
+  }
   return diagnostics;
 }
 
@@ -1453,6 +1932,17 @@ export async function completeIterationLoop(
     );
 
   const loop = loadedLoop.loaded.data;
+  const semanticDiagnostics = loopScenarioDiagnostics(
+    loop,
+    loadedLoop.loaded.path,
+  );
+  if (semanticDiagnostics.length > 0)
+    return transitionBlocked(
+      "completed",
+      loop,
+      loadedLoop.loaded.path,
+      semanticDiagnostics,
+    );
   if (loop.status === "completed")
     return transitionBlocked("completed", loop, loadedLoop.loaded.path, [
       diagnostic({
@@ -1566,6 +2056,16 @@ export async function completeIterationLoop(
         evidenceRefs: [...evidenceRefs],
       }),
     ),
+    ...(loadedCompletion.loaded.data.scenarioResults === undefined
+      ? {}
+      : {
+          scenarioResults: loadedCompletion.loaded.data.scenarioResults.map(
+            ({ scenarioId, evidenceRefs }) => ({
+              scenarioId,
+              evidenceRefs: [...evidenceRefs],
+            }),
+          ),
+        }),
     completedAt: new Date().toISOString(),
   };
   const writeDiagnostic = await replaceLoopAtomically({

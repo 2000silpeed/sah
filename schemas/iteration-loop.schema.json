@@ -141,6 +141,21 @@
             "writtenBy": ["product owner"],
             "readBy": ["loop evaluator"]
           }
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "https://sah.dev/schemas/iteration-scenario/v0.1.0"
+          },
+          "x-sah-trace": {
+            "writtenBy": ["product owner"],
+            "readBy": [
+              "iteration planner",
+              "loop evaluator",
+              "session consumer"
+            ]
+          }
         }
       },
       "x-sah-trace": {
@@ -371,6 +386,17 @@
                 "writtenBy": ["iteration planner"],
                 "readBy": ["coding agent", "loop evaluator"]
               }
+            },
+            "slice": {
+              "$ref": "https://sah.dev/schemas/iteration-slice/v0.1.0",
+              "x-sah-trace": {
+                "writtenBy": ["iteration planner", "coding agent"],
+                "readBy": [
+                  "loop evaluator",
+                  "loop recorder",
+                  "session consumer"
+                ]
+              }
             }
           },
           "x-sah-trace": {
@@ -507,6 +533,42 @@
             "required": ["criterionId", "evidenceRefs"],
             "properties": {
               "criterionId": {
+                "type": "string",
+                "minLength": 1,
+                "x-sah-trace": {
+                  "writtenBy": ["loop completion command"],
+                  "readBy": ["loop completion gate"]
+                }
+              },
+              "evidenceRefs": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 },
+                "x-sah-trace": {
+                  "writtenBy": ["loop completion command"],
+                  "readBy": ["loop completion gate"]
+                }
+              }
+            },
+            "x-sah-trace": {
+              "writtenBy": ["loop completion command"],
+              "readBy": ["loop completion gate"]
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["loop completion command"],
+            "readBy": ["loop completion gate"]
+          }
+        },
+        "scenarioResults": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scenarioId", "evidenceRefs"],
+            "properties": {
+              "scenarioId": {
                 "type": "string",
                 "minLength": 1,
                 "x-sah-trace": {

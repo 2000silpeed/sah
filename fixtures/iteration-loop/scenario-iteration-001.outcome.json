@@ -1,0 +1,63 @@
+{
+  "$schema": "https://sah.dev/schemas/iteration-outcome/v0.4.0",
+  "outcomeVersion": "0.4.0",
+  "iterationId": "iteration-001",
+  "status": "succeeded",
+  "evidence": {
+    "executor": { "name": "sah-loop-checks", "version": "0.1.0" },
+    "cwd": "/workspace/product",
+    "startedAt": "2026-08-19T00:00:00.000Z",
+    "finishedAt": "2026-08-19T00:00:01.000Z",
+    "workContext": {
+      "targetRevision": "git:initial",
+      "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "checkResults": [
+    {
+      "checkId": "reservation-e2e",
+      "status": "passed",
+      "command": "npm test -- reservation",
+      "cwd": "/workspace/product",
+      "startedAt": "2026-08-19T00:00:00.000Z",
+      "finishedAt": "2026-08-19T00:00:01.000Z",
+      "exitCode": 0,
+      "stdoutDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "stderrDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "observed": "reservation scenario passed"
+    }
+  ],
+  "sliceEvidence": [
+    {
+      "scenarioId": "create-reservation",
+      "evidenceRefs": ["iteration-001:reservation-e2e"]
+    }
+  ],
+  "learnings": [
+    {
+      "id": "learn-001",
+      "observation": "The first reservation scenario is executable.",
+      "priority": "should",
+      "nextTask": {
+        "goal": "Improve reservation confirmation copy.",
+        "context": ["src/reservations"],
+        "constraints": ["preserve reservation authority"],
+        "doneWhen": ["the reservation scenario still passes"],
+        "checks": [
+          {
+            "id": "reservation-e2e",
+            "kind": "test",
+            "command": "npm test -- reservation",
+            "expected": "exit 0",
+            "required": true
+          }
+        ],
+        "slice": {
+          "id": "reservation-confirmation",
+          "scenarioRefs": ["create-reservation"],
+          "acceptanceCheckIds": ["reservation-e2e"]
+        }
+      }
+    }
+  ]
+}

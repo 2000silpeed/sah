@@ -237,6 +237,42 @@
         "readBy": ["loop evaluator", "loop recorder"]
       }
     },
+    "sliceEvidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenarioId", "evidenceRefs"],
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner", "coding agent"],
+              "readBy": ["loop recorder", "completion gate", "session consumer"]
+            }
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["SAH check runner", "coding agent"],
+              "readBy": ["loop recorder", "completion gate"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["SAH check runner", "coding agent"],
+          "readBy": ["loop recorder", "completion gate", "session consumer"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["SAH check runner", "coding agent"],
+        "readBy": ["loop recorder", "completion gate", "session consumer"]
+      }
+    },
     "learnings": {
       "type": "array",
       "items": {
@@ -366,6 +402,17 @@
                 "x-sah-trace": {
                   "writtenBy": ["coding agent"],
                   "readBy": ["next-task projection", "loop transition"]
+                }
+              },
+              "slice": {
+                "$ref": "https://sah.dev/schemas/iteration-slice/v0.1.0",
+                "x-sah-trace": {
+                  "writtenBy": ["coding agent"],
+                  "readBy": [
+                    "next-task projection",
+                    "loop transition",
+                    "session consumer"
+                  ]
                 }
               }
             },

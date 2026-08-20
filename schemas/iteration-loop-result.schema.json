@@ -243,6 +243,13 @@
             "writtenBy": ["loop evaluator"],
             "readBy": ["coding agent"]
           }
+        },
+        "slice": {
+          "$ref": "https://sah.dev/schemas/iteration-slice/v0.1.0",
+          "x-sah-trace": {
+            "writtenBy": ["loop evaluator"],
+            "readBy": ["coding agent", "session consumer"]
+          }
         }
       },
       "x-sah-trace": {
@@ -343,6 +350,13 @@
             "writtenBy": ["learning projector"],
             "readBy": ["coding agent"]
           }
+        },
+        "slice": {
+          "$ref": "https://sah.dev/schemas/iteration-slice/v0.1.0",
+          "x-sah-trace": {
+            "writtenBy": ["learning projector"],
+            "readBy": ["coding agent", "session consumer"]
+          }
         }
       },
       "x-sah-trace": {
@@ -356,6 +370,17 @@
       "x-sah-trace": {
         "writtenBy": ["learning projector"],
         "readBy": ["session consumer"]
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "https://sah.dev/schemas/iteration-scenario/v0.1.0"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["loop evaluator"],
+        "readBy": ["coding agent", "session consumer"]
       }
     },
     "diagnostics": {

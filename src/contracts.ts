@@ -239,6 +239,30 @@ export type IterationTaskContract = {
   constraints: string[];
   doneWhen: string[];
   checks?: IterationCheckContract[];
+  slice?: IterationSliceContract;
+};
+
+export const iterationScenarioSchemaId =
+  "https://sah.dev/schemas/iteration-scenario/v0.1.0" as const;
+
+export const iterationSliceSchemaId =
+  "https://sah.dev/schemas/iteration-slice/v0.1.0" as const;
+
+export type IterationScenario = {
+  id: string;
+  description: string;
+  expectedOutcome: string;
+};
+
+export type IterationSliceContract = {
+  id: string;
+  scenarioRefs: string[];
+  acceptanceCheckIds: string[];
+};
+
+export type IterationScenarioEvidence = {
+  scenarioId: string;
+  evidenceRefs: string[];
 };
 
 export type IterationCheckContract = {
@@ -273,6 +297,7 @@ export type IterationCompletion = {
   status: "open" | "completed";
   workContext: IterationEvidenceContext;
   criterionResults: IterationCriterionEvidence[];
+  scenarioResults?: IterationScenarioEvidence[];
   completedAt?: string;
 };
 
@@ -291,6 +316,7 @@ export type IterationLoopResult = {
   };
   currentTask?: IterationTaskContract;
   nextTask?: IterationTaskContract;
+  scenarios?: IterationScenario[];
   workContext?: IterationWorkContext;
   learningSourceIterationId?: string;
   diagnostics: SahDiagnostic[];
@@ -324,6 +350,7 @@ export type IterationOutcome = {
     stderrDigest: string;
     observed?: string;
   }>;
+  sliceEvidence?: IterationScenarioEvidence[];
   learnings: Array<{
     id: string;
     observation: string;
@@ -346,6 +373,7 @@ export type IterationCompletionRequest = {
   status: "completed";
   workContext: IterationEvidenceContext;
   criterionResults: IterationCriterionEvidence[];
+  scenarioResults?: IterationScenarioEvidence[];
 };
 
 export type VerificationOptions = {

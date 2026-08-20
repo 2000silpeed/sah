@@ -14,10 +14,20 @@ target revision token, the design-bundle path, and the `sha256:` fingerprint emi
 resume` or verification. Each actionable learning must include a `nextTask.checks` array;
 each check has an ID, kind, exact command, expected result, and `required` flag.
 
+For an agile product direction, add optional `direction.scenarios` entries with a stable ID,
+plain-language description, and expected user-visible outcome. Select one or more of them in
+`currentIteration.taskContract.slice` (or a proposed `nextTask.slice`) and name the exact
+`acceptanceCheckIds` that prove the slice. If the product owner cannot state the observable
+outcome or the acceptance boundary, the host agent should ask one or two consequential questions;
+SAH never invents a product decision from a vague goal.
+
 An outcome is v0.4.0 evidence. Every declared check carries its exact command, explicit working
 directory, timestamps, exit code, and SHA-256 digests for captured stdout/stderr. A coding agent
-must not hand-write a successful check claim. The design bundle remains the authority for
-architecture decisions, constraints, and S13 evidence.
+must not hand-write a successful check claim. When a task has a slice, `sah loop-checks` also emits
+`sliceEvidence`, linking every selected scenario to its acceptance checks. `loop-record` rejects a
+successful slice with missing, unknown, stale, or non-passing scenario evidence. This proves
+execution linkage, not human acceptance or semantic sufficiency. The design bundle remains the
+authority for architecture decisions, constraints, and S13 evidence.
 
 ## Evidence and transitions
 
@@ -80,6 +90,9 @@ npm exec -- sah loop-accept-next .sah/sah.loop.json --repair \
 The transition requires a latest learning with at least one unique required check. Invalid states,
 missing proposals, and stale concurrent writes are atomic no-ops.
 
+The selected slice is copied into the next planned iteration only when the learning explicitly
+contains it. The loop does not create scenarios, reorder them, or silently change product intent.
+
 ## Product-complete gate
 
 Write a completion request whose criterion IDs exactly match `direction.successCriteria`. Every
@@ -106,10 +119,19 @@ Close the loop atomically:
 npm exec -- sah loop-complete .sah/sah.loop.json .sah/completion.json --json
 ```
 
+When `direction.scenarios` is present, also provide exact `scenarioResults` coverage. Each result
+uses a scenario ID and references passing evidence emitted by a slice that selected that scenario:
+
+```json
+"scenarioResults": [
+  { "scenarioId": "create-reservation", "evidenceRefs": ["iteration-001:reservation-e2e"] }
+]
+```
+
 The gate requires a completed current iteration, a succeeded latest outcome, matching loop,
-latest-outcome, and completion-request contexts, no unresolved latest
-`must` learning, and a recorded `passed`/exit-zero check for every referenced item. Unknown,
-duplicate, missing, or non-passing references leave the loop unchanged. Completion is a local
+latest-outcome, and completion-request contexts, no unresolved latest `must` learning, and a
+recorded `passed`/exit-zero check for every referenced item. Unknown, duplicate, missing, or
+non-passing criterion or scenario references leave the loop unchanged. Completion is a local
 deterministic product-direction terminal state; it is not S13, deployment, release approval, or
 user acceptance. A new product direction starts a new loop artifact.
 
