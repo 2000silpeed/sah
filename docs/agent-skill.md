@@ -28,6 +28,21 @@ iteration is blocked. Use `sah loop-complete` only with a completion request who
 criterion references recorded passing check evidence with matching context. The loop is a work
 selector and local evidence gate; the design bundle remains the architecture and S13 authority.
 
+For long-running work, the user may opt into bounded continuous mode with a positive
+`maxIterations` bound in the skill prompt:
+
+```text
+Use $sah in bounded continuous mode for at most 8 iterations. Continue ready implementation
+slices and checks automatically; pause only at an owned SAH gate and leave a resumable handoff.
+```
+
+The host agent continues only declared, executable next tasks. It pauses for unresolved decisions,
+`reasoning`/`blocked` routes, failed or incomplete checks, stale revision/fingerprint context,
+missing next-task checks, required Checker judgment, user acceptance, or S13. It never invents
+product direction, auto-repairs a blocked task, calls a hosted model, or turns the mode into an
+unbounded daemon. The default interactive behavior and deterministic CLI/library contracts remain
+unchanged.
+
 The skill does not contain or call a hosted model. Codex or Claude Code supplies the model, tools,
 conversation, and existing permissions. SAH supplies the reusable method and evidence protocol.
 This matches the skill model documented by [OpenAI](https://developers.openai.com/codex/skills)

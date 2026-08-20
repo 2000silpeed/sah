@@ -140,3 +140,23 @@ advanced, or complete; exit 1 means escalation or a valid transition/completion 
 means malformed or inaccessible artifacts or incomplete/operational check execution. The loop is a
 work selector and evidence gate, not a hosted backlog, LLM judge, benchmark, telemetry, or Git
 coordination service.
+
+## Optional bounded continuous mode
+
+If the user wants the agent to keep going after each green iteration, opt in explicitly and set a
+bound. This is a skill execution policy over the existing commands, not a new CLI writer:
+
+```text
+Use $sah in bounded continuous mode for at most 8 iterations. Continue ready slices and checks;
+pause at any unresolved decision, risk escalation, failed evidence, or required review.
+```
+
+The host agent then repeats the normal inspect → implement → target checks → `loop-checks` →
+`loop-record` → `loop-accept-next` sequence. It may accept only the latest learning that already
+declares executable checks; it never generates product direction, silently answers a stakeholder,
+or treats an empty learning list as completion. The mode stops with a resumable handoff when the
+bound is exhausted, the route is `reasoning`/`blocked`, evidence is failed/partial/incomplete/
+operational, context is stale, checks are missing, a Checker or user decision is required, or the
+S13/full-verification gate remains. Default interactive behavior and every CLI/library exit code
+are unchanged. Existing atomic writes mean an interrupted session resumes from the last committed
+iteration.

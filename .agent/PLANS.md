@@ -397,4 +397,4 @@ After Run 20, local continuation and termination are explicit and evidence-backe
 ## Run 21 ExecPlan — 2026-08-19
 
 See the [Run 21 plan](plans/run-21.md) for the completed binding, no-Git, atomicity, and verification contract; the Run 21 milestone commit records this handoff.
-## Run 22 ExecPlan — 2026-08-20 ([plan](plans/run-22.md); complete); Run 23 ([plan](plans/run-23.md); in progress)
+## Run 22 ExecPlan — 2026-08-20 ([plan](plans/run-22.md); complete); Run 23 ([plan](plans/run-23.md); complete); Run 24 ([plan](plans/run-24.md); complete)

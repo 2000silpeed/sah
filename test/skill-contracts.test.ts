@@ -75,6 +75,13 @@ describe("portable SAH Agent Skill", () => {
     expect(implementation).toContain("S13 lifecycle");
     expect(skill).toContain("formatter/linter");
     expect(implementation).toContain("target-check failure");
+    expect(skill).toContain("Optional bounded continuous mode");
+    expect(skill).toContain("positive `maxIterations` bound");
+    expect(skill).toContain("It does not invent a next task or");
+    expect(skill).toContain("Do not auto-repair a blocked iteration");
+    expect(skill).toContain(
+      "existing CLI/library commands, result schemas, and exit codes are unchanged",
+    );
     const checkerReview = await readSkillFile("references/checker-review.md");
     expect(skill).toContain("references/checker-review.md");
     expect(checkerReview).toContain("independent-checker");
@@ -111,6 +118,10 @@ describe("portable SAH Agent Skill", () => {
     expect(guide).toContain("Use $sah");
     expect(guide).toContain("/sah");
     expect(index).toContain("checker-review.md");
+    expect(index).toContain("plans/run-24.md");
+    expect(index).toContain("adr/0024-bounded-continuous-agent-mode.md");
+    expect(guide).toContain("bounded continuous mode");
+    expect(guide).toContain("maxIterations");
 
     for (const landingPage of [readme, koreanReadme]) {
       expect(landingPage).toContain("~/.agents/skills");

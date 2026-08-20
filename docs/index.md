@@ -10,7 +10,8 @@ read [vision](vision.md), [principles](principles.md), and the
 [Runs 8–10](../.agent/plans/run-8-10.md), and
 [Runs 11–14](../.agent/plans/run-11-14.md) preserve completed execution history; the
 [Run 22 plan](../.agent/plans/run-22.md) is the completed independent-Checker handoff; the
-[Run 23 plan](../.agent/plans/run-23.md) records the active scenario-centered vertical-slice
+[Run 23 plan](../.agent/plans/run-23.md) records the completed scenario-centered vertical-slice
+extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounded continuous-mode
 extension.
 
 ## Product and reasoning authority
@@ -101,6 +102,8 @@ extension.
   read-only Checker review into a portable judgment-gate contract without changing lifecycle authority.
 - [ADR-0023](adr/0023-scenario-centered-vertical-slice-loop.md) — adds additive scenario and
   vertical-slice evidence contracts without changing lifecycle or exit-code authority.
+- [ADR-0024](adr/0024-bounded-continuous-agent-mode.md) — adds an explicit, bounded continuous
+  execution policy to the portable agent skill without changing CLI/lifecycle authority.
 
 ## JSON Schema contracts
 

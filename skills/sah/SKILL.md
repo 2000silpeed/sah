@@ -23,6 +23,28 @@ passing exit-zero acceptance checks. `sah loop-complete` additionally requires e
 coverage when scenarios are declared. The loop selects work and gates evidence; S0–S13 remains
 the authority for material architecture decisions and S13 completion.
 
+## Optional bounded continuous mode
+
+The default is still interactive: after a successful iteration, the host agent may present the
+declared next task before calling `loop-accept-next`. If the user explicitly requests “continuous
+mode” (or equivalent) they must also give a positive `maxIterations` bound, for example:
+
+```text
+Use $sah in bounded continuous mode for at most 8 iterations. Continue ready implementation
+slices and their checks automatically; pause only at an owned SAH gate and leave a resumable
+handoff.
+```
+
+In this mode the host agent repeats the ordinary sequence—inspect canonical authority, implement
+only ready work, run target checks, run `sah loop-checks`, record the schema-valid outcome, and
+atomically accept the latest declared executable learning. It does not invent a next task or
+product direction. Stop and report when the bound is reached, the route is `reasoning` or
+`blocked`, evidence is failed/partial/incomplete/operational, the next task is missing checks,
+context is stale, a Checker or stakeholder decision is required, or user acceptance/S13 remains.
+Do not auto-repair a blocked iteration, call `loop-complete`, or bypass a lifecycle gate. The
+existing CLI/library commands, result schemas, and exit codes are unchanged; an interruption is
+safe because each canonical transition is already atomic.
+
 ## Required references
 
 Read these files from this skill package at the point named below:
