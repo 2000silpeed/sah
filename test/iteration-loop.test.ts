@@ -569,6 +569,52 @@ describe("iteration loop", () => {
     ).toHaveLength(0);
   });
 
+  it("round-trips evidence when iteration IDs contain the reference delimiter", async () => {
+    const { loop, outcome, context } = await createScenarioLoop();
+    const model = JSON.parse(await readFile(loop, "utf8")) as {
+      currentIteration: { id: string };
+    };
+    model.currentIteration.id = "iteration:001";
+    await writeFile(loop, `${JSON.stringify(model, null, 2)}\n`);
+
+    const checks = await runIterationChecks(loop, process.cwd(), context);
+    expect(checks.status).toBe("passed");
+    expect(checks.outcome?.sliceEvidence?.[0]?.evidenceRefs).toEqual([
+      "iteration:001:reservation-e2e",
+    ]);
+    if (checks.outcome === undefined) return;
+    checks.outcome.learnings = [
+      {
+        id: "learning-delimiter",
+        observation: "The scenario evidence remains addressable.",
+        priority: "should",
+        nextTask: {
+          goal: "Keep the scenario addressable",
+          context: ["src/reservations"],
+          constraints: ["preserve the user scenario"],
+          doneWhen: ["the scenario check passes"],
+          checks: [
+            {
+              id: "reservation-e2e",
+              kind: "test",
+              command: 'node -e "process.exit(0)"',
+              expected: "exit 0",
+              required: true,
+            },
+          ],
+          slice: {
+            id: "reservation-delimiter",
+            scenarioRefs: ["create-reservation"],
+            acceptanceCheckIds: ["reservation-e2e"],
+          },
+        },
+      },
+    ];
+    await writeFile(outcome, `${JSON.stringify(checks.outcome, null, 2)}\n`);
+    const recorded = await recordIterationOutcome(loop, outcome);
+    expect(recorded.status).toBe("ready");
+  });
+
   it("projects a selected slice across sessions and gates scenario completion", async () => {
     const { loop, outcome, directory, context } = await createScenarioLoop();
     const checks = await runIterationChecks(loop, process.cwd(), context);

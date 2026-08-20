@@ -61,6 +61,9 @@ expectations, and changes to S0–S13 or S13 completion authority.
 - 2026-08-20: Reuse the existing v0.4/v0.3/v0.2 artifact IDs with optional fields. The schema
   registry compiles the two reusable scenario/slice references, while legacy fixtures remain
   unchanged and valid.
+- 2026-08-20: The independent review found that delimiter-bearing iteration IDs were accepted by
+  the schema but rejected by the runner's first-colon parser. The parser now matches the longest
+  known iteration ID before splitting, preserving the existing reference string and ID vocabulary.
 
 ## Verification contract
 

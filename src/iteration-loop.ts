@@ -950,7 +950,16 @@ async function replaceLoopAtomically(input: {
 
 function evidenceReference(
   reference: string,
+  knownIterationIds: readonly string[] = [],
 ): { iterationId: string; checkId: string } | undefined {
+  const matchingIterationId = [...knownIterationIds]
+    .filter((iterationId) => reference.startsWith(`${iterationId}:`))
+    .sort((left, right) => right.length - left.length)[0];
+  if (matchingIterationId !== undefined)
+    return {
+      iterationId: matchingIterationId,
+      checkId: reference.slice(matchingIterationId.length + 1),
+    };
   const separator = reference.indexOf(":");
   if (separator < 1 || separator === reference.length - 1) return undefined;
   return {
@@ -1022,7 +1031,7 @@ function sliceEvidenceDiagnostics(
           }),
         );
       seenRefs.add(reference);
-      const parsed = evidenceReference(reference);
+      const parsed = evidenceReference(reference, [outcome.iterationId]);
       const check =
         parsed?.iterationId === outcome.iterationId
           ? evidenceByCheck.get(parsed.checkId)
@@ -1760,9 +1769,12 @@ function completionDiagnostics(
         continue;
       }
       seenEvidence.add(reference);
-      const separator = reference.indexOf(":");
-      const iterationId = separator < 1 ? "" : reference.slice(0, separator);
-      const checkId = separator < 1 ? "" : reference.slice(separator + 1);
+      const parsed = evidenceReference(
+        reference,
+        loop.outcomes.map(({ iterationId }) => iterationId),
+      );
+      const iterationId = parsed?.iterationId ?? "";
+      const checkId = parsed?.checkId ?? "";
       const outcome = loop.outcomes.find(
         ({ iterationId: candidate }) => candidate === iterationId,
       );
@@ -1847,7 +1859,10 @@ function completionDiagnostics(
       continue;
     }
     for (const reference of scenarioResult.evidenceRefs) {
-      const parsed = evidenceReference(reference);
+      const parsed = evidenceReference(
+        reference,
+        loop.outcomes.map(({ iterationId }) => iterationId),
+      );
       const outcome =
         parsed === undefined
           ? undefined
