@@ -43,8 +43,10 @@ for that attempt. No benchmark fixture or semantic design bundle is mutated.
 
 ## Scope boundary
 
-This contract does not claim that a model ran. A later runner may consume the isolated target and
-public SAH surfaces, then append raw trajectory, execution, cost, and scoring artifacts through a
-separate versioned contract. Hidden expectations remain evaluator inputs after participant outputs
-are frozen. Prompt/provider/model provenance, longitudinal handover, scope/continuity metrics, and
-judge orchestration are not part of this preparation slice.
+This contract does not claim that a model ran. The raw trajectory entries for the
+reserved capture location are now executable through
+[Benchmark trajectory capture](benchmark-trajectory.md); appending execution,
+cost, and scoring artifacts still requires separate versioned contracts. Hidden
+expectations remain evaluator inputs after participant outputs are frozen.
+Prompt/provider/model provenance, longitudinal handover, scope/continuity metrics,
+and judge orchestration are not part of this preparation slice.

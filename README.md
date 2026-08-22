@@ -189,8 +189,7 @@ Use --changed to run constraints assigned to slices affected by explicit target-
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 ~~~
 
-SAH does not inspect Git. You must supply every changed path explicitly. If a path is unmapped,
-ambiguous, or outside declared roots, selection expands to full-fallback.
+SAH does not inspect Git. You must supply every changed path explicitly; if a path is unmapped, ambiguous, or outside declared roots, selection expands to full-fallback.
 
 Even when every selected check passes—or fallback runs every check—the invocation is still
 change-scoped evidence and cannot complete S13. Run a new verification without --changed to
@@ -204,6 +203,7 @@ produce eligible completion evidence.
 | sah verify BUNDLE TARGET | Validate the bundle and check target facts | No, unless --record is supplied |
 | sah advance BUNDLE STAGE | Validate the exact next gate and update lifecycle atomically | Yes, only after success |
 | sah benchmark-prepare BENCHMARK RUN | Create an isolated benchmark target and evaluator-side run record | Yes, fresh paths only |
+| sah benchmark-trajectory RUN | Validate-append or inspect the isolated run's raw trajectory capture | --entry-file appends; --status does not |
 
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.
@@ -216,7 +216,7 @@ Exit codes are stable across the CLI:
 | 1 | Valid input contains validation/gate defects, advancement is blocked, or target facts violate a deterministic constraint |
 | 2 | Invocation/operation failed, or verification is incomplete because review, blockers, unsafe binding, or adapter coverage remains pending |
 
-See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees. See [Benchmark run preparation](docs/benchmark-run.md) for the benchmark isolation command and its hidden-expectation boundary.
+See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees. See [Benchmark run preparation](docs/benchmark-run.md) and [Benchmark trajectory capture](docs/benchmark-trajectory.md) for the benchmark isolation command, its hidden-expectation boundary, and raw trajectory entry capture.
 
 ## Install the conversational skill
 

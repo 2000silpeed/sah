@@ -13,6 +13,7 @@ import { escapePointer } from "./diagnostics.js";
 
 const schemaFiles = [
   "benchmark-run.schema.json",
+  "benchmark-trajectory-entry.schema.json",
   "design-bundle-manifest.schema.json",
   "design-bundle-manifest-v0.5.0.schema.json",
   "architecture-evolution.schema.json",

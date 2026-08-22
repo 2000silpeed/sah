@@ -67,10 +67,17 @@ export type {
   BenchmarkRunMode,
   BenchmarkRunResult,
   BenchmarkRunStatus,
+  BenchmarkTrajectoryAppendOptions,
+  BenchmarkTrajectoryAppendResult,
+  BenchmarkTrajectoryEntry,
+  BenchmarkTrajectoryEntryKind,
+  BenchmarkTrajectoryInspectResult,
+  BenchmarkTrajectoryView,
 } from "./contracts.js";
 export {
   architectureEvolutionSchemaId,
   benchmarkRunSchemaId,
+  benchmarkTrajectoryEntrySchemaId,
   currentArchitectureResultSchemaId,
   iterationScenarioSchemaId,
   iterationSliceSchemaId,
@@ -96,3 +103,7 @@ export { validateCheckerReview } from "./checker-review.js";
 export { resolveArchitectureLineage } from "./architecture-lineage.js";
 export { resolveCurrentArchitecture } from "./current-architecture.js";
 export { prepareBenchmarkRun } from "./benchmark-run.js";
+export {
+  appendBenchmarkTrajectoryEntry,
+  inspectBenchmarkTrajectory,
+} from "./benchmark-trajectory.js";

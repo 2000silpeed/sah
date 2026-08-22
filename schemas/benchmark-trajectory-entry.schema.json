@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-trajectory-entry/v0.1.0",
+  "title": "SAH benchmark trajectory entry",
+  "description": "One raw JSONL trajectory entry captured beside an isolated benchmark run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "seq", "recordedAt", "kind", "payload"],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-trajectory-entry/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "kind": {
+      "enum": [
+        "agent-message",
+        "tool-invocation",
+        "tool-result",
+        "system-event"
+      ],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "payload": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Raw participant-owned trajectory content; SAH owns only its presence as a non-empty object.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-trajectory-entry/v0.1.0",
+      "seq": 1,
+      "recordedAt": "2026-08-22T00:00:00.000Z",
+      "kind": "agent-message",
+      "payload": {
+        "role": "user",
+        "text": "Implement the bookmark feature from problem.md."
+      }
+    }
+  ]
+}

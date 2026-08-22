@@ -132,6 +132,56 @@ export type BenchmarkRunResult = {
   summary: ValidationSummary;
 };
 
+export const benchmarkTrajectoryEntrySchemaId =
+  "https://sah.dev/schemas/benchmark-trajectory-entry/v0.1.0" as const;
+
+export type BenchmarkTrajectoryEntryKind =
+  "agent-message" | "tool-invocation" | "tool-result" | "system-event";
+
+export type BenchmarkTrajectoryEntry = {
+  $schema: typeof benchmarkTrajectoryEntrySchemaId;
+  seq: number;
+  recordedAt: string;
+  kind: BenchmarkTrajectoryEntryKind;
+  payload: Record<string, unknown>;
+};
+
+export type BenchmarkTrajectoryAppendOptions = {
+  seq: number;
+  recordedAt: string;
+  kind: BenchmarkTrajectoryEntryKind;
+  payload: Record<string, unknown>;
+};
+
+export type BenchmarkTrajectoryView = {
+  byteSize: number;
+  sha256Digest: string | null;
+  entryCount: number;
+  firstSeq: number | null;
+  lastSeq: number | null;
+  firstRecordedAt: string | null;
+  lastRecordedAt: string | null;
+};
+
+export type BenchmarkTrajectoryAppendResult = {
+  status: "appended" | "operational-error";
+  runDirectory: string;
+  trajectoryPath?: string;
+  entry?: BenchmarkTrajectoryEntry;
+  view?: BenchmarkTrajectoryView;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
+export type BenchmarkTrajectoryInspectResult = {
+  status: "ok" | "operational-error";
+  runDirectory: string;
+  trajectoryPath?: string;
+  view?: BenchmarkTrajectoryView;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
 export type LineageBundle = {
   bundleId: string;
   path: string;

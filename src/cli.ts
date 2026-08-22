@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import {
@@ -20,6 +21,10 @@ import {
   type CurrentArchitectureResult,
   type BenchmarkRunResult,
   type BenchmarkRunMode,
+  type BenchmarkTrajectoryAppendOptions,
+  type BenchmarkTrajectoryAppendResult,
+  type BenchmarkTrajectoryEntryKind,
+  type BenchmarkTrajectoryInspectResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -40,6 +45,10 @@ import {
 } from "./iteration-loop.js";
 import { validateCheckerReview } from "./checker-review.js";
 import { prepareBenchmarkRun } from "./benchmark-run.js";
+import {
+  appendBenchmarkTrajectoryEntry,
+  inspectBenchmarkTrajectory,
+} from "./benchmark-trajectory.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -49,6 +58,7 @@ const usage = [
   "       sah lineage <sah-root> [--json]",
   "       sah current <sah-root> [--json]",
   "       sah benchmark-prepare <benchmark-directory> <run-directory> --run-id <run-id> --comparison-id <comparison-id> --mode <treatment|control> [--json]",
+  "       sah benchmark-trajectory <run-directory> (--entry-file <entry-file> | --status) [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -72,6 +82,8 @@ type ParsedArguments = {
   benchmarkRunId?: string;
   benchmarkComparisonId?: string;
   benchmarkMode?: string;
+  benchmarkTrajectoryEntryPath?: string;
+  benchmarkTrajectoryStatus?: boolean;
   repair?: boolean;
   error?: string;
 };
@@ -89,6 +101,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let benchmarkRunId: string | undefined;
   let benchmarkComparisonId: string | undefined;
   let benchmarkMode: string | undefined;
+  let benchmarkTrajectoryEntryPath: string | undefined;
+  let benchmarkTrajectoryStatus = false;
   let repair = false;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -139,6 +153,37 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       else if (argument === "--comparison-id") benchmarkComparisonId = value;
       else benchmarkMode = value;
       index += 1;
+      continue;
+    }
+    if (argument === "--entry-file") {
+      if (benchmarkTrajectoryEntryPath !== undefined) {
+        return {
+          positional,
+          json,
+          error: "--entry-file may be supplied only once.",
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--entry-file requires one entry file path.",
+        };
+      }
+      benchmarkTrajectoryEntryPath = value;
+      index += 1;
+      continue;
+    }
+    if (argument === "--status") {
+      if (benchmarkTrajectoryStatus) {
+        return {
+          positional,
+          json,
+          error: "--status may be supplied only once.",
+        };
+      }
+      benchmarkTrajectoryStatus = true;
       continue;
     }
     if (argument === "--mapping") {
@@ -275,6 +320,10 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     ...(benchmarkRunId === undefined ? {} : { benchmarkRunId }),
     ...(benchmarkComparisonId === undefined ? {} : { benchmarkComparisonId }),
     ...(benchmarkMode === undefined ? {} : { benchmarkMode }),
+    ...(benchmarkTrajectoryEntryPath === undefined
+      ? {}
+      : { benchmarkTrajectoryEntryPath }),
+    ...(benchmarkTrajectoryStatus ? { benchmarkTrajectoryStatus: true } : {}),
     ...(repair ? { repair: true } : {}),
   };
 }
@@ -440,7 +489,9 @@ function exitCode(
     | IterationLoopResult
     | CheckerReviewResult
     | CurrentArchitectureResult
-    | BenchmarkRunResult,
+    | BenchmarkRunResult
+    | BenchmarkTrajectoryAppendResult
+    | BenchmarkTrajectoryInspectResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -448,6 +499,8 @@ function exitCode(
     case "ready":
     case "complete":
     case "prepared":
+    case "appended":
+    case "ok":
       return 0;
     case "escalate":
       return 1;
@@ -732,6 +785,165 @@ function isBenchmarkMode(value: string | undefined): value is BenchmarkRunMode {
   return value === "treatment" || value === "control";
 }
 
+const benchmarkTrajectoryKinds: readonly BenchmarkTrajectoryEntryKind[] = [
+  "agent-message",
+  "tool-invocation",
+  "tool-result",
+  "system-event",
+];
+
+function isBenchmarkTrajectoryKind(
+  value: string,
+): value is BenchmarkTrajectoryEntryKind {
+  return (benchmarkTrajectoryKinds as readonly string[]).includes(value);
+}
+
+function toTrajectoryAppendOptions(
+  value: unknown,
+): BenchmarkTrajectoryAppendOptions | string {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return "one JSON object";
+  const record = value as Record<string, unknown>;
+  const allowedKeys = ["seq", "recordedAt", "kind", "payload"];
+  const keys = Object.keys(record);
+  for (const key of keys) {
+    if (!allowedKeys.includes(key)) return `no ${key} property`;
+  }
+  if (!keys.includes("seq") || typeof record.seq !== "number")
+    return "a numeric seq property";
+  if (!Number.isInteger(record.seq) || record.seq < 1)
+    return "seq to be a positive integer";
+  if (!keys.includes("recordedAt") || typeof record.recordedAt !== "string")
+    return "a recordedAt date-time string";
+  if (
+    !keys.includes("kind") ||
+    typeof record.kind !== "string" ||
+    !isBenchmarkTrajectoryKind(record.kind)
+  )
+    return `kind to be one of ${benchmarkTrajectoryKinds.join(", ")}`;
+  if (
+    !keys.includes("payload") ||
+    typeof record.payload !== "object" ||
+    record.payload === null ||
+    Array.isArray(record.payload)
+  )
+    return "payload to be a non-null object";
+  const payload = record.payload as Record<string, unknown>;
+  return {
+    seq: record.seq,
+    recordedAt: record.recordedAt,
+    kind: record.kind,
+    payload,
+  };
+}
+
+function formatTrajectoryHuman(
+  trajectoryResult:
+    BenchmarkTrajectoryAppendResult | BenchmarkTrajectoryInspectResult,
+): string {
+  const title =
+    trajectoryResult.status === "appended"
+      ? "SAH benchmark trajectory entry appended"
+      : trajectoryResult.status === "ok"
+        ? "SAH benchmark trajectory inspected"
+        : "SAH benchmark trajectory capture failed";
+  const view = trajectoryResult.view;
+  const entry =
+    trajectoryResult.status === "appended" ? trajectoryResult.entry : undefined;
+  return [
+    title,
+    `Run: ${trajectoryResult.runDirectory}`,
+    ...(trajectoryResult.trajectoryPath === undefined
+      ? []
+      : [`Trajectory: ${trajectoryResult.trajectoryPath}`]),
+    ...(entry === undefined
+      ? []
+      : [`Entry: seq ${String(entry.seq)} (${entry.kind})`]),
+    ...(view === undefined
+      ? []
+      : [
+          `Capture: ${String(view.entryCount)} entr${view.entryCount === 1 ? "y" : "ies"}, ${String(view.byteSize)} byte(s)`,
+          ...(view.sha256Digest === null
+            ? []
+            : [`Digest: ${view.sha256Digest}`]),
+          ...(view.firstSeq === null || view.lastSeq === null
+            ? []
+            : [
+                `Sequence: ${String(view.firstSeq)}..${String(view.lastSeq)}`,
+                `Recorded: ${view.firstRecordedAt ?? "(unknown)"}..${view.lastRecordedAt ?? "(unknown)"}`,
+              ]),
+        ]),
+    ...trajectoryResult.diagnostics.map(humanDiagnostic),
+    `Summary: ${trajectoryResult.summary.errors} error(s), ${trajectoryResult.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
+async function runBenchmarkTrajectory(
+  positional: string[],
+  parsed: ParsedArguments,
+): Promise<number> {
+  const { json } = parsed;
+  const actionCount =
+    (parsed.benchmarkTrajectoryEntryPath !== undefined ? 1 : 0) +
+    (parsed.benchmarkTrajectoryStatus === true ? 1 : 0);
+  if (positional.length !== 2 || actionCount !== 1) {
+    const invalid = invocationError(
+      "benchmark-trajectory requires exactly one run directory and exactly one of --entry-file or --status.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  const runDirectory = positional[1] ?? "";
+  if (parsed.benchmarkTrajectoryStatus === true) {
+    const inspected = await inspectBenchmarkTrajectory(runDirectory);
+    process.stdout.write(
+      `${json ? JSON.stringify(inspected, null, 2) : formatTrajectoryHuman(inspected)}\n`,
+    );
+    return exitCode(inspected);
+  }
+  let raw: string;
+  try {
+    raw = await readFile(parsed.benchmarkTrajectoryEntryPath ?? "", "utf8");
+  } catch (error) {
+    const invalid = invocationError(
+      `--entry-file could not be read: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(raw) as unknown;
+  } catch {
+    const invalid = invocationError(
+      "--entry-file does not contain valid JSON.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  const options = toTrajectoryAppendOptions(value);
+  if (typeof options === "string") {
+    const invalid = invocationError(
+      `The --entry-file envelope requires ${options}. $schema is stamped automatically.`,
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  const appended = await appendBenchmarkTrajectoryEntry(runDirectory, options);
+  process.stdout.write(
+    `${json ? JSON.stringify(appended, null, 2) : formatTrajectoryHuman(appended)}\n`,
+  );
+  return exitCode(appended);
+}
+
 async function main(arguments_: string[]): Promise<number> {
   const parsed = parseArguments(arguments_);
   const { json, positional } = parsed;
@@ -757,6 +969,19 @@ async function main(arguments_: string[]): Promise<number> {
   if (benchmarkOptionUsed && positional[0] !== "benchmark-prepare") {
     const invalid = invocationError(
       "--run-id, --comparison-id, and --mode are supported only by benchmark-prepare.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+
+  const trajectoryOptionUsed =
+    parsed.benchmarkTrajectoryEntryPath !== undefined ||
+    parsed.benchmarkTrajectoryStatus === true;
+  if (trajectoryOptionUsed && positional[0] !== "benchmark-trajectory") {
+    const invalid = invocationError(
+      "--entry-file and --status are supported only by benchmark-trajectory.",
     );
     process.stdout.write(
       `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
@@ -850,6 +1075,10 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(prepared, null, 2) : formatBenchmarkRunHuman(prepared)}\n`,
     );
     return exitCode(prepared);
+  }
+
+  if (positional[0] === "benchmark-trajectory") {
+    return runBenchmarkTrajectory(positional, parsed);
   }
 
   if (

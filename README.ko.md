@@ -157,8 +157,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 예상 결과는 equipment-owns-writes constraint의 결정론적 check 하나가 pass하는 것입니다.
 
 `fixtures/simple-crud`는 설계 번들, `fixtures/s13-typescript-target`은 대상이며, 대상 상대
-mapping은 source path/symbol을 Architecture element ID와 연결합니다. --record를 지정하지
-않은 verify는 읽기 전용입니다.
+mapping은 source path/symbol을 Architecture element ID와 연결합니다. --record를 지정하지 않은 verify는 읽기 전용입니다.
 
 ## Full evidence를 기록하고 S13 완료하기
 
@@ -190,12 +189,9 @@ S12→S13을 승인할 수 있습니다.
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 ~~~
 
-SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전달해야 합니다. 경로가
-mapping되지 않았거나 모호하거나 선언한 source root 밖이면 full-fallback으로 확장됩니다.
+SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전달해야 하며, 경로가 mapping되지 않았거나 모호하거나 선언한 source root 밖이면 full-fallback으로 확장됩니다.
 
-선택한 check가 모두 pass하거나 fallback이 전체 check를 실행했더라도 호출 자체는 여전히
-change-scoped evidence입니다. S13 완료 증거가 될 수 없습니다. --changed 없이 새로운 full
-verification을 실행해야 합니다.
+선택한 check가 모두 pass하거나 fallback이 전체 check를 실행했더라도 호출 자체는 여전히 change-scoped evidence입니다. S13 완료 증거가 될 수 없습니다. --changed 없이 새로운 full verification을 실행해야 합니다.
 
 ## CLI 빠른 참조
 
@@ -204,6 +200,8 @@ verification을 실행해야 합니다.
 | sah validate BUNDLE | 저장된 lifecycle stage 기준으로 번들 검증 | 없음 |
 | sah verify BUNDLE TARGET | 번들 검증 후 대상 fact 검사 | --record가 없으면 없음 |
 | sah advance BUNDLE STAGE | 정확히 다음 gate를 검증하고 lifecycle을 원자적으로 변경 | 성공한 경우에만 있음 |
+| sah benchmark-prepare BENCHMARK RUN | 격리된 벤치마크 target과 evaluator 측 run record 생성 | 있음, 새 경로만 |
+| sah benchmark-trajectory RUN | 격리된 run의 raw trajectory capture 검증-append 또는 조회 | --entry-file은 추가, --status는 없음 |
 
 Advance는 정방향으로 정확히 한 stage만 이동합니다. 현재 실행 가능한 target gate는
 S5부터 S13까지입니다.
@@ -217,7 +215,9 @@ CLI exit code:
 | 2 | 호출/운영 실패 또는 review, blocker, unsafe binding, adapter가 남아 verification incomplete |
 
 정확한 문법, option, result envelope, 전이 규칙, 경로 제한, adapter 범위, 원자성은
-[Validation CLI and Library](docs/validation-cli.md)가 소유합니다.
+[Validation CLI and Library](docs/validation-cli.md)가 소유합니다. 벤치마크 격리 명령, 숨겨진
+expectation 경계, raw trajectory entry capture는 [Benchmark run preparation](docs/benchmark-run.md)과
+[Benchmark trajectory capture](docs/benchmark-trajectory.md)가 소유합니다.
 
 ## 대화형 skill 설치하기
 

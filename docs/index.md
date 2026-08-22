@@ -15,7 +15,9 @@ extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounde
 extension; [Run 25 plan](../.agent/plans/run-25.md) records the approved Cross-Bundle Lineage
 MVP; [Run 27 plan](../.agent/plans/run-27.md) records the target-check evidence bridge; [Run 28
 plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture; [Run 29 plan](../.agent/plans/run-29.md)
-records the sandbox-safe direct CLI path.
+records the sandbox-safe direct CLI path; [Run 30 plan](../.agent/plans/run-30.md)
+records the isolated benchmark preparation contract; [Run 31 plan](../.agent/plans/run-31.md)
+records the benchmark trajectory capture seam.
 
 ## Product and reasoning authority
 
@@ -58,6 +60,8 @@ records the sandbox-safe direct CLI path.
   roles, coverage, and dataset evolution.
 - [Benchmark run preparation](benchmark-run.md) — owns the executable FP-008 input-isolation
   contract and evaluator-side preparation record.
+- [Benchmark trajectory capture](benchmark-trajectory.md) — owns the preparation-bound raw
+  trajectory entry contract, append continuity, and read-only capture inspection.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
   harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,
@@ -125,6 +129,8 @@ records the sandbox-safe direct CLI path.
   source-checkout path for read-only CLI use when npm side effects are unavailable.
 - [ADR-0029](adr/0029-isolate-benchmark-inputs-before-execution.md) — isolates benchmark input
   from hidden expectations before any model execution.
+- [ADR-0030](adr/0030-capture-benchmark-trajectory-locally.md) — adds a local, preparation-bound
+  raw trajectory capture seam without model invocation, scoring, or semantic payload claims.
 
 ## JSON Schema contracts
 
@@ -155,6 +161,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   the derived active/superseded decision, trigger, judgment, head, and conflict projection.
 - [Benchmark run](../schemas/benchmark-run.schema.json) — validates evaluator-side treatment/control
   preparation metadata without exposing hidden expectations to the participant target.
+- [Benchmark trajectory entry](../schemas/benchmark-trajectory-entry.schema.json) — validates one
+  raw JSONL trajectory line captured beside a prepared benchmark run.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -205,6 +213,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Benchmark run preparation](../src/benchmark-run.ts) and
   [benchmark-run contract](benchmark-run.md) — create a fresh participant target containing only
   problem.md and a sibling schema-validated evaluator record.
+- [Benchmark trajectory capture](../src/benchmark-trajectory.ts) and
+  [trajectory contract](benchmark-trajectory.md) — append schema-valid JSONL entries to the
+  reserved capture path and inspect them read-only.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.
@@ -240,7 +251,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
   [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
   [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), [sandbox CLI tests](../test/sandbox-cli.test.ts),
-  [benchmark run tests](../test/benchmark-run.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
+  [benchmark run tests](../test/benchmark-run.test.ts), [benchmark trajectory tests](../test/benchmark-trajectory.test.ts),
+and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   host-workflow packaging, output, and failure families without external network access.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

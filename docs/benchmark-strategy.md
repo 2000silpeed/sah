@@ -25,7 +25,9 @@ document length, method vocabulary, or agreement with one exact architecture.
 The executable preparation seam is documented in [Benchmark run preparation](benchmark-run.md).
 `sah benchmark-prepare` creates a fresh participant target containing only `problem.md` and a
 sibling evaluator-side `benchmark-run` record. It reserves trajectory/output paths but does not
-invoke a model, capture raw trajectory, read expectations, or score a result.
+invoke a model or score a result. Raw trajectory entries can now be appended and inspected
+locally through [Benchmark trajectory capture](benchmark-trajectory.md); model invocation,
+scoring, and judging remain subsequent slices.
 
 ## Common score: 100 points
 
