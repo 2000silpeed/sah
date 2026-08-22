@@ -15,6 +15,8 @@ const schemaFiles = [
   "benchmark-run.schema.json",
   "benchmark-trajectory-entry.schema.json",
   "benchmark-freeze.schema.json",
+  "benchmark-judge-review.schema.json",
+  "benchmark-score.schema.json",
   "design-bundle-manifest.schema.json",
   "design-bundle-manifest-v0.5.0.schema.json",
   "architecture-evolution.schema.json",

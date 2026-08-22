@@ -70,6 +70,11 @@ export type {
   BenchmarkFreeze,
   BenchmarkFreezeResult,
   BenchmarkFrozenOutputFile,
+  BenchmarkJudgeCategory,
+  BenchmarkJudgeReview,
+  BenchmarkScore,
+  BenchmarkScoreResult,
+  BenchmarkScoreStatus,
   BenchmarkTrajectoryAppendOptions,
   BenchmarkTrajectoryAppendResult,
   BenchmarkTrajectoryEntry,
@@ -80,7 +85,9 @@ export type {
 export {
   architectureEvolutionSchemaId,
   benchmarkFreezeSchemaId,
+  benchmarkJudgeReviewSchemaId,
   benchmarkRunSchemaId,
+  benchmarkScoreSchemaId,
   benchmarkTrajectoryEntrySchemaId,
   currentArchitectureResultSchemaId,
   iterationScenarioSchemaId,
@@ -112,3 +119,4 @@ export {
   freezeBenchmarkCapture,
   inspectBenchmarkTrajectory,
 } from "./benchmark-trajectory.js";
+export { aggregateBenchmarkJudgeReviews } from "./benchmark-judging.js";

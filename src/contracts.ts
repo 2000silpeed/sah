@@ -222,6 +222,81 @@ export type BenchmarkFreezeResult = {
   summary: ValidationSummary;
 };
 
+export const benchmarkJudgeReviewSchemaId =
+  "https://sah.dev/schemas/benchmark-judge-review/v0.1.0" as const;
+
+export const benchmarkScoreSchemaId =
+  "https://sah.dev/schemas/benchmark-score/v0.1.0" as const;
+
+export type BenchmarkJudgeCategory =
+  | "characterization"
+  | "strategy"
+  | "responsibilities"
+  | "boundaries"
+  | "quality-trade-offs"
+  | "continuous-enforcement";
+
+export type BenchmarkJudgeReview = {
+  $schema: typeof benchmarkJudgeReviewSchemaId;
+  judgeVersion: "0.1.0";
+  judgeId: string;
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  trajectoryDigest: string;
+  problemDigest: string;
+  rubricVersion: string;
+  reviewedAt: string;
+  scores: Array<{
+    category: BenchmarkJudgeCategory;
+    points: number;
+    explanation: string;
+  }>;
+  penalties: {
+    overEngineeringDeduction: number;
+    overEngineeringExplanation: string;
+  };
+  fatalIndicators: string[];
+  notes?: string;
+};
+
+export type BenchmarkScoreStatus =
+  "scored" | "adjudication-required" | "violations" | "operational-error";
+
+export type BenchmarkScore = {
+  $schema: typeof benchmarkScoreSchemaId;
+  scoreVersion: "0.1.0";
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  trajectoryDigest: string;
+  problemDigest: string;
+  judges: [string, string];
+  rubricVersions: [string, string];
+  categories: Array<{
+    category: BenchmarkJudgeCategory;
+    points: [number, number];
+    mean: number | null;
+    agreed: boolean;
+  }>;
+  disputedCategories: BenchmarkJudgeCategory[];
+  adjudicationRequired: boolean;
+  fatalIndicatorFlagged: boolean;
+  overEngineeringDeductions: [number, number];
+  judgeSubtotal: number | null;
+};
+
+export type BenchmarkScoreResult = {
+  status: BenchmarkScoreStatus;
+  recordAPath: string;
+  recordBPath: string;
+  score?: BenchmarkScore;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
 export type LineageBundle = {
   bundleId: string;
   path: string;

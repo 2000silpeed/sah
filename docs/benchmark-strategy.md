@@ -25,9 +25,11 @@ document length, method vocabulary, or agreement with one exact architecture.
 The executable preparation seam is documented in [Benchmark run preparation](benchmark-run.md).
 `sah benchmark-prepare` creates a fresh participant target containing only `problem.md` and a
 sibling evaluator-side `benchmark-run` record. It reserves trajectory/output paths but does not
-invoke a model or score a result. Raw trajectory entries can now be appended and inspected
-locally through [Benchmark trajectory capture](benchmark-trajectory.md); model invocation,
-scoring, and judging remain subsequent slices.
+invoke a model or score a result. Raw trajectory entries can be appended, inspected, and frozen
+locally through [Benchmark trajectory capture](benchmark-trajectory.md). Judge records are now
+validated and aggregated with the deterministic three-point gate through
+[Benchmark judging](benchmark-judging.md); judges themselves are executed by evaluator-side agent
+sessions, and model invocation plus deterministic category scoring remain subsequent slices.
 
 ## Common score: 100 points
 

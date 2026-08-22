@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-score/v0.1.0",
+  "title": "SAH benchmark judge aggregation",
+  "description": "Derived two-judge aggregation over LLM-judged categories with the deterministic agreement gate; deterministic scoring categories are assembled by a later slice.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "scoreVersion",
+    "runId",
+    "comparisonId",
+    "benchmarkId",
+    "mode",
+    "trajectoryDigest",
+    "problemDigest",
+    "judges",
+    "rubricVersions",
+    "categories",
+    "disputedCategories",
+    "adjudicationRequired",
+    "fatalIndicatorFlagged",
+    "overEngineeringDeductions",
+    "judgeSubtotal"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-score/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "scoreVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "mode": {
+      "enum": ["treatment", "control"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "trajectoryDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "problemDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "judges": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+      },
+      "description": "Sorted distinct judge identities whose records were aggregated.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "rubricVersions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Per-judge declared rubric identity, kept raw; equal values indicate a shared rubric.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "points", "mean", "agreed"],
+        "properties": {
+          "category": {
+            "enum": [
+              "characterization",
+              "strategy",
+              "responsibilities",
+              "boundaries",
+              "quality-trade-offs",
+              "continuous-enforcement"
+            ],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "points": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            },
+            "description": "Raw judge points kept verbatim; order matches the judges array.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "mean": {
+            "type": ["number", "null"],
+            "description": "Mean of both judges when the category agreed within three points; otherwise null pending human adjudication.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "agreed": {
+            "type": "boolean",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["benchmark-evaluator"],
+          "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "disputedCategories": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "characterization",
+          "strategy",
+          "responsibilities",
+          "boundaries",
+          "quality-trade-offs",
+          "continuous-enforcement"
+        ]
+      },
+      "description": "Categories whose judge points differ by more than three and require benchmark-steward adjudication.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "adjudicationRequired": {
+      "type": "boolean",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "fatalIndicatorFlagged": {
+      "type": "boolean",
+      "description": "True when any judge reported any FATAL failure indicator; the eventual total is capped at 49.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "overEngineeringDeductions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+      },
+      "description": "Raw per-judge over-engineering deductions kept verbatim; no agreement gate applies in this version.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "judgeSubtotal": {
+      "type": ["number", "null"],
+      "description": "Sum of agreed category means, or null while any dispute or missing adjudication remains.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-score/v0.1.0",
+      "scoreVersion": "0.1.0",
+      "runId": "simple-crud-treatment-001",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "mode": "treatment",
+      "trajectoryDigest": "sha256:d69f05a168df61321bb29f40067e36b6bdc7bb5b6f59ae47cc89ddaa9e807ca8",
+      "problemDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "judges": ["judge-session-a", "judge-session-b"],
+      "rubricVersions": [
+        "benchmark-strategy@2026-08-22",
+        "benchmark-strategy@2026-08-22"
+      ],
+      "categories": [
+        {
+          "category": "characterization",
+          "points": [12, 13],
+          "mean": 12.5,
+          "agreed": true
+        },
+        {
+          "category": "strategy",
+          "points": [16, 16],
+          "mean": 16,
+          "agreed": true
+        },
+        {
+          "category": "responsibilities",
+          "points": [11, 14],
+          "mean": null,
+          "agreed": false
+        },
+        {
+          "category": "boundaries",
+          "points": [12, 12],
+          "mean": 12,
+          "agreed": true
+        },
+        {
+          "category": "quality-trade-offs",
+          "points": [11, 11],
+          "mean": 11,
+          "agreed": true
+        },
+        {
+          "category": "continuous-enforcement",
+          "points": [4, 5],
+          "mean": 4.5,
+          "agreed": true
+        }
+      ],
+      "disputedCategories": ["responsibilities"],
+      "adjudicationRequired": true,
+      "fatalIndicatorFlagged": false,
+      "overEngineeringDeductions": [2, 3],
+      "judgeSubtotal": null
+    }
+  ]
+}

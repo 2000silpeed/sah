@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-judge-review/v0.1.0",
+  "title": "SAH benchmark judge review",
+  "description": "One independent LLM-judge record over a frozen benchmark capture; SAH validates and aggregates records but never executes the judgment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "judgeVersion",
+    "judgeId",
+    "runId",
+    "comparisonId",
+    "benchmarkId",
+    "mode",
+    "trajectoryDigest",
+    "problemDigest",
+    "rubricVersion",
+    "reviewedAt",
+    "scores",
+    "penalties",
+    "fatalIndicators"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-judge-review/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "judgeVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "judgeId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "description": "Identity of one independent judge session; two aggregated records must not share it.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "description": "Copied from the frozen capture so the review is bound to exactly one run.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "mode": {
+      "enum": ["treatment", "control"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "trajectoryDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Digest of the frozen trajectory the judge scored; must match the freeze record.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "problemDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Digest of the problem.md bytes given to the judge.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "rubricVersion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Evaluator-declared rubric identity the judge applied, e.g. a benchmark-strategy revision label.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "scores": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "description": "Exactly one entry per LLM-judged category; per-category maximum points are enforced by the aggregator.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "points", "explanation"],
+        "properties": {
+          "category": {
+            "enum": [
+              "characterization",
+              "strategy",
+              "responsibilities",
+              "boundaries",
+              "quality-trade-offs",
+              "continuous-enforcement"
+            ],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-judge"],
+              "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+            }
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20,
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-judge"],
+              "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+            }
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-judge"],
+              "readBy": ["benchmark-evaluator"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["benchmark-judge"],
+          "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+      }
+    },
+    "penalties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overEngineeringDeduction", "overEngineeringExplanation"],
+      "properties": {
+        "overEngineeringDeduction": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-judge"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+          }
+        },
+        "overEngineeringExplanation": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-judge"],
+            "readBy": ["benchmark-evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+      }
+    },
+    "fatalIndicators": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "FATAL failure indicator identifiers observed by this judge; any occurrence caps the eventual total at 49.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator", "benchmark-judge-aggregator"]
+      }
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-judge"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-judge-review/v0.1.0",
+      "judgeVersion": "0.1.0",
+      "judgeId": "judge-session-a",
+      "runId": "simple-crud-treatment-001",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "mode": "treatment",
+      "trajectoryDigest": "sha256:d69f05a168df61321bb29f40067e36b6bdc7bb5b6f59ae47cc89ddaa9e807ca8",
+      "problemDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "rubricVersion": "benchmark-strategy@2026-08-22",
+      "reviewedAt": "2026-08-22T14:00:00.000Z",
+      "scores": [
+        {
+          "category": "characterization",
+          "points": 12,
+          "explanation": "Dimensions match the domain; uncertainty recorded."
+        },
+        {
+          "category": "strategy",
+          "points": 16,
+          "explanation": "Proportional choices; simpler alternatives named."
+        },
+        {
+          "category": "responsibilities",
+          "points": 11,
+          "explanation": "Critical outcomes owned; recovery thinner than required."
+        },
+        {
+          "category": "boundaries",
+          "points": 12,
+          "explanation": "Boundaries follow change reasons."
+        },
+        {
+          "category": "quality-trade-offs",
+          "points": 11,
+          "explanation": "Trade-offs explicit including what worsens."
+        },
+        {
+          "category": "continuous-enforcement",
+          "points": 4,
+          "explanation": "Constraints trace to decisions with observable predicates."
+        }
+      ],
+      "penalties": {
+        "overEngineeringDeduction": 2,
+        "overEngineeringExplanation": "One unjustified repository layer around plain CRUD reads."
+      },
+      "fatalIndicators": []
+    }
+  ]
+}

@@ -61,7 +61,9 @@ records the benchmark trajectory capture seam.
 - [Benchmark run preparation](benchmark-run.md) — owns the executable FP-008 input-isolation
   contract and evaluator-side preparation record.
 - [Benchmark trajectory capture](benchmark-trajectory.md) — owns the preparation-bound raw
-  trajectory entry contract, append continuity, and read-only capture inspection.
+  trajectory entry contract, append continuity, freeze pinning, and read-only inspection.
+- [Benchmark judging](benchmark-judging.md) — owns the judge-review record contract, the two-judge
+  agreement gate, and the evaluator-side independence protocol.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
   harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,
@@ -133,6 +135,8 @@ records the benchmark trajectory capture seam.
   raw trajectory capture seam without model invocation, scoring, or semantic payload claims.
 - [ADR-0031](adr/0031-freeze-completed-benchmark-captures-before-scoring.md) — pins completed
   captures with an immutable evaluator-side freeze record that blocks later appends.
+- [ADR-0032](adr/0032-validate-and-aggregate-benchmark-judges.md) — validates and aggregates
+  evaluator-executed judge records deterministically without the runtime invoking models.
 
 ## JSON Schema contracts
 
@@ -167,6 +171,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   raw JSONL trajectory line captured beside a prepared benchmark run.
 - [Benchmark freeze](../schemas/benchmark-freeze.schema.json) — validates the evaluator-side pin
   of one run's completed trajectory capture and output inventory.
+- [Benchmark judge review](../schemas/benchmark-judge-review.schema.json) and
+  [score](../schemas/benchmark-score.schema.json) — validate one independent judge's record over
+  a frozen capture and the derived two-judge agreement projection.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -220,6 +227,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Benchmark trajectory capture](../src/benchmark-trajectory.ts) and
   [trajectory contract](benchmark-trajectory.md) — append schema-valid JSONL entries to the
   reserved capture path, inspect them read-only, and freeze completed captures.
+- [Benchmark judge aggregation](../src/benchmark-judging.ts) and
+  [judging contract](benchmark-judging.md) — validate independent judge records and project the
+  deterministic two-judge agreement view without executing any judgment.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.

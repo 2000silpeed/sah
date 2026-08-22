@@ -105,8 +105,7 @@ SAH는 검증 가능성에 따라 주장을 나눕니다.
 | Assisted | 사실이 맥락 검토 범위를 좁힘 | 불가, finding만 생성 |
 | Judgment | 사람 또는 LLM이 rubric, confidence, 반대 근거를 함께 평가 | 불가, disposition 전까지 pending |
 
-Adapter가 없으면 **unsupported**이며 pass가 아닙니다. 이름 냄새, 추상화 선택, 전략 적합성,
-트레이드오프 판단은 규칙처럼 표현하기 쉽다는 이유만으로 결정론적 오류가 되지 않습니다.
+Adapter가 없으면 **unsupported**이며 pass가 아닙니다. 이름 냄새, 추상화 선택, 전략 적합성, 트레이드오프 판단은 규칙처럼 표현하기 쉽다는 이유만으로 결정론적 오류가 되지 않습니다.
 
 현재 실행 가능한 adapter는 다음 두 가지입니다.
 
@@ -202,6 +201,7 @@ SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전�
 | sah benchmark-prepare BENCHMARK RUN | 격리된 벤치마크 target과 evaluator 측 run record 생성 | 있음, 새 경로만 |
 | sah benchmark-trajectory RUN | 격리된 run의 raw trajectory capture 검증-append 또는 조회 | --entry-file은 추가, --status는 없음 |
 | sah benchmark-freeze RUN | 완료된 캡처와 output 인벤토리를 evaluator 측 불변 기록으로 고정 | 있음, 새 record만 |
+| sah benchmark-judge RECORD-A RECORD-B | 두 독립 judge 기록을 검증하고 합의 뷰를 산출 | 없음 |
 
 Advance는 정방향으로 정확히 한 stage만 이동합니다. 현재 실행 가능한 target gate는
 S5부터 S13까지입니다.

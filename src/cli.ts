@@ -22,6 +22,7 @@ import {
   type BenchmarkRunResult,
   type BenchmarkRunMode,
   type BenchmarkFreezeResult,
+  type BenchmarkScoreResult,
   type BenchmarkTrajectoryAppendOptions,
   type BenchmarkTrajectoryAppendResult,
   type BenchmarkTrajectoryEntryKind,
@@ -51,6 +52,7 @@ import {
   freezeBenchmarkCapture,
   inspectBenchmarkTrajectory,
 } from "./benchmark-trajectory.js";
+import { aggregateBenchmarkJudgeReviews } from "./benchmark-judging.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -62,6 +64,7 @@ const usage = [
   "       sah benchmark-prepare <benchmark-directory> <run-directory> --run-id <run-id> --comparison-id <comparison-id> --mode <treatment|control> [--json]",
   "       sah benchmark-trajectory <run-directory> (--entry-file <entry-file> | --status) [--json]",
   "       sah benchmark-freeze <run-directory> [--json]",
+  "       sah benchmark-judge <judge-record-a> <judge-record-b> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -495,7 +498,8 @@ function exitCode(
     | BenchmarkRunResult
     | BenchmarkTrajectoryAppendResult
     | BenchmarkTrajectoryInspectResult
-    | BenchmarkFreezeResult,
+    | BenchmarkFreezeResult
+    | BenchmarkScoreResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -505,6 +509,7 @@ function exitCode(
     case "prepared":
     case "appended":
     case "frozen":
+    case "scored":
     case "ok":
       return 0;
     case "escalate":
@@ -516,6 +521,8 @@ function exitCode(
     case "blocked":
       return 1;
     case "violations":
+      return 1;
+    case "adjudication-required":
       return 1;
     case "incomplete":
     case "operational-error":
@@ -908,6 +915,40 @@ function formatFreezeHuman(freezeResult: BenchmarkFreezeResult): string {
   ].join("\n\n");
 }
 
+function formatJudgeHuman(scoreResult: BenchmarkScoreResult): string {
+  const title =
+    scoreResult.status === "scored"
+      ? "SAH benchmark judges aggregated"
+      : scoreResult.status === "adjudication-required"
+        ? "SAH benchmark judges disagree; steward adjudication required"
+        : scoreResult.status === "violations"
+          ? "SAH benchmark judge records rejected"
+          : "SAH benchmark judging could not run";
+  const score = scoreResult.score;
+  return [
+    title,
+    `Records: ${scoreResult.recordAPath} | ${scoreResult.recordBPath}`,
+    ...(score === undefined
+      ? []
+      : [
+          `Run: ${score.runId} (${score.mode}, comparison ${score.comparisonId})`,
+          `Judges: ${score.judges.join(" | ")}`,
+          ...score.categories.map(
+            (category) =>
+              `${category.category}: ${String(category.points[0])}/${String(category.points[1])}${
+                category.agreed ? ` -> ${String(category.mean)}` : " (disputed)"
+              }`,
+          ),
+          `Disputed: ${score.disputedCategories.join(", ") || "(none)"}`,
+          `Fatal indicators: ${score.fatalIndicatorFlagged ? "flagged" : "none"}`,
+          `Over-engineering deductions: ${score.overEngineeringDeductions.map(String).join("/")}`,
+          `Judge subtotal: ${score.judgeSubtotal === null ? "(pending adjudication)" : String(score.judgeSubtotal)}`,
+        ]),
+    ...scoreResult.diagnostics.map(humanDiagnostic),
+    `Summary: ${scoreResult.summary.errors} error(s), ${scoreResult.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 async function runBenchmarkTrajectory(
   positional: string[],
   parsed: ParsedArguments,
@@ -1134,6 +1175,34 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(frozen, null, 2) : formatFreezeHuman(frozen)}\n`,
     );
     return exitCode(frozen);
+  }
+
+  if (
+    positional.length === 3 &&
+    positional[0] === "benchmark-judge" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.checkRecordPath === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.benchmarkRunId === undefined &&
+    parsed.benchmarkComparisonId === undefined &&
+    parsed.benchmarkMode === undefined &&
+    parsed.benchmarkTrajectoryEntryPath === undefined &&
+    parsed.benchmarkTrajectoryStatus !== true &&
+    parsed.repair !== true
+  ) {
+    const scored = await aggregateBenchmarkJudgeReviews(
+      positional[1] ?? "",
+      positional[2] ?? "",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(scored, null, 2) : formatJudgeHuman(scored)}\n`,
+    );
+    return exitCode(scored);
   }
 
   if (
