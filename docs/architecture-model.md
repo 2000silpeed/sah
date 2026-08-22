@@ -165,7 +165,8 @@ message, and exception policy. Assisted and judgment constraints may omit `obser
 enforcement names a review capability and trigger instead.
 
 JSON Schema validates shape. Reference validators validate graph integrity. Semantic
-validators enforce stage gates. Language adapters extract code facts. LLM judges evaluate
+validators enforce stage gates. Language adapters extract code facts, including the explicit
+iteration-check-record bridge. LLM judges evaluate
 contextual adequacy. These layers must report their own certainty and must not impersonate one
 another.
 

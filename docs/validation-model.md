@@ -62,6 +62,7 @@ has no complete observable specification.
 | Implementation handoff adequacy                                  |     J | Judge slice cohesion, acceptance checks, migration, rollback, and executable usefulness.                                   |
 | Verification record integrity                                    |     D | Record schema, byte digest, bundle metadata, invocation scope, result summaries, and design fingerprint.                   |
 | Checker review record integrity                                  |     D | Require revision/fingerprint context, independent read-only flags, exact check evidence, and a valid verdict shape.    |
+| Target-check execution evidence                                 |     D | Exact schema-valid loop check ID/status/exit/cwd/digests bound to caller-supplied target revision and design fingerprint; no command execution or adequacy judgment. |
 | Checker review adequacy                                           |     J | Judge residual risks, counter-evidence, and whether the independent review actually covers the Task scope.              |
 | S13 completion evidence                                          |     D | Full passed record with one current passing check per S12-assigned constraint; changed scope cannot qualify.               |
 | Source-to-element mapping syntax                                 |     D | Configured path/symbol selectors resolve uniquely or fail as unsupported.                                                  |
@@ -178,6 +179,14 @@ exact design fingerprint. S12→S13 accepts only full, passed, internally consis
 covering every current S12 assignment; affected and full-fallback changed runs are both
 ineligible. The manifest atomically pins record path/schema/digest with S13, and later validation
 rejects changed record bytes or stale semantic artifacts. ADR-0014 owns this boundary.
+
+Run 27 adds one bounded runtime evidence capability. A target-relative schema-valid
+`iteration-outcome/v0.4.0` from `sah loop-checks` can satisfy an explicitly selected
+`iteration-check-record/required-check-passed/true` constraint when its target revision,
+design fingerprint, cwd, unique check ID, status, exit code, and output digests match. The
+adapter never executes the recorded command and cannot judge test adequacy. Stale, unknown,
+duplicate, or incomplete evidence remains unsupported; malformed or unsafe input is operational.
+ADR-0027 owns this boundary.
 
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or

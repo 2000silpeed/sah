@@ -13,7 +13,7 @@ read [vision](vision.md), [principles](principles.md), and the
 [Run 23 plan](../.agent/plans/run-23.md) records the completed scenario-centered vertical-slice
 extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounded continuous-mode
 extension; [Run 25 plan](../.agent/plans/run-25.md) records the approved Cross-Bundle Lineage
-MVP.
+MVP; [Run 27 plan](../.agent/plans/run-27.md) records the target-check evidence bridge.
 
 ## Product and reasoning authority
 
@@ -38,6 +38,8 @@ MVP.
   evolution IR, resolver boundaries, and non-passing conflict semantics.
 - [Current architecture projection](current-architecture.md) — owns the read-only active,
   superseded, trigger, judgment, head, and conflict projection over lineage heads.
+- [Target-check evidence bridge](target-check-evidence.md) — owns the read-only iteration-outcome
+  adapter, explicit target/revision binding, and deterministic/incomplete boundary.
 - [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
   progressive questioning, and the natural-language-to-implementation experience.
 - [Session resume](session-resume.md) — owns the local, model-neutral cross-session resume view.
@@ -88,6 +90,8 @@ MVP.
   constraints from explicit changed paths and falls back safely when mapping is incomplete.
 - [ADR-0014](adr/0014-pin-full-verification-evidence-for-s13.md) — pins one schema-validated
   full-verification record as the atomic S12→S13 completion evidence.
+- [ADR-0027](adr/0027-bind-target-check-evidence-to-explicit-context.md) — reuses exact loop-check
+  evidence without executing commands or inferring target context.
 - [ADR-0015](adr/0015-orchestrate-the-full-loop-through-a-portable-agent-skill.md) — makes one
   portable Agent Skill the Codex/Claude orchestration surface from natural language through
   implementation and S13 verification.
@@ -188,6 +192,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Current architecture projection](../src/current-architecture.ts) and
   [current-state contract](current-architecture.md) — derive head decisions and open triggers
   without mutating canonical bundles or selecting a latest head.
+- [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
+  [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
+  verification without running the recorded command.
 - [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome/completion artifacts,
   binds explicit target/design context, executes declared checks, routes risk, records outcomes
   atomically, accepts/repairs the next task, and enforces the local completion gate.
@@ -218,7 +225,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
   [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
-  [skill contract tests](../test/skill-contracts.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
+  [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
+  and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   host-workflow packaging, output, and failure families without network use.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

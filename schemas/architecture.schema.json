@@ -122,7 +122,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["factSource", "selector", "predicate", "expected"],
       "properties": {
-        "factSource": {"enum": ["source-graph", "symbol-table", "filesystem", "manifest", "api-schema", "test-result", "runtime-telemetry", "architecture-ir"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}},
+        "factSource": {"enum": ["source-graph", "symbol-table", "filesystem", "manifest", "api-schema", "test-result", "iteration-check-record", "runtime-telemetry", "architecture-ir"], "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}},
         "selector": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler"]}},
         "predicate": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler"]}},
         "expected": {"type": "string", "minLength": 1, "x-sah-trace": {"writtenBy": ["S11"], "readBy": ["constraint-compiler", "S13"]}}

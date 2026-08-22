@@ -29,6 +29,19 @@ successful slice with missing, unknown, stale, or non-passing scenario evidence.
 execution linkage, not human acceptance or semantic sufficiency. The design bundle remains the
 authority for architecture decisions, constraints, and S13 evidence.
 
+When a deterministic Architecture constraint is explicitly bound to one target check, reuse the
+outcome without rerunning the command:
+
+```text
+npm exec -- sah verify /path/to/bundle /path/to/target \
+  --check-record .sah/iteration-001.outcome.json \
+  --target-revision git:abc123 --json
+```
+
+The target-check adapter checks the exact caller-supplied revision, current design fingerprint,
+target cwd, check ID, status, exit code, and schema-validated execution envelope. It does not
+judge test adequacy or reconstruct the loop declaration; use `loop-record` for the latter.
+
 ## Evidence and transitions
 
 Evaluate the current route without changing files:

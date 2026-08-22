@@ -41,7 +41,7 @@ import { validateCheckerReview } from "./checker-review.js";
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
   "       sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]",
-  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
+  "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--check-record <target-relative-iteration-outcome>] [--target-revision <target-revision>] [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
   "       sah lineage <sah-root> [--json]",
   "       sah current <sah-root> [--json]",
@@ -59,6 +59,7 @@ type ParsedArguments = {
   json: boolean;
   sourceMappingPath?: string;
   changedPaths?: string[];
+  checkRecordPath?: string;
   recordPath?: string;
   verificationRecordPath?: string;
   cwd?: string;
@@ -73,6 +74,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let json = false;
   let sourceMappingPath: string | undefined;
   let recordPath: string | undefined;
+  let checkRecordPath: string | undefined;
   let verificationRecordPath: string | undefined;
   let cwd: string | undefined;
   let targetRevision: string | undefined;
@@ -146,6 +148,26 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       index += 1;
       continue;
     }
+    if (argument === "--check-record") {
+      if (checkRecordPath !== undefined) {
+        return {
+          positional,
+          json,
+          error: "--check-record may be supplied only once.",
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--check-record requires one target-relative JSON path.",
+        };
+      }
+      checkRecordPath = value;
+      index += 1;
+      continue;
+    }
     if (
       argument === "--target-revision" ||
       argument === "--design-fingerprint"
@@ -202,6 +224,7 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     json,
     ...(sourceMappingPath === undefined ? {} : { sourceMappingPath }),
     ...(changedPaths.length === 0 ? {} : { changedPaths }),
+    ...(checkRecordPath === undefined ? {} : { checkRecordPath }),
     ...(recordPath === undefined ? {} : { recordPath }),
     ...(verificationRecordPath === undefined ? {} : { verificationRecordPath }),
     ...(cwd === undefined ? {} : { cwd }),
@@ -658,15 +681,28 @@ async function main(arguments_: string[]): Promise<number> {
     );
     return 2;
   }
+  if (parsed.checkRecordPath !== undefined && positional[0] !== "verify") {
+    const invalid = invocationError(
+      "--check-record is supported only by verify.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+  const targetContextCommand = [
+    "loop-bind",
+    "loop-checks",
+    "loop-accept-next",
+    "checker-review",
+  ].includes(positional[0] ?? "");
+  const verifyTargetContext =
+    positional[0] === "verify" && parsed.designFingerprint === undefined;
   if (
     (parsed.targetRevision !== undefined ||
       parsed.designFingerprint !== undefined) &&
-    ![
-      "loop-bind",
-      "loop-checks",
-      "loop-accept-next",
-      "checker-review",
-    ].includes(positional[0] ?? "")
+    !targetContextCommand &&
+    !verifyTargetContext
   ) {
     const invalid = invocationError(
       "--target-revision and --design-fingerprint are supported only by loop-bind, loop-checks, loop-accept-next, and checker-review.",
@@ -740,6 +776,12 @@ async function main(arguments_: string[]): Promise<number> {
       ...(parsed.changedPaths === undefined
         ? {}
         : { changedPaths: parsed.changedPaths }),
+      ...(parsed.checkRecordPath === undefined
+        ? {}
+        : { checkRecordPath: parsed.checkRecordPath }),
+      ...(parsed.targetRevision === undefined
+        ? {}
+        : { targetRevision: parsed.targetRevision }),
       ...(parsed.recordPath === undefined
         ? {}
         : { verificationRecordPath: parsed.recordPath }),

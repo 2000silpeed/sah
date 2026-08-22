@@ -26,6 +26,7 @@ import { replaceManifestAtomically } from "./atomic-manifest.js";
 import type { CodeFactAdapter } from "./code-fact-adapter.js";
 import { verifyConstraints } from "./constraint-verification.js";
 import { prepareFilesystemPresenceAdapter } from "./filesystem-presence-adapter.js";
+import { prepareTargetCheckEvidenceAdapter } from "./target-check-evidence-adapter.js";
 import {
   artifactRoles,
   type ArchitectureDecisionModel,
@@ -916,6 +917,36 @@ export async function verifyBundle(
     );
   }
 
+  if (
+    options.targetRevision !== undefined &&
+    options.checkRecordPath === undefined
+  ) {
+    return finishVerification(
+      prepared,
+      options,
+      verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        targetDirectory.trim() === ""
+          ? targetDirectory
+          : resolve(targetDirectory),
+        [],
+        [
+          operationalDiagnostic({
+            code: "VERIFICATION_TARGET_REVISION_WITHOUT_CHECK_RECORD",
+            capability: "Target-check evidence record",
+            message:
+              "An explicit target revision is meaningful only when a target-check evidence record is supplied.",
+            expected: "checkRecordPath and targetRevision supplied together",
+            repair:
+              "Pass --check-record with the corresponding --target-revision, or omit both options.",
+          }),
+        ],
+        validation.bundle,
+      ),
+    );
+  }
+
   const target = await prepareFilesystemPresenceAdapter(targetDirectory);
   if (!target.ok) {
     return finishVerification(
@@ -940,6 +971,35 @@ export async function verifyBundle(
 
   const models = toModels(prepared.artifacts);
   const adapters: CodeFactAdapter[] = [target.adapter];
+  if (options.checkRecordPath !== undefined) {
+    const targetCheck = await prepareTargetCheckEvidenceAdapter({
+      targetRoot: target.targetRoot,
+      checkRecordPath: options.checkRecordPath,
+      ...(options.targetRevision === undefined
+        ? {}
+        : { targetRevision: options.targetRevision }),
+      designFingerprint: designFingerprint(
+        prepared.manifest,
+        prepared.artifacts,
+      ),
+      registry: prepared.registry,
+    });
+    if (!targetCheck.ok) {
+      return finishVerification(
+        prepared,
+        options,
+        verificationResult(
+          "operational-error",
+          prepared.bundleRoot,
+          target.targetRoot,
+          [],
+          targetCheck.diagnostics,
+          validation.bundle,
+        ),
+      );
+    }
+    adapters.push(targetCheck.adapter);
+  }
   let selection: VerificationSelection | undefined;
   if (options.sourceMappingPath !== undefined) {
     const sourceAdapter = await prepareTypeScriptSourceAdapter({

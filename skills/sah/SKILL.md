@@ -213,6 +213,11 @@ verification only for fast feedback. Final S13 eligibility requires a new full v
 `S12 -> S13` advance. `incomplete`, `violations`, `operational-error`, changed scope, and
 `full-fallback` selected from a changed request never satisfy completion.
 
+When a deterministic constraint is explicitly bound to a loop check, pass the schema-valid outcome
+to `sah verify` with `--check-record <target-relative-outcome>` and the same explicit
+`--target-revision`. The target-check adapter is read-only and never executes the recorded command;
+stale or unsupported evidence remains `incomplete`, and test adequacy remains a judgment.
+
 When the available adapter cannot observe a claim, report `unsupported`/`incomplete`; do not call
 it pass. The software may still be implemented and tested, but S13 remains incomplete until the
 declared review or adapter coverage exists.

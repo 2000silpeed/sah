@@ -77,6 +77,12 @@ Also run the target's own formatter, linter, typechecker, tests, build, migratio
 acceptance commands. Record the exact command and outcome in the iteration handoff or outcome
 view. A required non-zero lint result blocks the iteration's done contract, but is a target-check failure rather than an SAH architecture violation. SAH verification complements these checks; it does not replace functional correctness.
 
+For an accepted deterministic target-check binding, reuse the exact outcome with
+`--check-record <target-relative-outcome> --target-revision <revision>`. The adapter validates the
+bundle fingerprint, target revision, target cwd, selected check, status, exit code, and schema
+envelope without executing the command. Unknown, stale, or incomplete evidence is unsupported;
+test adequacy is still assisted or judgment evidence.
+
 ## Full S13 evidence
 
 After all ready slices and target checks pass, publish a fresh full result from the SAH checkout:

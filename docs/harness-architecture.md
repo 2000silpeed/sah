@@ -73,8 +73,9 @@ acyclic-dependency checks. It does not execute handoff checks or judge slice qua
 The S13 execution surface exposes `verifyBundle(bundleDirectory, targetDirectory, options)`.
 The Model Repository validates the stored S12 bundle, selects constraints assigned to ready
 slices, dispatches declared adapter capabilities, and aggregates check states. Private
-filesystem and TypeScript adapters implement only confined regular-file presence and one
-explicitly mapped write-authority predicate. The CLI owns invocation, presentation, and exit
+filesystem, TypeScript, and target-check evidence adapters implement only confined regular-file
+presence, one explicitly mapped write-authority predicate, and one explicit outcome-binding
+predicate. The CLI owns invocation, presentation, and exit
 mapping; adapter outcomes, Ajv/compiler objects, and terminal formatting do not enter
 canonical IR. An opt-in full verification can publish one schema-validated bundle-local record.
 For S12→S13, the repository checks record scope/status, current S12 assignments, summary,

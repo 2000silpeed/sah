@@ -27,7 +27,7 @@ An installed package exposes:
 ```text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
+sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--check-record <target-relative-iteration-outcome>] [--target-revision <target-revision>] [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
 sah lineage <sah-root> [--json]
 sah current <sah-root> [--json]
@@ -52,6 +52,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-target --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
+npm exec -- sah verify /path/to/s12-bundle /path/to/target --check-record .sah/iteration-001.outcome.json --target-revision git:abc123 --json
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
@@ -74,6 +75,12 @@ Context mismatches are deterministic blocked results and do not write files. SAH
 state or hashes target source trees.
 `verify` requires an explicit target checkout and is read-only
 unless `--record` requests atomic bundle-local result publication.
+With `--check-record`, it additionally requires the caller-supplied `--target-revision`, reads one
+target-relative schema-valid `iteration-outcome/v0.4.0`, and dispatches the
+`target-check-evidence` capability. It never executes the recorded command. Context mismatch,
+unknown/duplicate check IDs, incomplete execution, or unsupported bindings are `unsupported`
+checks and overall `incomplete`; malformed or unsafe record input is an operational error. See
+[Target-Check Evidence Bridge](target-check-evidence.md) for the exact tuple and limits.
 `checker-review` is read-only and validates one caller-produced, revision-bound independent
 Checker record. It does not run the recorded commands, invoke a reviewer, mutate a loop, or
 advance a lifecycle stage. Its `passed` result is limited to a mechanically consistent

@@ -493,6 +493,8 @@ export type IterationCompletionRequest = {
 export type VerificationOptions = {
   sourceMappingPath?: string;
   changedPaths?: readonly string[];
+  checkRecordPath?: string;
+  targetRevision?: string;
   verificationRecordPath?: string;
 };
 
