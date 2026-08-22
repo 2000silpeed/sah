@@ -55,3 +55,13 @@ The result remains runtime evidence. Supplying `--record` may publish the comple
 result, and only an eligible full passed record can later support S12→S13. A target-check pass
 does not itself claim that the test is sufficient, that a user scenario succeeded, or that a
 judgment constraint passed. Existing filesystem and TypeScript adapter semantics are unchanged.
+
+## Bookmark smoke fixture
+
+[FP-007](../.agent/plans/run-28.md) exercises this boundary with the checked-in
+[loopback-only server](../fixtures/bookmark-lineage/http-smoke-target/server.mjs) and
+[smoke command](../fixtures/bookmark-lineage/http-smoke-target/smoke.mjs). The regression runs
+the real `sah loop-checks` and `loop-record` path, verifies the exact two check IDs through the
+production CLI, publishes a full record, and advances a disposable shared-operations bundle to
+S13. The canonical direct-CLI and shared-operations snapshots are never modified; the fixture is
+not an HTTP adapter or hosted-service contract.

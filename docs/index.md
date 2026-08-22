@@ -13,7 +13,8 @@ read [vision](vision.md), [principles](principles.md), and the
 [Run 23 plan](../.agent/plans/run-23.md) records the completed scenario-centered vertical-slice
 extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounded continuous-mode
 extension; [Run 25 plan](../.agent/plans/run-25.md) records the approved Cross-Bundle Lineage
-MVP; [Run 27 plan](../.agent/plans/run-27.md) records the target-check evidence bridge.
+MVP; [Run 27 plan](../.agent/plans/run-27.md) records the target-check evidence bridge; [Run 28
+plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture.
 
 ## Product and reasoning authority
 
@@ -226,9 +227,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
   [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
-  and [iteration loop tests](../test/iteration-loop.test.ts)
+  [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
-  host-workflow packaging, output, and failure families without network use.
+  host-workflow packaging, output, and failure families without external network access.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),
   [strategy](../fixtures/simple-crud/design-strategy.json), [responsibilities](../fixtures/simple-crud/responsibility.json),
   [invariants](../fixtures/simple-crud/invariant.json), [architecture](../fixtures/simple-crud/architecture.json),
@@ -239,6 +240,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [evolved bookmark snapshot](../fixtures/bookmark-lineage/shared-operations/sah.bundle.json) —
   demonstrate direct CLI → second local caller trigger → shared operations decision without
   rewriting the parent snapshot.
+- [Bookmark HTTP smoke target](../fixtures/bookmark-lineage/http-smoke-target/server.mjs) and
+  [smoke command](../fixtures/bookmark-lineage/http-smoke-target/smoke.mjs) — provide a
+  loopback-only bookmark surface for exact iteration-check and S13 regression evidence.
 - [Iteration loop fixtures](../fixtures/iteration-loop/sah.loop.json), [outcome](../fixtures/iteration-loop/iteration-001.outcome.json),
   [scenario loop](../fixtures/iteration-loop/scenario-loop.json), and
   [scenario outcome](../fixtures/iteration-loop/scenario-iteration-001.outcome.json) — provide

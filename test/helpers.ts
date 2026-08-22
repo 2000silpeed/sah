@@ -10,6 +10,10 @@ export const bookmarkLineageDirectory = join(
   "fixtures",
   "bookmark-lineage",
 );
+export const bookmarkHttpTargetDirectory = join(
+  bookmarkLineageDirectory,
+  "http-smoke-target",
+);
 export const verificationTargetDirectory = join(
   repositoryRoot,
   "fixtures",
@@ -49,6 +53,14 @@ export async function copyBookmarkLineage(): Promise<string> {
   await cp(bookmarkLineageDirectory, lineage, { recursive: true });
   temporaryDirectories.push(root);
   return lineage;
+}
+
+export async function copyBookmarkHttpTarget(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-bookmark-http-test-"));
+  const target = join(root, "target");
+  await cp(bookmarkHttpTargetDirectory, target, { recursive: true });
+  temporaryDirectories.push(root);
+  return target;
 }
 
 export async function copyVerificationTarget(): Promise<string> {
