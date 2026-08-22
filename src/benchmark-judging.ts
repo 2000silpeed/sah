@@ -13,7 +13,7 @@ import {
 import { summarize } from "./diagnostics.js";
 import { loadSchemaRegistry } from "./schema-validation.js";
 
-const categoryMaxima: Record<BenchmarkJudgeCategory, number> = {
+export const categoryMaxima: Record<BenchmarkJudgeCategory, number> = {
   characterization: 15,
   strategy: 20,
   responsibilities: 15,

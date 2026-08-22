@@ -1,0 +1,417 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-verdict/v0.1.0",
+  "title": "SAH benchmark verdict",
+  "description": "Assembled benchmark result: judge finals, deterministic category points, penalties, caps, and pass thresholds over one frozen run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "verdictVersion",
+    "runId",
+    "comparisonId",
+    "benchmarkId",
+    "mode",
+    "trajectoryDigest",
+    "problemDigest",
+    "judges",
+    "stewardId",
+    "finals",
+    "judgeSubtotalFinal",
+    "deterministicPoints",
+    "overEngineeringDeductionMean",
+    "fatalIndicatorFlagged",
+    "totalBeforeCap",
+    "total",
+    "thresholds",
+    "status"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-verdict/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "verdictVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "mode": {
+      "enum": ["treatment", "control"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "trajectoryDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "problemDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "judges": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "stewardId": {
+      "type": ["string", "null"],
+      "description": "Adjudicating steward identity when disputed categories were resolved; otherwise null.",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "finals": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "maxPoints", "points", "source"],
+        "properties": {
+          "category": {
+            "enum": [
+              "characterization",
+              "strategy",
+              "responsibilities",
+              "boundaries",
+              "quality-trade-offs",
+              "continuous-enforcement"
+            ],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "maxPoints": {
+            "enum": [5, 15, 20],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "points": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Agreed mean, steward-adjudicated value, or raw mean fallback; never null in a verdict.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          },
+          "source": {
+            "enum": ["agreement", "adjudication"],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": [
+                "benchmark-evaluator",
+                "benchmark-regression-comparator"
+              ]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["benchmark-evaluator"],
+          "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+        }
+      },
+      "description": "Final LLM-judged category points; deterministic categories are reported separately.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "judgeSubtotalFinal": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 85,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "deterministicPoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactIntegrity", "enforcementDeterministic"],
+      "properties": {
+        "artifactIntegrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["points", "bundleValidated"],
+          "properties": {
+            "points": {
+              "enum": [0, 10],
+              "x-sah-trace": {
+                "writtenBy": ["benchmark-evaluator"],
+                "readBy": [
+                  "benchmark-evaluator",
+                  "benchmark-regression-comparator"
+                ]
+              }
+            },
+            "bundleValidated": {
+              "type": "boolean",
+              "x-sah-trace": {
+                "writtenBy": ["benchmark-evaluator"],
+                "readBy": ["benchmark-evaluator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+          }
+        },
+        "enforcementDeterministic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["points", "declaredConstraints"],
+          "properties": {
+            "points": {
+              "enum": [0, 5],
+              "x-sah-trace": {
+                "writtenBy": ["benchmark-evaluator"],
+                "readBy": [
+                  "benchmark-evaluator",
+                  "benchmark-regression-comparator"
+                ]
+              }
+            },
+            "declaredConstraints": {
+              "type": "integer",
+              "minimum": 0,
+              "x-sah-trace": {
+                "writtenBy": ["benchmark-evaluator"],
+                "readBy": ["benchmark-evaluator"]
+              }
+            }
+          },
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+          }
+        }
+      },
+      "description": "Fifteen deterministic points: bundle validity (10) and declared decision-linked constraints (5); unscoreable output receives zero.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "overEngineeringDeductionMean": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 20,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "fatalIndicatorFlagged": {
+      "type": "boolean",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "totalBeforeCap": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 100,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "total": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 100,
+      "description": "Total after the FATAL cap of 49 applies; a flagged fatal also fails the verdict outright.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumTotalMet",
+        "strategyMinimumMet",
+        "responsibilitiesMinimumMet",
+        "noFatalIndicator"
+      ],
+      "properties": {
+        "minimumTotalMet": {
+          "type": "boolean",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+          }
+        },
+        "strategyMinimumMet": {
+          "type": "boolean",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator"]
+          }
+        },
+        "responsibilitiesMinimumMet": {
+          "type": "boolean",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator"]
+          }
+        },
+        "noFatalIndicator": {
+          "type": "boolean",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "status": {
+      "enum": ["passed", "failed"],
+      "description": "passed requires total at least 70 after penalties, no fatal indicator, strategy at least 12/20, responsibilities at least 9/15.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-verdict/v0.1.0",
+      "verdictVersion": "0.1.0",
+      "runId": "simple-crud-treatment-001",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "mode": "treatment",
+      "trajectoryDigest": "sha256:d69f05a168df61321bb29f40067e36b6bdc7bb5b6f59ae47cc89ddaa9e807ca8",
+      "problemDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "judges": ["judge-a", "judge-b"],
+      "stewardId": null,
+      "finals": [
+        {
+          "category": "boundaries",
+          "maxPoints": 15,
+          "points": 12,
+          "source": "agreement"
+        },
+        {
+          "category": "characterization",
+          "maxPoints": 15,
+          "points": 12.5,
+          "source": "agreement"
+        },
+        {
+          "category": "continuous-enforcement",
+          "maxPoints": 5,
+          "points": 4.5,
+          "source": "agreement"
+        },
+        {
+          "category": "quality-trade-offs",
+          "maxPoints": 15,
+          "points": 11,
+          "source": "agreement"
+        },
+        {
+          "category": "responsibilities",
+          "maxPoints": 15,
+          "points": 11,
+          "source": "agreement"
+        },
+        {
+          "category": "strategy",
+          "maxPoints": 20,
+          "points": 16,
+          "source": "agreement"
+        }
+      ],
+      "judgeSubtotalFinal": 66,
+      "deterministicPoints": {
+        "artifactIntegrity": { "points": 10, "bundleValidated": true },
+        "enforcementDeterministic": { "points": 5, "declaredConstraints": 1 }
+      },
+      "overEngineeringDeductionMean": 2,
+      "fatalIndicatorFlagged": false,
+      "totalBeforeCap": 79,
+      "total": 79,
+      "thresholds": {
+        "minimumTotalMet": true,
+        "strategyMinimumMet": true,
+        "responsibilitiesMinimumMet": true,
+        "noFatalIndicator": true
+      },
+      "status": "passed"
+    }
+  ]
+}

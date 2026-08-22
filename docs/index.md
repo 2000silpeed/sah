@@ -64,6 +64,8 @@ records the benchmark trajectory capture seam.
   trajectory entry contract, append continuity, freeze pinning, and read-only inspection.
 - [Benchmark judging](benchmark-judging.md) — owns the judge-review record contract, the two-judge
   agreement gate, and the evaluator-side independence protocol.
+- [Benchmark verdict](benchmark-verdict.md) — owns deterministic category scoring, steward
+  adjudication consumption, cap/threshold assembly, and fresh-only verdict records.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
   harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,
@@ -137,6 +139,8 @@ records the benchmark trajectory capture seam.
   captures with an immutable evaluator-side freeze record that blocks later appends.
 - [ADR-0032](adr/0032-validate-and-aggregate-benchmark-judges.md) — validates and aggregates
   evaluator-executed judge records deterministically without the runtime invoking models.
+- [ADR-0033](adr/0033-assemble-benchmark-verdicts-from-preserved-evidence.md) — assembles verdicts
+  from preserved evidence with binary deterministic categories, steward adjudication, and fresh-only records.
 
 ## JSON Schema contracts
 
@@ -174,6 +178,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Benchmark judge review](../schemas/benchmark-judge-review.schema.json) and
   [score](../schemas/benchmark-score.schema.json) — validate one independent judge's record over
   a frozen capture and the derived two-judge agreement projection.
+- [Benchmark adjudication](../schemas/benchmark-adjudication.schema.json) and
+  [verdict](../schemas/benchmark-verdict.schema.json) — validate steward resolutions of disputed
+  categories and the assembled total with penalties, caps, and thresholds.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -230,6 +237,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Benchmark judge aggregation](../src/benchmark-judging.ts) and
   [judging contract](benchmark-judging.md) — validate independent judge records and project the
   deterministic two-judge agreement view without executing any judgment.
+- [Benchmark verdict assembly](../src/benchmark-verdict.ts) and
+  [verdict contract](benchmark-verdict.md) — score deterministic categories, consume steward
+  adjudications, and assemble capped totals with pass thresholds.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.

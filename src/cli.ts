@@ -23,6 +23,7 @@ import {
   type BenchmarkRunMode,
   type BenchmarkFreezeResult,
   type BenchmarkScoreResult,
+  type BenchmarkVerdictResult,
   type BenchmarkTrajectoryAppendOptions,
   type BenchmarkTrajectoryAppendResult,
   type BenchmarkTrajectoryEntryKind,
@@ -53,6 +54,7 @@ import {
   inspectBenchmarkTrajectory,
 } from "./benchmark-trajectory.js";
 import { aggregateBenchmarkJudgeReviews } from "./benchmark-judging.js";
+import { assembleBenchmarkVerdict } from "./benchmark-verdict.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -65,6 +67,7 @@ const usage = [
   "       sah benchmark-trajectory <run-directory> (--entry-file <entry-file> | --status) [--json]",
   "       sah benchmark-freeze <run-directory> [--json]",
   "       sah benchmark-judge <judge-record-a> <judge-record-b> [--json]",
+  "       sah benchmark-verdict <judge-score.json> --bundle <participant-bundle-directory> [--adjudication <adjudication-file>] [--record <verdict-file>] [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -90,6 +93,8 @@ type ParsedArguments = {
   benchmarkMode?: string;
   benchmarkTrajectoryEntryPath?: string;
   benchmarkTrajectoryStatus?: boolean;
+  benchmarkBundleDirectory?: string;
+  benchmarkAdjudicationFile?: string;
   repair?: boolean;
   error?: string;
 };
@@ -109,6 +114,8 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let benchmarkMode: string | undefined;
   let benchmarkTrajectoryEntryPath: string | undefined;
   let benchmarkTrajectoryStatus = false;
+  let benchmarkBundleDirectory: string | undefined;
+  let benchmarkAdjudicationFile: string | undefined;
   let repair = false;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -190,6 +197,46 @@ function parseArguments(arguments_: string[]): ParsedArguments {
         };
       }
       benchmarkTrajectoryStatus = true;
+      continue;
+    }
+    if (argument === "--bundle") {
+      if (benchmarkBundleDirectory !== undefined) {
+        return {
+          positional,
+          json,
+          error: "--bundle may be supplied only once.",
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--bundle requires one participant bundle directory.",
+        };
+      }
+      benchmarkBundleDirectory = value;
+      index += 1;
+      continue;
+    }
+    if (argument === "--adjudication") {
+      if (benchmarkAdjudicationFile !== undefined) {
+        return {
+          positional,
+          json,
+          error: "--adjudication may be supplied only once.",
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: "--adjudication requires one steward adjudication file.",
+        };
+      }
+      benchmarkAdjudicationFile = value;
+      index += 1;
       continue;
     }
     if (argument === "--mapping") {
@@ -330,6 +377,12 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       ? {}
       : { benchmarkTrajectoryEntryPath }),
     ...(benchmarkTrajectoryStatus ? { benchmarkTrajectoryStatus: true } : {}),
+    ...(benchmarkBundleDirectory === undefined
+      ? {}
+      : { benchmarkBundleDirectory }),
+    ...(benchmarkAdjudicationFile === undefined
+      ? {}
+      : { benchmarkAdjudicationFile }),
     ...(repair ? { repair: true } : {}),
   };
 }
@@ -499,7 +552,8 @@ function exitCode(
     | BenchmarkTrajectoryAppendResult
     | BenchmarkTrajectoryInspectResult
     | BenchmarkFreezeResult
-    | BenchmarkScoreResult,
+    | BenchmarkScoreResult
+    | BenchmarkVerdictResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -949,6 +1003,42 @@ function formatJudgeHuman(scoreResult: BenchmarkScoreResult): string {
   ].join("\n\n");
 }
 
+function formatVerdictHuman(result: BenchmarkVerdictResult): string {
+  const title =
+    result.status === "passed"
+      ? "SAH benchmark verdict passed"
+      : result.status === "failed"
+        ? "SAH benchmark verdict failed"
+        : result.status === "violations"
+          ? "SAH benchmark verdict inputs rejected"
+          : "SAH benchmark verdict could not run";
+  const verdict = result.verdict;
+  return [
+    title,
+    `Score: ${result.scorePath}`,
+    ...(verdict === undefined
+      ? []
+      : [
+          `Run: ${verdict.runId} (${verdict.mode}, comparison ${verdict.comparisonId})`,
+          ...verdict.finals.map(
+            (final) =>
+              `${final.category}: ${String(final.points)}/${String(final.maxPoints)} (${final.source})`,
+          ),
+          `Deterministic: integrity ${String(verdict.deterministicPoints.artifactIntegrity.points)}/10, enforcement ${String(verdict.deterministicPoints.enforcementDeterministic.points)}/5 (${String(verdict.deterministicPoints.enforcementDeterministic.declaredConstraints)} constraint(s))`,
+          `Over-engineering deduction: -${String(verdict.overEngineeringDeductionMean)}`,
+          `Total: ${String(verdict.total)}${
+            verdict.fatalIndicatorFlagged ? " (FATAL cap applied)" : ""
+          } before cap ${String(verdict.totalBeforeCap)}`,
+          `Thresholds: total>=70 ${verdict.thresholds.minimumTotalMet ? "met" : "missed"}, strategy>=12 ${verdict.thresholds.strategyMinimumMet ? "met" : "missed"}, responsibilities>=9 ${verdict.thresholds.responsibilitiesMinimumMet ? "met" : "missed"}, no-fatal ${verdict.thresholds.noFatalIndicator ? "met" : "missed"}`,
+        ]),
+    ...(result.recordPath === undefined
+      ? []
+      : [`Record: ${result.recordPath}`]),
+    ...result.diagnostics.map(humanDiagnostic),
+    `Summary: ${result.summary.errors} error(s), ${result.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 async function runBenchmarkTrajectory(
   positional: string[],
   parsed: ParsedArguments,
@@ -1053,6 +1143,19 @@ async function main(arguments_: string[]): Promise<number> {
   if (trajectoryOptionUsed && positional[0] !== "benchmark-trajectory") {
     const invalid = invocationError(
       "--entry-file and --status are supported only by benchmark-trajectory.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
+  }
+
+  const verdictOptionUsed =
+    parsed.benchmarkBundleDirectory !== undefined ||
+    parsed.benchmarkAdjudicationFile !== undefined;
+  if (verdictOptionUsed && positional[0] !== "benchmark-verdict") {
+    const invalid = invocationError(
+      "--bundle and --adjudication are supported only by benchmark-verdict.",
     );
     process.stdout.write(
       `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
@@ -1203,6 +1306,39 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(scored, null, 2) : formatJudgeHuman(scored)}\n`,
     );
     return exitCode(scored);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "benchmark-verdict" &&
+    parsed.benchmarkBundleDirectory !== undefined &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.checkRecordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.benchmarkRunId === undefined &&
+    parsed.benchmarkComparisonId === undefined &&
+    parsed.benchmarkMode === undefined &&
+    parsed.benchmarkTrajectoryEntryPath === undefined &&
+    parsed.benchmarkTrajectoryStatus !== true &&
+    parsed.repair !== true
+  ) {
+    const assembled = await assembleBenchmarkVerdict(positional[1] ?? "", {
+      bundleDirectory: parsed.benchmarkBundleDirectory,
+      ...(parsed.benchmarkAdjudicationFile === undefined
+        ? {}
+        : { adjudicationFile: parsed.benchmarkAdjudicationFile }),
+      ...(parsed.recordPath === undefined
+        ? {}
+        : { recordFile: parsed.recordPath }),
+    });
+    process.stdout.write(
+      `${json ? JSON.stringify(assembled, null, 2) : formatVerdictHuman(assembled)}\n`,
+    );
+    return exitCode(assembled);
   }
 
   if (

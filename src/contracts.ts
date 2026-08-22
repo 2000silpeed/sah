@@ -297,6 +297,85 @@ export type BenchmarkScoreResult = {
   summary: ValidationSummary;
 };
 
+export const benchmarkAdjudicationSchemaId =
+  "https://sah.dev/schemas/benchmark-adjudication/v0.1.0" as const;
+
+export const benchmarkVerdictSchemaId =
+  "https://sah.dev/schemas/benchmark-verdict/v0.1.0" as const;
+
+export type BenchmarkAdjudication = {
+  $schema: typeof benchmarkAdjudicationSchemaId;
+  adjudicationVersion: "0.1.0";
+  stewardId: string;
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  trajectoryDigest: string;
+  problemDigest: string;
+  adjudicatedAt: string;
+  entries: Array<{
+    category: BenchmarkJudgeCategory;
+    points: number;
+    rationale: string;
+  }>;
+};
+
+export type BenchmarkVerdictStatus = "passed" | "failed";
+
+export type BenchmarkVerdict = {
+  $schema: typeof benchmarkVerdictSchemaId;
+  verdictVersion: "0.1.0";
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  trajectoryDigest: string;
+  problemDigest: string;
+  judges: [string, string];
+  stewardId: string | null;
+  finals: Array<{
+    category: BenchmarkJudgeCategory;
+    maxPoints: number;
+    points: number;
+    source: "agreement" | "adjudication";
+  }>;
+  judgeSubtotalFinal: number;
+  deterministicPoints: {
+    artifactIntegrity: { points: 0 | 10; bundleValidated: boolean };
+    enforcementDeterministic: { points: 0 | 5; declaredConstraints: number };
+  };
+  overEngineeringDeductionMean: number;
+  fatalIndicatorFlagged: boolean;
+  totalBeforeCap: number;
+  total: number;
+  thresholds: {
+    minimumTotalMet: boolean;
+    strategyMinimumMet: boolean;
+    responsibilitiesMinimumMet: boolean;
+    noFatalIndicator: boolean;
+  };
+  status: BenchmarkVerdictStatus;
+};
+
+export type BenchmarkVerdictResultStatus =
+  "passed" | "failed" | "violations" | "operational-error";
+
+export type BenchmarkVerdictOptions = {
+  bundleDirectory: string;
+  adjudicationFile?: string;
+  recordFile?: string;
+};
+
+export type BenchmarkVerdictResult = {
+  status: BenchmarkVerdictResultStatus;
+  scorePath: string;
+  verdict?: BenchmarkVerdict;
+  recordPath?: string;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
 export type LineageBundle = {
   bundleId: string;
   path: string;

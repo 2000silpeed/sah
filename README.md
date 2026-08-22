@@ -24,9 +24,7 @@ Coding agents can generate working code while still making expensive structural 
 - treating a subjective architecture opinion as a deterministic rule; or
 - changing code without knowing which earlier decision must be reconsidered.
 
-SAH puts an evidence trail between requirements and implementation. It does not choose one
-universal architecture style. A simple CRUD area can stay simple while a payment, pipeline, or
-agentic area uses stronger boundaries when its risks justify them.
+SAH puts an evidence trail between requirements and implementation. It does not choose one universal architecture style. A simple CRUD area can stay simple while a payment, pipeline, or agentic area uses stronger boundaries when its risks justify them.
 
 Use SAH when a coding agent will make a non-trivial structural change and later agents need to
 understand or preserve the decision. For a tiny, reversible, low-risk change, SAH supports a
@@ -157,7 +155,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 
 Expected result: one passing deterministic check for the equipment-owns-writes constraint.
 
-Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-target` is the target, and the target-relative mapping connects source paths/symbols to architecture element IDs. Verification is read-only unless --record is supplied.
+Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-target` is the target, and the target-relative mapping connects source paths/symbols to architecture element IDs; verification stays read-only unless --record is supplied.
 
 ## Complete S13 with recorded full evidence
 
@@ -204,6 +202,7 @@ produce eligible completion evidence.
 | sah benchmark-trajectory RUN | Validate-append or inspect the isolated run's raw trajectory capture | --entry-file appends; --status does not |
 | sah benchmark-freeze RUN | Pin a completed capture and output inventory into an immutable evaluator-side record | Yes, fresh record only |
 | sah benchmark-judge RECORD-A RECORD-B | Validate two independent judge records and project the agreement view | No |
+| sah benchmark-verdict SCORE --bundle BUNDLE | Score deterministic categories and assemble the capped total | Yes with --record, fresh only |
 
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.
