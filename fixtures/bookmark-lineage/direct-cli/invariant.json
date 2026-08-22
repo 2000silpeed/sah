@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "bookmark-register-invariants",
+  "characterizationRef": "bookmark-register-characterization",
+  "responsibilityRef": "bookmark-register-responsibilities",
+  "invariants": [
+    {
+      "id": "asset-tag-unique",
+      "subsystemRef": "bookmark-administration",
+      "statement": "Every active or archived bookmark record has a unique asset tag",
+      "kind": "state",
+      "applicability": "From record creation until permanent deletion",
+      "evidenceRefs": ["ev-bookmark-maintenance"],
+      "responsibilityRefs": ["maintain-bookmark-record"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "scope": {
+        "description": "All bookmark records including archived records",
+        "ownershipSpan": "single-owner"
+      },
+      "triggers": ["Create bookmark", "Change an asset tag"],
+      "preconditions": ["Actor is authorized"],
+      "postconditions": ["No other bookmark record has the accepted asset tag"],
+      "consistency": {
+        "mode": "atomic",
+        "stalenessBound": "none",
+        "ordering": "one database transaction"
+      },
+      "criticality": "medium",
+      "failureImpact": "Staff cannot identify bookmark reliably",
+      "detection": "Check the unique key before or during commit",
+      "recovery": "Reject the change with an asset-tag validation error",
+      "owner": {
+        "logicalOwnerRef": "bookmark-operations",
+        "enforcementResponsibilityRef": "maintain-bookmark-record",
+        "authority": "May reject a write that duplicates an asset tag",
+        "rationale": "The bookmark transaction owns the unique-key check and commit"
+      }
+    }
+  ],
+  "unresolvedConflicts": []
+}

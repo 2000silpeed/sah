@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/lineage-result/v0.1.0",
+  "title": "SAH Architecture Lineage Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "lineageVersion",
+    "status",
+    "sahRoot",
+    "bundles",
+    "edges",
+    "triggerEvents",
+    "heads",
+    "conflicts",
+    "diagnostics",
+    "summary"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/lineage-result/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["schema-validator", "lineage-reporter"]
+      }
+    },
+    "lineageVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["schema-validator", "lineage-reporter"]
+      }
+    },
+    "status": {
+      "enum": ["passed", "violations", "incomplete", "operational-error"],
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter", "cli"]
+      }
+    },
+    "sahRoot": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter"]
+      }
+    },
+    "bundles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/bundle"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter"]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter"]
+      }
+    },
+    "triggerEvents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/triggerEvent"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter"]
+      }
+    },
+    "heads": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter", "cli"]
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/conflict"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter", "cli"]
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "https://sah.dev/schemas/verification-diagnostic/v0.1.0"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter", "cli"]
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary",
+      "x-sah-trace": {
+        "writtenBy": ["lineage-runtime"],
+        "readBy": ["lineage-reporter", "cli"]
+      }
+    }
+  },
+  "$defs": {
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "path", "fingerprint", "completedStage"],
+      "properties": {
+        "bundleId": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["model-repository", "lineage-runtime"],
+            "readBy": ["lineage-reporter", "lineage-validator"]
+          }
+        },
+        "completedStage": {
+          "enum": [
+            "S0",
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "S5",
+            "S6",
+            "S7",
+            "S8",
+            "S9",
+            "S10",
+            "S11",
+            "S12",
+            "S13"
+          ],
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromBundleId", "toBundleId", "relationship"],
+      "properties": {
+        "fromBundleId": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "lineage-validator"]
+          }
+        },
+        "toBundleId": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "lineage-validator"]
+          }
+        },
+        "relationship": {
+          "const": "derives-from",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author", "lineage-runtime"],
+            "readBy": ["lineage-reporter", "lineage-validator"]
+          }
+        }
+      }
+    },
+    "triggerEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "sourceDecision", "resultingDecision"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        },
+        "status": {
+          "const": "fired",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author", "lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        },
+        "sourceDecision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        },
+        "resultingDecision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter"]
+          }
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "bundleIds", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "bundleIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundles", "edges", "conflicts", "errors", "warnings"],
+      "properties": {
+        "bundles": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "edges": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "conflicts": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["lineage-runtime"],
+            "readBy": ["lineage-reporter", "cli"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/lineage-result/v0.1.0",
+      "lineageVersion": "0.1.0",
+      "status": "passed",
+      "sahRoot": "/project/.sah",
+      "bundles": [
+        {
+          "bundleId": "bookmark-direct-cli",
+          "path": "direct-cli",
+          "fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "completedStage": "S13"
+        },
+        {
+          "bundleId": "bookmark-shared-operations",
+          "path": "shared-operations",
+          "fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "completedStage": "S12"
+        }
+      ],
+      "edges": [
+        {
+          "fromBundleId": "bookmark-direct-cli",
+          "toBundleId": "bookmark-shared-operations",
+          "relationship": "derives-from"
+        }
+      ],
+      "triggerEvents": [
+        {
+          "id": "second-local-caller-fired",
+          "status": "fired",
+          "sourceDecision": "bookmark-direct-cli#direct-cli-ownership",
+          "resultingDecision": "bookmark-shared-operations#share-bookmark-operations"
+        }
+      ],
+      "heads": ["bookmark-shared-operations"],
+      "conflicts": [],
+      "diagnostics": [],
+      "summary": {
+        "bundles": 2,
+        "edges": 1,
+        "conflicts": 0,
+        "errors": 0,
+        "warnings": 0
+      }
+    }
+  ]
+}

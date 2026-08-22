@@ -12,6 +12,7 @@ export const artifactRoles = [
   "architecture",
   "architectureDecision",
   "implementationHandoff",
+  "architectureEvolution",
 ] as const;
 
 export type ArtifactRole = (typeof artifactRoles)[number];
@@ -35,6 +36,50 @@ export type BundleManifest = {
     schemaId: string;
     sha256: string;
   };
+};
+
+export type ArchitectureEvolutionModel = {
+  evolutionId: string;
+  currentBundleId: string;
+  parents: Array<{
+    bundleId: string;
+    designFingerprint: string;
+    relationship: "derives-from";
+  }>;
+  changeRequest: {
+    summary: string;
+    evidenceRefs: string[];
+  };
+  triggerEvents: Array<{
+    id: string;
+    status: "fired";
+    source: {
+      bundleId: string;
+      designFingerprint: string;
+      decisionId: string;
+      reviewTriggerText: string;
+      reviewTriggerDigest: string;
+    };
+    evidenceRefs: string[];
+    rationale: string;
+  }>;
+  reopenedStages: Array<{
+    stage: Stage;
+    reason: string;
+    triggerRefs: string[];
+  }>;
+  decisionTransitions: Array<{
+    id: string;
+    from: {
+      bundleId: string;
+      designFingerprint: string;
+      decisionId: string;
+    };
+    toDecisionRef: string;
+    transition: "supersedes" | "extends" | "narrows" | "coexists";
+    scopeElementRefs: string[];
+    triggerRefs: string[];
+  }>;
 };
 
 type Rating = { evidenceRefs: string[] };
@@ -202,6 +247,7 @@ export type ArchitectureDecisionModel = {
     selectedOptionRef: string | null;
     supersedes: string[];
     constraintRefs: string[];
+    reviewTriggers: string[];
     authority: { decider: string; scope: string };
   }>;
 };
@@ -236,6 +282,7 @@ export type LoadedModels = {
   architecture?: ArchitectureModel;
   architectureDecision?: ArchitectureDecisionModel;
   implementationHandoff?: ImplementationHandoffModel;
+  architectureEvolution?: ArchitectureEvolutionModel;
 };
 
 export type LoadedArtifact = {

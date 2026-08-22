@@ -1,0 +1,460 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/architecture-evolution/v0.1.0",
+  "title": "SAH Architecture Evolution IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "evolutionId",
+    "currentBundleId",
+    "parents",
+    "changeRequest",
+    "triggerEvents",
+    "reopenedStages",
+    "decisionTransitions"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/architecture-evolution/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["evolution-author"],
+        "readBy": ["schema-validator", "model-repository", "lineage-validator"]
+      }
+    },
+    "schemaVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["evolution-author"],
+        "readBy": ["schema-validator", "lineage-validator"]
+      }
+    },
+    "evolutionId": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["S10", "evolution-author"],
+        "readBy": [
+          "schema-validator",
+          "lineage-validator",
+          "evolution-reporter"
+        ]
+      }
+    },
+    "currentBundleId": {
+      "$ref": "#/$defs/id",
+      "x-sah-trace": {
+        "writtenBy": ["bundle-author"],
+        "readBy": ["model-repository", "lineage-validator"]
+      }
+    },
+    "parents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parent"
+      },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["evolution-author"],
+        "readBy": ["lineage-validator", "evolution-reporter"]
+      }
+    },
+    "changeRequest": {
+      "$ref": "#/$defs/changeRequest",
+      "x-sah-trace": {
+        "writtenBy": ["S0", "evolution-author"],
+        "readBy": ["lineage-validator", "evolution-reporter"]
+      }
+    },
+    "triggerEvents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/triggerEvent"
+      },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["S10", "evolution-author"],
+        "readBy": ["lineage-validator", "evolution-reporter"]
+      }
+    },
+    "reopenedStages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reopenedStage"
+      },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["S10", "evolution-author"],
+        "readBy": ["lineage-validator", "evolution-reporter"]
+      }
+    },
+    "decisionTransitions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/decisionTransition"
+      },
+      "minItems": 1,
+      "x-sah-trace": {
+        "writtenBy": ["S10", "evolution-author"],
+        "readBy": ["lineage-validator", "evolution-reporter"]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stage": {
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "S9",
+        "S10",
+        "S11",
+        "S12",
+        "S13"
+      ]
+    },
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "designFingerprint", "relationship"],
+      "properties": {
+        "bundleId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "designFingerprint": {
+          "$ref": "#/$defs/digest",
+          "x-sah-trace": {
+            "writtenBy": ["model-repository", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "relationship": {
+          "const": "derives-from",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        }
+      }
+    },
+    "changeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "evidenceRefs"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S0", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["S0", "evolution-author"],
+            "readBy": ["lineage-validator", "reference-validator"]
+          }
+        }
+      }
+    },
+    "triggerSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundleId",
+        "designFingerprint",
+        "decisionId",
+        "reviewTriggerText",
+        "reviewTriggerDigest"
+      ],
+      "properties": {
+        "bundleId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        },
+        "designFingerprint": {
+          "$ref": "#/$defs/digest",
+          "x-sah-trace": {
+            "writtenBy": ["model-repository", "evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        },
+        "decisionId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        },
+        "reviewTriggerText": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "reviewTriggerDigest": {
+          "$ref": "#/$defs/digest",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        }
+      }
+    },
+    "triggerEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "source", "evidenceRefs", "rationale"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "status": {
+          "const": "fired",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "source": {
+          "$ref": "#/$defs/triggerSource",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "reference-validator"]
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        }
+      }
+    },
+    "reopenedStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "reason", "triggerRefs"],
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/stage",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "triggerRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "reference-validator"]
+          }
+        }
+      }
+    },
+    "decisionSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "designFingerprint", "decisionId"],
+      "properties": {
+        "bundleId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        },
+        "designFingerprint": {
+          "$ref": "#/$defs/digest",
+          "x-sah-trace": {
+            "writtenBy": ["model-repository", "evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        },
+        "decisionId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator"]
+          }
+        }
+      }
+    },
+    "decisionTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "toDecisionRef",
+        "transition",
+        "scopeElementRefs",
+        "triggerRefs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "from": {
+          "$ref": "#/$defs/decisionSource",
+          "x-sah-trace": {
+            "writtenBy": ["evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "toDecisionRef": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "transition": {
+          "enum": ["supersedes", "extends", "narrows", "coexists"],
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "evolution-reporter"]
+          }
+        },
+        "scopeElementRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "reference-validator"]
+          }
+        },
+        "triggerRefs": {
+          "$ref": "#/$defs/stringArray",
+          "x-sah-trace": {
+            "writtenBy": ["S10", "evolution-author"],
+            "readBy": ["lineage-validator", "reference-validator"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/architecture-evolution/v0.1.0",
+      "schemaVersion": "0.1.0",
+      "evolutionId": "bookmark-shared-operations-evolution",
+      "currentBundleId": "bookmark-shared-operations",
+      "parents": [
+        {
+          "bundleId": "bookmark-direct-cli",
+          "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "relationship": "derives-from"
+        }
+      ],
+      "changeRequest": {
+        "summary": "Add a second local caller while preserving the direct CLI.",
+        "evidenceRefs": ["ev-second-local-caller"]
+      },
+      "triggerEvents": [
+        {
+          "id": "second-local-caller-fired",
+          "status": "fired",
+          "source": {
+            "bundleId": "bookmark-direct-cli",
+            "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "decisionId": "direct-cli-ownership",
+            "reviewTriggerText": "A second consumer appears.",
+            "reviewTriggerDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "evidenceRefs": ["ev-second-local-caller"],
+          "rationale": "The second caller changes the single-consumer premise."
+        }
+      ],
+      "reopenedStages": [
+        {
+          "stage": "S6",
+          "reason": "The ownership boundary premise changed.",
+          "triggerRefs": ["second-local-caller-fired"]
+        },
+        {
+          "stage": "S7",
+          "reason": "The representation must serve more than one caller.",
+          "triggerRefs": ["second-local-caller-fired"]
+        },
+        {
+          "stage": "S8",
+          "reason": "A shared operations candidate must be compared.",
+          "triggerRefs": ["second-local-caller-fired"]
+        }
+      ],
+      "decisionTransitions": [
+        {
+          "id": "share-operations-transition",
+          "from": {
+            "bundleId": "bookmark-direct-cli",
+            "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "decisionId": "direct-cli-ownership"
+          },
+          "toDecisionRef": "share-bookmark-operations",
+          "transition": "supersedes",
+          "scopeElementRefs": ["bookmark-operations"],
+          "triggerRefs": ["second-local-caller-fired"]
+        }
+      ]
+    }
+  ]
+}

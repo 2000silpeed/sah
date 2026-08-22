@@ -29,6 +29,7 @@ sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
+sah lineage <sah-root> [--json]
 sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
 sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
@@ -42,6 +43,7 @@ From this source checkout, use the package binary without global installation:
 ```text
 npm exec -- sah validate fixtures/simple-crud
 npm exec -- sah validate fixtures/simple-crud --json
+npm exec -- sah lineage fixtures/bookmark-lineage --json
 npm exec -- sah advance /path/to/disposable-bundle S12
 npm exec -- sah advance /path/to/disposable-bundle S12 --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-target
@@ -80,7 +82,7 @@ deterministic architecture validation. When supplied, `--target-revision` and
 `--design-fingerprint` are explicit expected context and any mismatch is a non-passing result;
 SAH never discovers either value.
 Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
-`AdvanceResult`, `VerificationResult`, `IterationLoopResult`, `CheckerReviewResult`, or a
+`AdvanceResult`, `VerificationResult`, `LineageResult`, `IterationLoopResult`, `CheckerReviewResult`, or a
 schema-valid iteration outcome)
 and no prose. Validation diagnostics preserve stable
 code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
@@ -108,6 +110,14 @@ previously published evidence.
 |    1 | Valid input has validation/gate errors, advancement is blocked, target facts violate a deterministic constraint, or a Checker requests changes. |
 |    2 | Invocation/operation failed, or verification/review is incomplete because a blocker, unsafe binding, missing evidence, or adapter is pending. |
 
+`sah lineage <sah-root>` is read-only and scans only the explicit root for directories containing
+`sah.bundle.json`. It reports bundle IDs, computed design fingerprints, parent-to-child edges,
+fired trigger projections, heads, conflicts, and deterministic diagnostics. It never scans Git,
+follows a symlink outside the root, rewrites a bundle, or selects a parallel head by date or
+filename. A resolved graph returns exit 0; stale/conflicting/cyclic/dangling semantic lineage
+returns exit 1; an inaccessible, unsafe, malformed, or incomplete root returns exit 2. Missing
+parents are represented as `incomplete`, never `passed`.
+
 The loop command maps `fast`/ready, an accepted next iteration, and `complete` to exit 0;
 `reasoning`/escalate, blocked transitions, and completion-gate failures to exit 1; and malformed
 or inaccessible loop/outcome/completion artifacts to exit 2. `loop-checks` maps all required checks
@@ -120,11 +130,13 @@ artifact descriptors. ADR-0006 explains why this metadata is outside semantic IR
 artifact paths use forward-slash relative paths, and physical targets—including symlinks—must
 remain inside the bundle.
 
-The current manifest schema is v0.4.0, Architecture IR is v0.2.0, and the other six semantic
-IR schemas are v0.1.0. The manifest migration is a deliberate hard cut: v0.3 lacks the exact
+The legacy manifest schema is v0.4.0, and the explicitly dispatched evolved manifest schema is
+v0.5.0. Architecture IR is v0.2.0, and the other semantic IR schemas remain v0.1.0. v0.5 adds
+only an optional `architectureEvolution` descriptor; v0.4 remains strict and unchanged. The
+manifest migration is a deliberate hard cut: v0.3 lacks the exact
 S13 verification-record descriptor and is an operational schema/declaration failure, not
-silently rewritten. ADR-0014 owns v0.4; ADR-0009 and ADR-0008 own the earlier handoff and
-Architecture candidate migrations.
+silently rewritten. ADR-0014 owns v0.4; ADR-0025 owns v0.5 lineage; ADR-0009 and ADR-0008 own
+the earlier handoff and Architecture candidate migrations.
 
 The optional [TypeScript source mapping schema](../schemas/typescript-source-mapping.schema.json)
 is v0.2.0 and requires a target-relative `tsconfigPath`. It is explicit target-local adapter

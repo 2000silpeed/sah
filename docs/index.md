@@ -12,7 +12,8 @@ read [vision](vision.md), [principles](principles.md), and the
 [Run 22 plan](../.agent/plans/run-22.md) is the completed independent-Checker handoff; the
 [Run 23 plan](../.agent/plans/run-23.md) records the completed scenario-centered vertical-slice
 extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounded continuous-mode
-extension.
+extension; [Run 25 plan](../.agent/plans/run-25.md) records the approved Cross-Bundle Lineage
+MVP.
 
 ## Product and reasoning authority
 
@@ -33,6 +34,8 @@ extension.
   continuous enforcement, and exceptions.
 - [Validation CLI and library](validation-cli.md) — owns install, invocation, output, public
   result types, and exit codes for the executable structural slice.
+- [Architecture evolution](architecture-evolution.md) — owns immutable cross-bundle lineage,
+  evolution IR, resolver boundaries, and non-passing conflict semantics.
 - [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
   progressive questioning, and the natural-language-to-implementation experience.
 - [Session resume](session-resume.md) — owns the local, model-neutral cross-session resume view.
@@ -104,6 +107,8 @@ extension.
   vertical-slice evidence contracts without changing lifecycle or exit-code authority.
 - [ADR-0024](adr/0024-bounded-continuous-agent-mode.md) — adds an explicit, bounded continuous
   execution policy to the portable agent skill without changing CLI/lifecycle authority.
+- [ADR-0025](adr/0025-preserve-cross-bundle-architecture-lineage.md) — adds optional evolution
+  IR and explicit-root lineage without rewriting historical bundles or adding a service.
 
 ## JSON Schema contracts
 
@@ -125,6 +130,11 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   dependencies, accepted decisions, proposed blockers, checks, migration, and rollback.
 - [Bundle manifest](../schemas/design-bundle-manifest.schema.json) — non-semantic lifecycle,
   profile, artifact path, and declared schema metadata for loading a design bundle.
+- [Evolved bundle manifest](../schemas/design-bundle-manifest-v0.5.0.schema.json) and
+  [Architecture Evolution](../schemas/architecture-evolution.schema.json) — explicitly versioned
+  optional lineage metadata for evolved snapshots while preserving v0.4.
+- [Lineage result](../schemas/lineage-result.schema.json) — validates the derived read-only
+  project lineage projection and its deterministic conflict summary.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -166,6 +176,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   `validateCheckerReview`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
+- [Architecture lineage resolver](../src/architecture-lineage.ts) and
+  [evolution validation](../src/evolution-validation.ts) — own explicit-root bundle discovery,
+  fingerprint-bound cross-bundle checks, graph diagnostics, and derived lineage results.
 - [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome/completion artifacts,
   binds explicit target/design context, executes declared checks, routes risk, records outcomes
   atomically, accepts/repairs the next task, and enforces the local completion gate.
@@ -191,6 +204,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   changed-path mapping plus confined target-fact capabilities from canonical semantics and CLI
   concerns.
 - [Test helpers](../test/helpers.ts), [validation tests](../test/model-repository.test.ts),
+- [lineage tests](../test/architecture-lineage.test.ts),
   [S8 tests](../test/s8-stage.test.ts), [S9 tests](../test/s9-stage.test.ts), [S12 tests](../test/s12-stage.test.ts),
   [advance tests](../test/advance-bundle.test.ts), [verification tests](../test/verification.test.ts),
   [TypeScript verification tests](../test/typescript-verification.test.ts),
@@ -204,6 +218,10 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [decisions](../fixtures/simple-crud/architecture-decision.json), and [handoff](../fixtures/simple-crud/implementation-handoff.json)
   — form the valid external equipment-register fixture derived from the dogfood walkthrough,
   outside benchmark inputs.
+- [Bookmark lineage fixture](../fixtures/bookmark-lineage/direct-cli/sah.bundle.json) and
+  [evolved bookmark snapshot](../fixtures/bookmark-lineage/shared-operations/sah.bundle.json) —
+  demonstrate direct CLI → second local caller trigger → shared operations decision without
+  rewriting the parent snapshot.
 - [Iteration loop fixtures](../fixtures/iteration-loop/sah.loop.json), [outcome](../fixtures/iteration-loop/iteration-001.outcome.json),
   [scenario loop](../fixtures/iteration-loop/scenario-loop.json), and
   [scenario outcome](../fixtures/iteration-loop/scenario-iteration-001.outcome.json) — provide

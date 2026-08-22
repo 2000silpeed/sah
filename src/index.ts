@@ -48,10 +48,18 @@ export type {
   LoopRoute,
   LoopResultRoute,
   LoopResultStatus,
+  LineageBundle,
+  LineageConflict,
+  LineageEdge,
+  LineageResult,
+  LineageStatus,
+  LineageTriggerEvent,
 } from "./contracts.js";
 export {
+  architectureEvolutionSchemaId,
   iterationScenarioSchemaId,
   iterationSliceSchemaId,
+  lineageResultSchemaId,
   verificationRecordSchemaId,
 } from "./contracts.js";
 export { checkerReviewSchemaId } from "./contracts.js";
@@ -70,3 +78,4 @@ export {
   completeIterationLoop,
 } from "./iteration-loop.js";
 export { validateCheckerReview } from "./checker-review.js";
+export { resolveArchitectureLineage } from "./architecture-lineage.js";

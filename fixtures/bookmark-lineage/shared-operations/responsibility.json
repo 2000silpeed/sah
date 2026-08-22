@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.1.0",
+  "modelId": "bookmark-register-responsibilities",
+  "characterizationRef": "bookmark-register-characterization",
+  "strategyRef": "bookmark-register-strategy",
+  "responsibilities": [
+    {
+      "id": "maintain-bookmark-record",
+      "subsystemRef": "bookmark-administration",
+      "statement": "Accept or reject an authorized bookmark record change and append its audit fact",
+      "kind": "outcome",
+      "evidenceRefs": ["ev-bookmark-maintenance"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "inputs": [
+        "current bookmark record",
+        "requested fields",
+        "actor identity"
+      ],
+      "outputs": [
+        "accepted bookmark record and audit fact, or useful validation errors"
+      ],
+      "trigger": "An authorized coordinator submits an bookmark change",
+      "changeReason": "Bookmark maintenance and audit rules change",
+      "collaboratorRefs": [],
+      "owner": {
+        "logicalOwnerRef": "bookmark-operations",
+        "authority": "May accept one bookmark transaction and its audit append",
+        "rationale": "One transaction owns record validation, mutation, and audit consistency"
+      }
+    }
+  ],
+  "unresolvedConflicts": []
+}

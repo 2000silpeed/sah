@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "0.2.0",
+  "modelId": "bookmark-register-architecture",
+  "systemRef": "bookmark-register-characterization",
+  "strategyRef": "bookmark-register-strategy",
+  "responsibilityModelRef": "bookmark-register-responsibilities",
+  "invariantModelRef": "bookmark-register-invariants",
+  "candidates": [
+    {
+      "id": "bookmark-modular-candidate",
+      "name": "Modular bookmark operations",
+      "status": "selected",
+      "rationale": "One local module and datastore satisfy the evidenced short-path forces",
+      "elementRefs": ["bookmark-operations"],
+      "boundaryRefs": ["bookmark-boundary"],
+      "relationRefs": [],
+      "interfaceRefs": [],
+      "operationalConsequences": [
+        "Bookmark changes and audit append share one local transaction boundary"
+      ]
+    }
+  ],
+  "singleCandidateJustification": {
+    "kind": "short-path",
+    "rationale": "The richer S2 alternative adds model and mapping ceremony without evidenced interacting rules",
+    "evidenceRefs": ["ev-bookmark-maintenance"],
+    "strategyAlternativeRefs": ["responsibility-centered-domain"],
+    "hardConstraintRefs": []
+  },
+  "elements": [
+    {
+      "id": "bookmark-operations",
+      "name": "Bookmark operations",
+      "subsystemRef": "bookmark-administration",
+      "logicalRole": "Own bookmark validation, mutation, query, export, and audit coordination",
+      "representation": "module",
+      "authority": "Controls the bookmark transaction boundary",
+      "responsibilityRefs": ["maintain-bookmark-record"],
+      "invariantRefs": ["asset-tag-unique"],
+      "decisionRefs": ["direct-cli-ownership"]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "bookmark-boundary",
+      "name": "Bookmark administration boundary",
+      "insideElementRefs": ["bookmark-operations"],
+      "protectedChange": "Bookmark maintenance and audit rules",
+      "ownerElementRef": "bookmark-operations",
+      "decisionRefs": ["direct-cli-ownership"]
+    }
+  ],
+  "relations": [],
+  "interfaces": [],
+  "qualityAssessments": [
+    {
+      "candidateRef": "bookmark-modular-candidate",
+      "scenarioRef": "qs-valid-edit",
+      "result": "pass",
+      "evidence": "A single local transaction owns record and audit mutation",
+      "sensitivityPoints": [
+        "Rules that require independent audit availability"
+      ],
+      "tradeoffRefs": ["bookmark-module-option"]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "bookmark-owns-writes",
+      "decisionRef": "direct-cli-ownership",
+      "statement": "Only bookmark operations may write bookmark records",
+      "classification": "deterministic",
+      "scopeElementRefs": ["bookmark-operations"],
+      "invariantRefs": ["asset-tag-unique"],
+      "observable": {
+        "factSource": "source-graph",
+        "selector": "bookmark-records",
+        "predicate": "writers-belong-to-constraint-scope",
+        "expected": "true"
+      },
+      "enforcement": {
+        "adapterCapability": "dependency-and-write analysis",
+        "timing": "ci",
+        "severity": "error",
+        "failureMessage": "Bookmark record write bypasses its owner"
+      },
+      "exceptionPolicy": {
+        "authority": "architecture owner",
+        "expiryRequired": true,
+        "requiredRationale": "Name the incident or migration forcing the bypass"
+      }
+    }
+  ]
+}

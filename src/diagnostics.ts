@@ -12,7 +12,14 @@ import type {
   VerificationStatus,
   ResumeResult,
   ResumeStatus,
+  LineageBundle,
+  LineageConflict,
+  LineageEdge,
+  LineageResult,
+  LineageStatus,
+  LineageTriggerEvent,
 } from "./contracts.js";
+import { lineageResultSchemaId } from "./contracts.js";
 
 function orderDiagnostics(diagnostics: SahDiagnostic[]): SahDiagnostic[] {
   return [...diagnostics].sort((left, right) =>
@@ -59,6 +66,56 @@ export function result(
     ...(bundle === undefined ? {} : { bundle }),
     diagnostics: ordered,
     summary: summarize(ordered),
+  };
+}
+
+export function lineageResult(
+  status: LineageStatus,
+  sahRoot: string,
+  fields: {
+    bundles?: LineageBundle[];
+    edges?: LineageEdge[];
+    triggerEvents?: LineageTriggerEvent[];
+    heads?: string[];
+    conflicts?: LineageConflict[];
+    diagnostics?: SahDiagnostic[];
+  } = {},
+): LineageResult {
+  const diagnostics = orderDiagnostics(fields.diagnostics ?? []);
+  const conflicts = [...(fields.conflicts ?? [])].sort((left, right) =>
+    [left.code, ...left.bundleIds]
+      .join("\0")
+      .localeCompare([right.code, ...right.bundleIds].join("\0")),
+  );
+  return {
+    $schema: lineageResultSchemaId,
+    lineageVersion: "0.1.0",
+    status,
+    sahRoot,
+    bundles: [...(fields.bundles ?? [])].sort((left, right) =>
+      [left.bundleId, left.path]
+        .join("\0")
+        .localeCompare([right.bundleId, right.path].join("\0")),
+    ),
+    edges: [...(fields.edges ?? [])].sort((left, right) =>
+      [left.fromBundleId, left.toBundleId]
+        .join("\0")
+        .localeCompare([right.fromBundleId, right.toBundleId].join("\0")),
+    ),
+    triggerEvents: [...(fields.triggerEvents ?? [])].sort((left, right) =>
+      [left.id, left.sourceDecision]
+        .join("\0")
+        .localeCompare([right.id, right.sourceDecision].join("\0")),
+    ),
+    heads: [...(fields.heads ?? [])].sort(),
+    conflicts,
+    diagnostics,
+    summary: {
+      bundles: fields.bundles?.length ?? 0,
+      edges: fields.edges?.length ?? 0,
+      conflicts: conflicts.length,
+      ...summarize(diagnostics),
+    },
   };
 }
 

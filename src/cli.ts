@@ -16,6 +16,7 @@ import {
   type IterationChecksResult,
   type IterationLoopResult,
   type CheckerReviewResult,
+  type LineageResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -24,6 +25,7 @@ import {
   verifyBundle,
   resumeBundle,
 } from "./model-repository.js";
+import { resolveArchitectureLineage } from "./architecture-lineage.js";
 import {
   evaluateIterationLoop,
   runIterationChecks,
@@ -39,6 +41,7 @@ const usage = [
   "       sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]",
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
+  "       sah lineage <sah-root> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -361,6 +364,7 @@ function exitCode(
     | AdvanceResult
     | VerificationResult
     | ResumeResult
+    | LineageResult
     | IterationChecksResult
     | IterationLoopResult
     | CheckerReviewResult,
@@ -528,6 +532,47 @@ function formatResumeHuman(resume: ResumeResult): string {
   ].join("\n\n");
 }
 
+function formatLineageHuman(lineage: LineageResult): string {
+  const title =
+    lineage.status === "passed"
+      ? "SAH architecture lineage passed"
+      : lineage.status === "violations"
+        ? "SAH architecture lineage found violations"
+        : lineage.status === "incomplete"
+          ? "SAH architecture lineage is incomplete"
+          : "SAH architecture lineage could not run";
+  return [
+    title,
+    `SAH root: ${lineage.sahRoot}`,
+    `Bundles: ${
+      lineage.bundles
+        .map(
+          ({ bundleId, path, fingerprint, completedStage }) =>
+            `${bundleId} (${path}, ${completedStage}, ${fingerprint})`,
+        )
+        .join(" | ") || "(none)"
+    }`,
+    `Edges: ${
+      lineage.edges
+        .map(
+          ({ fromBundleId, toBundleId }) => `${fromBundleId} -> ${toBundleId}`,
+        )
+        .join(" | ") || "(none)"
+    }`,
+    `Heads: ${lineage.heads.join(", ") || "(none)"}`,
+    ...lineage.triggerEvents.map(
+      ({ id, sourceDecision, resultingDecision }) =>
+        `Trigger ${id}: ${sourceDecision} -> ${resultingDecision}`,
+    ),
+    ...lineage.conflicts.map(
+      ({ code, bundleIds, message }) =>
+        `Conflict ${code} (${bundleIds.join(", ")}): ${message}`,
+    ),
+    ...lineage.diagnostics.map(humanDiagnostic),
+    `Summary: ${lineage.summary.bundles} bundle(s), ${lineage.summary.edges} edge(s), ${lineage.summary.conflicts} conflict(s), ${lineage.summary.errors} error(s), ${lineage.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 function isStage(value: string | undefined): value is Stage {
   return value !== undefined && (stages as readonly string[]).includes(value);
 }
@@ -668,6 +713,25 @@ async function main(arguments_: string[]): Promise<number> {
       `${typeof output === "string" ? output : JSON.stringify(output, null, 2)}\n`,
     );
     return exitCode(resume);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "lineage" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.repair !== true
+  ) {
+    const lineage = await resolveArchitectureLineage(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(lineage, null, 2) : formatLineageHuman(lineage)}\n`,
+    );
+    return exitCode(lineage);
   }
 
   if (

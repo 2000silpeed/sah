@@ -9,10 +9,12 @@ import {
   cleanupFixtures,
   cliPath,
   checkerReviewFixturePath,
+  copyBookmarkLineage,
   copyCheckerReview,
   copyFixture,
   copyIterationLoop,
   copyTypeScriptTarget,
+  bookmarkLineageDirectory,
   fixtureDirectory,
   iterationLoopFixtureDirectory,
   mutateJson,
@@ -69,6 +71,72 @@ describe("sah resume CLI", () => {
     expect(output.bundleFingerprint).toMatch(/^sha256:[a-f0-9]{64}$/u);
     expect(output.nextAction).toBe("implement-ready-slices");
     expect(output.readySliceRefs).toContain("implement-equipment-operations");
+  });
+});
+
+describe("sah lineage CLI", () => {
+  it("emits the bookmark lineage result as JSON", async () => {
+    const execution = await runCli([
+      "lineage",
+      bookmarkLineageDirectory,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      $schema: string;
+      status: string;
+      edges: Array<{ fromBundleId: string; toBundleId: string }>;
+      triggerEvents: Array<{ resultingDecision: string }>;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.$schema).toBe(
+      "https://sah.dev/schemas/lineage-result/v0.1.0",
+    );
+    expect(output.status).toBe("passed");
+    expect(output.edges).toEqual([
+      {
+        fromBundleId: "bookmark-direct-cli",
+        toBundleId: "bookmark-shared-operations",
+        relationship: "derives-from",
+      },
+    ]);
+    expect(output.triggerEvents[0]?.resultingDecision).toBe(
+      "bookmark-shared-operations#share-bookmark-operations",
+    );
+  });
+
+  it("prints the read-only lineage projection in human output", async () => {
+    const execution = await runCli(["lineage", bookmarkLineageDirectory]);
+
+    expect(execution.code).toBe(0);
+    expect(execution.stdout).toContain("SAH architecture lineage passed");
+    expect(execution.stdout).toContain(
+      "bookmark-direct-cli -> bookmark-shared-operations",
+    );
+  });
+
+  it("returns exit 2 for an unresolved parent instead of passing", async () => {
+    const root = await copyBookmarkLineage();
+    await mutateJson<{ parents: Array<{ bundleId: string }> }>(
+      join(root, "shared-operations"),
+      "architecture-evolution.json",
+      (evolution) => {
+        const parent = evolution.parents[0];
+        if (parent !== undefined) parent.bundleId = "missing-parent";
+      },
+    );
+
+    const execution = await runCli(["lineage", root, "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("incomplete");
+    expect(output.diagnostics.map(({ code }) => code)).toContain(
+      "LINEAGE_PARENT_MISSING",
+    );
   });
 });
 

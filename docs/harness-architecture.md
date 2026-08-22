@@ -82,6 +82,16 @@ design fingerprint, and exact record bytes. One manifest replacement pins its pa
 and S13 stage; the record is runtime evidence and no semantic IR is changed. ADR-0014 owns this
 completion boundary.
 
+The Cross-Bundle Lineage MVP adds a read-only project projection above individual bundle
+validation. An explicit SAH root is the discovery boundary; the Model Repository loads each
+bundle snapshot, computes its fingerprint, and the lineage resolver compares parent IDs and
+fingerprints before checking source decisions, exact review-trigger digests, reopened stages,
+and cross-bundle decision transitions. Lineage output is derived reporting, never a second
+semantic authority and never a mutation of an historical bundle. Symlinks that escape the
+explicit root, missing parents, stale fingerprints, cycles, dangling references, and parallel
+heads remain non-passing results. The CLI owns only invocation, presentation, and exit mapping;
+it does not scan Git, select a latest file, or resolve conflicts by date.
+
 TypeScript mapping is target-relative, schema-validated adapter context supplied explicitly by
 the caller. It relates complete declared source roots and path prefixes to Architecture element
 IDs, plus observable selectors to write symbols. It is neither inferred from directory names

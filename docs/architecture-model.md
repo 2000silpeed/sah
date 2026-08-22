@@ -20,6 +20,12 @@ permit representation during S3. Merging decisions and architecture would either
 elements inside options or erase rejected alternatives. No separate “methodology IR” exists:
 the strategy identifier and its evidence are the only downstream facts that need transport.
 
+The seven entries remain the bundle-local reasoning IR suite. Optional
+[Architecture Evolution](architecture-evolution.md) is a separate project-level lineage artifact,
+not an eighth replacement for the current Architecture or Architecture Decision IR. It links
+immutable full snapshots and reviewable decisions across bundles without copying their semantic
+facts into a new authority.
+
 ## Identity and references
 
 Identifiers are stable lowercase kebab-case within a design bundle. References are IDs, not

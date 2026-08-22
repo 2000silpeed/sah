@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "0.1.0",
+  "logId": "bookmark-register-decisions",
+  "decisions": [
+    {
+      "id": "direct-cli-ownership",
+      "title": "Keep bookmark behavior behind the direct CLI",
+      "status": "accepted",
+      "decidedAt": "2026-08-17",
+      "context": "The direct CLI is the only local caller of bookmark behavior.",
+      "evidenceRefs": ["ev-bookmark-maintenance"],
+      "affectedElementRefs": ["bookmark-operations"],
+      "qualityScenarioRefs": ["qs-valid-edit"],
+      "options": [
+        {
+          "id": "bookmark-module-option",
+          "description": "Plain module with transaction operations and one datastore",
+          "scenarioResults": [
+            {
+              "scenarioRef": "qs-valid-edit",
+              "result": "pass",
+              "evidence": "Record mutation and audit append share one transaction"
+            }
+          ],
+          "benefits": ["Low ceremony and one obvious write authority"],
+          "costs": [
+            "The module must be split if unrelated change reasons emerge"
+          ],
+          "risks": ["Richer behavior may be recognized late"],
+          "reversalEvidence": "Multiple interacting bookmark policies emerge"
+        },
+        {
+          "id": "bookmark-rich-domain-option",
+          "description": "Rich domain model with aggregate and repository abstractions",
+          "scenarioResults": [
+            {
+              "scenarioRef": "qs-valid-edit",
+              "result": "pass",
+              "evidence": "An aggregate can also coordinate record and audit behavior"
+            }
+          ],
+          "benefits": ["Explicit home for future interacting rules"],
+          "costs": ["Unjustified abstractions and mapping for current CRUD"],
+          "risks": ["Ceremony obscures direct data movement"],
+          "reversalEvidence": "Several interacting invariants require richer behavior ownership"
+        }
+      ],
+      "selectedOptionRef": "bookmark-module-option",
+      "decision": "Keep direct CLI ownership until a second local caller appears.",
+      "tradeoffsAccepted": [
+        "Reopen structure if interacting rules or independent release needs emerge"
+      ],
+      "consequences": [
+        "Bookmark writes remain behind one in-process module boundary"
+      ],
+      "supersedes": [],
+      "constraintRefs": ["bookmark-owns-writes"],
+      "reviewTriggers": ["A second local caller appears."],
+      "authority": {
+        "decider": "architecture owner",
+        "scope": "Bookmark administration"
+      }
+    }
+  ]
+}

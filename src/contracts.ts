@@ -22,6 +22,8 @@ export type ValidationClassification =
 export type DiagnosticCategory = "validation" | "operational";
 export type DiagnosticSeverity = "error" | "warning";
 export type ValidationStatus = "passed" | "violations" | "operational-error";
+export type LineageStatus =
+  "passed" | "violations" | "incomplete" | "operational-error";
 export type AdvanceStatus = "advanced" | "blocked" | "operational-error";
 export type VerificationCheckStatus =
   "pass" | "violation" | "pending" | "unsupported";
@@ -76,6 +78,57 @@ export type ValidationResult = {
   bundle?: ValidatedBundle;
   diagnostics: SahDiagnostic[];
   summary: ValidationSummary;
+};
+
+export const architectureEvolutionSchemaId =
+  "https://sah.dev/schemas/architecture-evolution/v0.1.0" as const;
+export const lineageResultSchemaId =
+  "https://sah.dev/schemas/lineage-result/v0.1.0" as const;
+
+export type LineageBundle = {
+  bundleId: string;
+  path: string;
+  fingerprint: string;
+  completedStage: Stage;
+};
+
+export type LineageEdge = {
+  fromBundleId: string;
+  toBundleId: string;
+  relationship: "derives-from";
+};
+
+export type LineageTriggerEvent = {
+  id: string;
+  status: "fired";
+  sourceDecision: string;
+  resultingDecision: string;
+};
+
+export type LineageConflict = {
+  code: string;
+  bundleIds: string[];
+  message: string;
+};
+
+export type LineageResult = {
+  $schema: typeof lineageResultSchemaId;
+  lineageVersion: "0.1.0";
+  status: LineageStatus;
+  sahRoot: string;
+  bundles: LineageBundle[];
+  edges: LineageEdge[];
+  triggerEvents: LineageTriggerEvent[];
+  heads: string[];
+  conflicts: LineageConflict[];
+  diagnostics: SahDiagnostic[];
+  summary: {
+    bundles: number;
+    edges: number;
+    conflicts: number;
+    errors: number;
+    warnings: number;
+  };
 };
 
 export type AdvancedBundle = {

@@ -29,6 +29,7 @@ import { prepareFilesystemPresenceAdapter } from "./filesystem-presence-adapter.
 import {
   artifactRoles,
   type ArchitectureDecisionModel,
+  type ArchitectureEvolutionModel,
   type ArchitectureModel,
   type ArtifactRole,
   type BundleManifest,
@@ -41,6 +42,7 @@ import {
   type SystemCharacterization,
 } from "./internal-model.js";
 import { validateReferences } from "./reference-validation.js";
+import { validateArchitectureEvolution } from "./evolution-validation.js";
 import {
   loadSchemaRegistry,
   type SchemaRegistry,
@@ -60,8 +62,10 @@ import {
 } from "./verification-record.js";
 
 const manifestName = "sah.bundle.json";
-const manifestSchemaId =
+const legacyManifestSchemaId =
   "https://sah.dev/schemas/design-bundle-manifest/v0.4.0";
+const evolvedManifestSchemaId =
+  "https://sah.dev/schemas/design-bundle-manifest/v0.5.0";
 
 type JsonReadResult =
   | { ok: true; data: unknown; source: Uint8Array }
@@ -73,6 +77,18 @@ type JsonReadResult =
 type ArtifactReadResult =
   | { ok: true; artifact: LoadedArtifact }
   | { ok: false; diagnostic: SahDiagnostic };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function declaredManifestSchemaId(data: unknown): string {
+  if (!isRecord(data)) return legacyManifestSchemaId;
+  const declared = data.$schema;
+  if (declared === legacyManifestSchemaId) return legacyManifestSchemaId;
+  if (declared === evolvedManifestSchemaId) return evolvedManifestSchemaId;
+  return legacyManifestSchemaId;
+}
 
 function operationalDiagnostic(input: {
   code: string;
@@ -301,6 +317,10 @@ function toModels(artifacts: LoadedArtifact[]): LoadedModels {
         models.implementationHandoff =
           artifact.data as ImplementationHandoffModel;
         break;
+      case "architectureEvolution":
+        models.architectureEvolution =
+          artifact.data as ArchitectureEvolutionModel;
+        break;
     }
   }
   return models;
@@ -311,6 +331,7 @@ type PreparedBundle = {
   manifestLexicalPath: string;
   manifestSource: Uint8Array;
   manifest: BundleManifest;
+  manifestSchemaId: string;
   registry: SchemaRegistry;
   paths: Partial<Record<ArtifactRole, string>>;
   artifacts: LoadedArtifact[];
@@ -391,8 +412,9 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
     };
   }
 
+  const selectedManifestSchemaId = declaredManifestSchemaId(manifestRead.data);
   const manifestDiagnostics = registryResult.registry.validate(
-    manifestSchemaId,
+    selectedManifestSchemaId,
     manifestRead.data,
     manifestName,
     "operational",
@@ -523,6 +545,7 @@ async function prepareBundle(directory: string): Promise<PreparationResult> {
       manifestLexicalPath,
       manifestSource: manifestRead.source,
       manifest,
+      manifestSchemaId: selectedManifestSchemaId,
       registry: registryResult.registry,
       paths,
       artifacts,
@@ -547,7 +570,7 @@ function evaluatePreparedBundle(
 
   const validationDiagnostics = [
     ...prepared.registry.validate(
-      manifestSchemaId,
+      prepared.manifestSchemaId,
       prepared.manifest,
       manifestName,
       "operational",
@@ -577,6 +600,13 @@ function evaluatePreparedBundle(
 
   const models = toModels(prepared.artifacts);
   validationDiagnostics.push(...validateReferences(models, prepared.paths));
+  validationDiagnostics.push(
+    ...validateArchitectureEvolution(
+      models,
+      prepared.manifest.bundleId,
+      prepared.paths,
+    ),
+  );
   validationDiagnostics.push(
     ...validateStageGates(
       completedStage,
@@ -621,6 +651,45 @@ export async function validateBundle(
         preparation.prepared.manifest.lifecycle.completedStage,
       )
     : preparation.validation;
+}
+
+export type LineageBundleSnapshot = {
+  bundleRoot: string;
+  manifest: BundleManifest;
+  paths: Partial<Record<ArtifactRole, string>>;
+  artifacts: LoadedArtifact[];
+  models: LoadedModels;
+  validation: ValidationResult;
+  fingerprint: string;
+};
+
+export type LineageBundleLoadResult =
+  | { ok: true; snapshot: LineageBundleSnapshot }
+  | { ok: false; validation: ValidationResult };
+
+export async function loadBundleForLineage(
+  directory: string,
+): Promise<LineageBundleLoadResult> {
+  const preparation = await prepareBundle(directory);
+  if (!preparation.ok) return preparation;
+  const { prepared } = preparation;
+  const validation = evaluatePreparedBundle(
+    prepared,
+    prepared.manifest.lifecycle.completedStage,
+  );
+  return {
+    ok: true,
+    snapshot: {
+      bundleRoot: prepared.bundleRoot,
+      manifest: prepared.manifest,
+      paths: prepared.paths,
+      artifacts: prepared.artifacts,
+      models:
+        validation.status === "passed" ? toModels(prepared.artifacts) : {},
+      validation,
+      fingerprint: designFingerprint(prepared.manifest, prepared.artifacts),
+    },
+  };
 }
 
 export async function resumeBundle(directory: string): Promise<ResumeResult> {

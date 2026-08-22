@@ -2,11 +2,13 @@
 
 ## Purpose
 
-SAH is a design reasoning harness for AI coding agents. It turns ambiguous requirements into
-an explicit, reviewable architecture basis before implementation and keeps the resulting
-constraints visible while code changes. Through a host agent, its product boundary spans the
-conversation from requirements and repository evidence through architecture, actual implementation,
-and continuous verification.
+SAH is a model-independent architecture memory, decision-lineage, and evidence protocol for AI
+coding agents. It turns ambiguous requirements into an explicit, reviewable architecture basis
+before implementation and keeps the resulting constraints visible while code changes. Through a
+host agent, its product boundary spans the conversation from requirements and repository evidence
+through architecture, actual implementation, continuous verification, and later evolution of the
+design bundle. Model/provider choice may change the reasoning surface, but it does not become
+semantic architecture authority.
 
 SAH serves teams that let coding agents make non-trivial structural changes and need the
 agent to explain and preserve why boundaries, ownership, and dependency directions exist.
@@ -39,6 +41,10 @@ deliberate exception.
   source decision, without presenting taste as fact.
 - **Change recovery:** a changed assumption identifies the earliest invalid reasoning step
   and the downstream artifacts that need reconsideration.
+- **Evolution continuity:** a later bundle can pin its immutable parent, source decision, review
+  trigger, reopened stages, and resulting decision without rewriting historical snapshots.
+- **Evidence integrity:** unresolved, unsupported, stale, or conflicting lineage is explicit and
+  never reported as a deterministic pass.
 - **Ceremony budget:** removing an artifact or field with no reader is a correctness fix, not
   a documentation loss.
 - **Agent portability:** the same structured architecture model can drive more than one host
@@ -61,6 +67,7 @@ SAH is not:
   or human accountability;
 - a diagram editor, source-code reverse-engineering product, or general project-management
   system;
+- a hosted architecture graph, database service, or automatic current-state authority;
 - a promise that architecture can be made deterministic; only observable propositions can
   become hard checks;
 - a requirement to fill every artifact for every project. A low-risk CRUD system should

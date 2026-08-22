@@ -5,6 +5,11 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const fixtureDirectory = join(repositoryRoot, "fixtures", "simple-crud");
+export const bookmarkLineageDirectory = join(
+  repositoryRoot,
+  "fixtures",
+  "bookmark-lineage",
+);
 export const verificationTargetDirectory = join(
   repositoryRoot,
   "fixtures",
@@ -36,6 +41,14 @@ export async function copyFixture(): Promise<string> {
   await cp(fixtureDirectory, bundle, { recursive: true });
   temporaryDirectories.push(root);
   return bundle;
+}
+
+export async function copyBookmarkLineage(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "sah-lineage-test-"));
+  const lineage = join(root, "lineage");
+  await cp(bookmarkLineageDirectory, lineage, { recursive: true });
+  temporaryDirectories.push(root);
+  return lineage;
 }
 
 export async function copyVerificationTarget(): Promise<string> {

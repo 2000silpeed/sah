@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { validateBundle } from "../src/index.js";
+import { resumeBundle, validateBundle } from "../src/index.js";
 import {
   cleanupFixtures,
   copyFixture,
@@ -24,6 +24,15 @@ describe("validateBundle", () => {
       profile: "short",
     });
     expect(validation.diagnostics).toEqual([]);
+  });
+
+  it("preserves the v0.4 bundle fingerprint while loading lineage support", async () => {
+    const resume = await resumeBundle(fixtureDirectory);
+
+    expect(resume.status).toBe("ready");
+    expect(resume.bundleFingerprint).toBe(
+      "sha256:cc8663147472dc70644fd5feb6aabac0bfd0cc6dd4403bad7cc4ee419d9fa261",
+    );
   });
 
   it("retains artifact and JSON Pointer for schema violations", async () => {

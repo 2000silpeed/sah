@@ -1,0 +1,63 @@
+{
+  "$schema": "https://sah.dev/schemas/architecture-evolution/v0.1.0",
+  "schemaVersion": "0.1.0",
+  "evolutionId": "bookmark-shared-operations-evolution",
+  "currentBundleId": "bookmark-shared-operations",
+  "parents": [
+    {
+      "bundleId": "bookmark-direct-cli",
+      "designFingerprint": "sha256:b4121e87de520279ff2c8813ecb02c8e982ee5a680861455c54bc38354f363ba",
+      "relationship": "derives-from"
+    }
+  ],
+  "changeRequest": {
+    "summary": "Add a second local caller while preserving the direct CLI.",
+    "evidenceRefs": ["ev-bookmark-maintenance"]
+  },
+  "triggerEvents": [
+    {
+      "id": "second-local-caller-fired",
+      "status": "fired",
+      "source": {
+        "bundleId": "bookmark-direct-cli",
+        "designFingerprint": "sha256:b4121e87de520279ff2c8813ecb02c8e982ee5a680861455c54bc38354f363ba",
+        "decisionId": "direct-cli-ownership",
+        "reviewTriggerText": "A second local caller appears.",
+        "reviewTriggerDigest": "sha256:fd2b695eca18be8dc6980b595e6ebb6d87d009bbf3cf2b269bcb9f17d2f8b48d"
+      },
+      "evidenceRefs": ["ev-bookmark-maintenance"],
+      "rationale": "A second local caller invalidates the single-caller boundary premise."
+    }
+  ],
+  "reopenedStages": [
+    {
+      "stage": "S6",
+      "reason": "The ownership boundary premise changed.",
+      "triggerRefs": ["second-local-caller-fired"]
+    },
+    {
+      "stage": "S7",
+      "reason": "The representation must serve more than one caller.",
+      "triggerRefs": ["second-local-caller-fired"]
+    },
+    {
+      "stage": "S8",
+      "reason": "A shared operations candidate must be compared.",
+      "triggerRefs": ["second-local-caller-fired"]
+    }
+  ],
+  "decisionTransitions": [
+    {
+      "id": "share-operations-transition",
+      "from": {
+        "bundleId": "bookmark-direct-cli",
+        "designFingerprint": "sha256:b4121e87de520279ff2c8813ecb02c8e982ee5a680861455c54bc38354f363ba",
+        "decisionId": "direct-cli-ownership"
+      },
+      "toDecisionRef": "share-bookmark-operations",
+      "transition": "supersedes",
+      "scopeElementRefs": ["bookmark-operations"],
+      "triggerRefs": ["second-local-caller-fired"]
+    }
+  ]
+}
