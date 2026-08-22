@@ -75,6 +75,8 @@ is read-only and does not mutate lifecycle metadata, artifacts, or historical bu
 
 ## Deliberate exclusions
 
-This contract does not define `sah current`, target-check evidence adapters, benchmark automation,
-stable trigger ID migration, hosted coordination, a graph database, UI, or model provenance.
-Those choices require later authority and evidence.
+This Phase 1 contract does not define target-check evidence adapters, benchmark automation, stable
+trigger ID migration, hosted coordination, a graph database, UI, or model provenance. The derived
+current-state view is defined separately in [Current Architecture Projection](current-architecture.md)
+and [ADR-0026](adr/0026-derive-current-architecture-from-lineage-heads.md). The remaining choices
+require later authority and evidence.

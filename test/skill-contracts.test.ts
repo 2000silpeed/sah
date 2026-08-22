@@ -74,7 +74,13 @@ describe("portable SAH Agent Skill", () => {
     expect(implementation).toContain("`full-fallback`");
     expect(implementation).toContain("S13 lifecycle");
     expect(skill).toContain("formatter/linter");
+    expect(skill).toContain("Existing-target current-state preflight");
+    expect(skill).toContain("sah current <sah-root> --json");
+    expect(skill).toContain("never selects a head by");
     expect(implementation).toContain("target-check failure");
+    expect(implementation).toContain(
+      "read-only `sah current <sah-root> --json`",
+    );
     expect(skill).toContain("Optional bounded continuous mode");
     expect(skill).toContain("positive `maxIterations` bound");
     expect(skill).toContain("It does not invent a next task or");

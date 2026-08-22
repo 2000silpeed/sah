@@ -20,6 +20,13 @@ With the skill, the host coding agent becomes SAH's conversational and implement
 6. runs target tests plus changed and full SAH verification; and
 7. advances S13 only with eligible full evidence.
 
+When an existing target has an explicit `.sah` root, the skill first runs the read-only
+`sah current <sah-root> --json` projection, then uses `sah resume` for a selected head. Active
+decisions, superseded history, exact open triggers, pending judgments, and conflicts are context
+for the next task; they never replace the canonical bundle. A trigger or non-ready current result
+starts reasoning and a new evolution snapshot, and never edits the historical parent or selects a
+head by date, filename, or Git order. See [Current Architecture Projection](current-architecture.md).
+
 For repeated product iterations, keep a schema-validated `.sah/sah.loop.json` beside the design
 bundle. Run `npm exec -- sah loop .sah/sah.loop.json --json` to select the fast/reasoning route,
 then bind the planned iteration with `sah loop-bind --target-revision <revision> --design-fingerprint <sha256>` before `sah loop-checks --cwd /absolute/project` produces execution evidence. Pass the same context to `sah loop-checks`; `sah loop-record` rejects stale evidence.
@@ -206,8 +213,9 @@ grant separate permission for external actions such as downloads or pushes.
 
 ## Where artifacts live
 
-By default the target gets `.sah/design/` containing `sah.bundle.json` and the seven semantic JSON
-artifacts. The target's source code stays in its normal locations. A TypeScript target may also get
+By default the target gets `.sah/design/` containing `sah.bundle.json` and the seven core semantic
+JSON artifacts. Evolved snapshots may additionally declare the separate architecture-evolution
+artifact. The target's source code stays in its normal locations. A TypeScript target may also get
 `sah.source-map.json` when an accepted observable constraint matches the current write-authority
 adapter.
 

@@ -17,6 +17,7 @@ import {
   type IterationLoopResult,
   type CheckerReviewResult,
   type LineageResult,
+  type CurrentArchitectureResult,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -26,6 +27,7 @@ import {
   resumeBundle,
 } from "./model-repository.js";
 import { resolveArchitectureLineage } from "./architecture-lineage.js";
+import { resolveCurrentArchitecture } from "./current-architecture.js";
 import {
   evaluateIterationLoop,
   runIterationChecks,
@@ -42,6 +44,7 @@ const usage = [
   "       sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]",
   "       sah resume <design-bundle-directory> [--json]",
   "       sah lineage <sah-root> [--json]",
+  "       sah current <sah-root> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -367,7 +370,8 @@ function exitCode(
     | LineageResult
     | IterationChecksResult
     | IterationLoopResult
-    | CheckerReviewResult,
+    | CheckerReviewResult
+    | CurrentArchitectureResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -378,6 +382,8 @@ function exitCode(
     case "escalate":
       return 1;
     case "failed":
+      return 1;
+    case "conflicted":
       return 1;
     case "blocked":
       return 1;
@@ -573,6 +579,56 @@ function formatLineageHuman(lineage: LineageResult): string {
   ].join("\n\n");
 }
 
+function formatCurrentArchitectureHuman(
+  current: CurrentArchitectureResult,
+): string {
+  const title =
+    current.status === "ready"
+      ? "SAH current architecture ready"
+      : current.status === "conflicted"
+        ? "SAH current architecture is conflicted"
+        : current.status === "incomplete"
+          ? "SAH current architecture is incomplete"
+          : "SAH current architecture could not run";
+  return [
+    title,
+    `SAH root: ${current.sahRoot}`,
+    `Heads: ${
+      current.heads
+        .map(
+          ({ bundleId, path, fingerprint }) =>
+            `${bundleId} (${path}, ${fingerprint})`,
+        )
+        .join(" | ") || "(none)"
+    }`,
+    `Active decisions: ${
+      current.activeDecisions
+        .map(
+          ({ qualifiedRef, title: decisionTitle }) =>
+            `${qualifiedRef}: ${decisionTitle}`,
+        )
+        .join(" | ") || "(none)"
+    }`,
+    ...current.supersededDecisions.map(
+      ({ qualifiedRef, supersededBy }) =>
+        `Superseded: ${qualifiedRef} -> ${supersededBy}`,
+    ),
+    ...current.openReviewTriggers.map(
+      ({ decisionRef, trigger }) => `Open trigger: ${decisionRef}: ${trigger}`,
+    ),
+    ...current.pendingJudgments.map(
+      ({ bundleId, constraintId }) =>
+        `Pending judgment: ${bundleId}#${constraintId}`,
+    ),
+    ...current.conflicts.map(
+      ({ code, bundleIds, message }) =>
+        `Conflict ${code} (${bundleIds.join(", ")}): ${message}`,
+    ),
+    ...current.diagnostics.map(humanDiagnostic),
+    `Summary: ${current.summary.activeDecisions} active decision(s), ${current.summary.supersededDecisions} superseded, ${current.summary.openReviewTriggers} open trigger(s), ${current.summary.pendingJudgments} pending judgment(s), ${current.summary.conflicts} conflict(s), ${current.summary.errors} error(s), ${current.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 function isStage(value: string | undefined): value is Stage {
   return value !== undefined && (stages as readonly string[]).includes(value);
 }
@@ -732,6 +788,25 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(lineage, null, 2) : formatLineageHuman(lineage)}\n`,
     );
     return exitCode(lineage);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "current" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.repair !== true
+  ) {
+    const current = await resolveCurrentArchitecture(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(current, null, 2) : formatCurrentArchitectureHuman(current)}\n`,
+    );
+    return exitCode(current);
   }
 
   if (

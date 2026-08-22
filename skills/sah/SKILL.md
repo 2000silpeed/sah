@@ -122,6 +122,22 @@ npm run build
 A stakeholder-imposed technology is a hard constraint, not permission to skip responsibility and
 ownership analysis.
 
+### Existing-target current-state preflight
+
+When an existing target has an explicit `.sah` root, run the read-only current projection before
+authoring a new design:
+
+1. locate the explicit SAH root and run `sah current <sah-root> --json`;
+2. inspect heads, active/superseded decisions, exact open triggers, pending judgments, and
+   conflicts;
+3. use `sah resume` for the selected head bundle only after the current result is ready;
+4. route an applicable open trigger, conflicting head, stale parent, or missing history to the
+   reasoning/authority path and create a new evolution snapshot rather than editing a parent.
+
+The current result is a derived view, not a semantic authority. The skill never selects a head by
+date, filename, Git order, or model/provider preference. `ready` does not mean judgment or target
+evidence has passed; it only means the projection is deterministic and conflict-free.
+
 ## Run progressive elicitation
 
 Inspect before asking. Mine requirements, source, tests, configs, ADRs, issue text, and operational

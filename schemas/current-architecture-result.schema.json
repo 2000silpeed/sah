@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/current-architecture-result/v0.1.0",
+  "title": "SAH Current Architecture Projection Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "currentVersion",
+    "status",
+    "sahRoot",
+    "heads",
+    "activeDecisions",
+    "supersededDecisions",
+    "openReviewTriggers",
+    "pendingJudgments",
+    "conflicts",
+    "diagnostics",
+    "summary"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/current-architecture-result/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["schema-validator", "current-architecture-reporter"]
+      }
+    },
+    "currentVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["schema-validator", "current-architecture-reporter"]
+      }
+    },
+    "status": {
+      "enum": ["ready", "conflicted", "incomplete", "operational-error"],
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "cli"]
+      }
+    },
+    "sahRoot": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter"]
+      }
+    },
+    "heads": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/head" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "cli"]
+      }
+    },
+    "activeDecisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/activeDecision" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "skill"]
+      }
+    },
+    "supersededDecisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/supersededDecision" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "skill"]
+      }
+    },
+    "openReviewTriggers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/openReviewTrigger" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "skill"]
+      }
+    },
+    "pendingJudgments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pendingJudgment" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "skill"]
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "cli", "skill"]
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "https://sah.dev/schemas/verification-diagnostic/v0.1.0"
+      },
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "cli", "skill"]
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary",
+      "x-sah-trace": {
+        "writtenBy": ["current-architecture-runtime"],
+        "readBy": ["current-architecture-reporter", "cli"]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "fingerprint", "path"],
+      "properties": {
+        "bundleId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/digest",
+          "x-sah-trace": {
+            "writtenBy": ["model-repository", "current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter"]
+          }
+        }
+      }
+    },
+    "activeDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualifiedRef", "title", "scopeElementRefs"],
+      "properties": {
+        "qualifiedRef": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": [
+              "architecture-decision-author",
+              "current-architecture-runtime"
+            ],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "scopeElementRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": [
+              "architecture-decision-author",
+              "current-architecture-runtime"
+            ],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        }
+      }
+    },
+    "supersededDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualifiedRef", "supersededBy"],
+      "properties": {
+        "qualifiedRef": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "supersededBy": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        }
+      }
+    },
+    "openReviewTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisionRef", "trigger"],
+      "properties": {
+        "decisionRef": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": [
+              "architecture-decision-author",
+              "current-architecture-runtime"
+            ],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        }
+      }
+    },
+    "pendingJudgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "constraintId"],
+      "properties": {
+        "bundleId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        },
+        "constraintId": {
+          "$ref": "#/$defs/id",
+          "x-sah-trace": {
+            "writtenBy": [
+              "architecture-author",
+              "current-architecture-runtime"
+            ],
+            "readBy": ["current-architecture-reporter", "skill"]
+          }
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "bundleIds", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli", "skill"]
+          }
+        },
+        "bundleIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli", "skill"]
+          }
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli", "skill"]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heads",
+        "activeDecisions",
+        "supersededDecisions",
+        "openReviewTriggers",
+        "pendingJudgments",
+        "conflicts",
+        "errors",
+        "warnings"
+      ],
+      "properties": {
+        "heads": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "activeDecisions": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "supersededDecisions": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "openReviewTriggers": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "pendingJudgments": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "conflicts": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "x-sah-trace": {
+            "writtenBy": ["current-architecture-runtime"],
+            "readBy": ["current-architecture-reporter", "cli"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/current-architecture-result/v0.1.0",
+      "currentVersion": "0.1.0",
+      "status": "ready",
+      "sahRoot": "/project/.sah",
+      "heads": [
+        {
+          "bundleId": "bookmark-shared-operations",
+          "fingerprint": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "path": "shared-operations"
+        }
+      ],
+      "activeDecisions": [
+        {
+          "qualifiedRef": "bookmark-shared-operations#share-bookmark-operations",
+          "title": "Share bookmark operations across local callers",
+          "scopeElementRefs": ["bookmark-operations"]
+        }
+      ],
+      "supersededDecisions": [
+        {
+          "qualifiedRef": "bookmark-direct-cli#direct-cli-ownership",
+          "supersededBy": "bookmark-shared-operations#share-bookmark-operations"
+        }
+      ],
+      "openReviewTriggers": [
+        {
+          "decisionRef": "bookmark-shared-operations#share-bookmark-operations",
+          "trigger": "A second local caller appears."
+        }
+      ],
+      "pendingJudgments": [],
+      "conflicts": [],
+      "diagnostics": [],
+      "summary": {
+        "heads": 1,
+        "activeDecisions": 1,
+        "supersededDecisions": 1,
+        "openReviewTriggers": 1,
+        "pendingJudgments": 0,
+        "conflicts": 0,
+        "errors": 0,
+        "warnings": 0
+      }
+    }
+  ]
+}

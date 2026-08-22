@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { cp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -136,6 +136,107 @@ describe("sah lineage CLI", () => {
     expect(output.status).toBe("incomplete");
     expect(output.diagnostics.map(({ code }) => code)).toContain(
       "LINEAGE_PARENT_MISSING",
+    );
+  });
+});
+
+describe("sah current CLI", () => {
+  it("emits active and superseded decisions for the bookmark head", async () => {
+    const execution = await runCli([
+      "current",
+      bookmarkLineageDirectory,
+      "--json",
+    ]);
+    const output = JSON.parse(execution.stdout) as {
+      $schema: string;
+      status: string;
+      activeDecisions: Array<{ qualifiedRef: string }>;
+      supersededDecisions: Array<{
+        qualifiedRef: string;
+        supersededBy: string;
+      }>;
+      openReviewTriggers: Array<{ decisionRef: string; trigger: string }>;
+    };
+
+    expect(execution.code).toBe(0);
+    expect(output.$schema).toBe(
+      "https://sah.dev/schemas/current-architecture-result/v0.1.0",
+    );
+    expect(output.status).toBe("ready");
+    expect(output.activeDecisions).toEqual([
+      {
+        qualifiedRef: "bookmark-shared-operations#share-bookmark-operations",
+        title: "Share bookmark operations across local callers",
+        scopeElementRefs: ["bookmark-operations"],
+      },
+    ]);
+    expect(output.supersededDecisions).toEqual([
+      {
+        qualifiedRef: "bookmark-direct-cli#direct-cli-ownership",
+        supersededBy: "bookmark-shared-operations#share-bookmark-operations",
+      },
+    ]);
+    expect(output.openReviewTriggers[0]?.trigger).toBe(
+      "A second local caller appears.",
+    );
+  });
+
+  it("prints the read-only current projection in human output", async () => {
+    const execution = await runCli(["current", bookmarkLineageDirectory]);
+
+    expect(execution.code).toBe(0);
+    expect(execution.stdout).toContain("SAH current architecture ready");
+    expect(execution.stdout).toContain(
+      "bookmark-direct-cli#direct-cli-ownership -> bookmark-shared-operations#share-bookmark-operations",
+    );
+  });
+
+  it("returns exit 2 for incomplete history", async () => {
+    const root = await copyBookmarkLineage();
+    await mutateJson<{ parents: Array<{ bundleId: string }> }>(
+      join(root, "shared-operations"),
+      "architecture-evolution.json",
+      (evolution) => {
+        const parent = evolution.parents[0];
+        if (parent !== undefined) parent.bundleId = "missing-parent";
+      },
+    );
+
+    const execution = await runCli(["current", root, "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      diagnostics: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(2);
+    expect(output.status).toBe("incomplete");
+    expect(output.diagnostics.map(({ code }) => code)).toContain(
+      "LINEAGE_PARENT_MISSING",
+    );
+  });
+
+  it("returns exit 1 for overlapping independent heads", async () => {
+    const root = await copyBookmarkLineage();
+    const alternate = join(root, "alternate-direct-cli");
+    await cp(join(root, "direct-cli"), alternate, { recursive: true });
+    await mutateJson<{ bundleId: string }>(
+      alternate,
+      "sah.bundle.json",
+      (manifest) => {
+        manifest.bundleId = "bookmark-alternate-direct-cli";
+      },
+    );
+
+    const execution = await runCli(["current", root, "--json"]);
+    const output = JSON.parse(execution.stdout) as {
+      status: string;
+      conflicts: Array<{ code: string }>;
+    };
+
+    expect(execution.code).toBe(1);
+    expect(output.status).toBe("conflicted");
+    expect(output.conflicts.map(({ code }) => code)).toContain(
+      "CURRENT_DECISION_SCOPE_CONFLICT",
     );
   });
 });

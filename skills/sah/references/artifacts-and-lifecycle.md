@@ -27,6 +27,10 @@ JSON is canonical. An ADR or diagram may be generated as a view, but validation 
 recover accepted facts. Every consequential ADR includes credible alternatives, at least two costs,
 consequences, mitigation, authority, and supersession/review triggers.
 
+`sah current` is a derived read-only view over explicit lineage heads, not another canonical
+artifact. Never author or persist a `current-architecture.json` file to simulate a lifecycle state;
+the bundle snapshots, evolution artifact, and S13 evidence remain authoritative.
+
 ## New-bundle bootstrap
 
 The current CLI implements atomic exact-next advancement for target gates S5–S13. It does not

@@ -16,6 +16,7 @@ const schemaFiles = [
   "design-bundle-manifest-v0.5.0.schema.json",
   "architecture-evolution.schema.json",
   "lineage-result.schema.json",
+  "current-architecture-result.schema.json",
   "system-characterization.schema.json",
   "design-strategy.schema.json",
   "responsibility.schema.json",

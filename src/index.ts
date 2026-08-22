@@ -54,9 +54,18 @@ export type {
   LineageResult,
   LineageStatus,
   LineageTriggerEvent,
+  CurrentArchitectureConflict,
+  CurrentArchitectureDecision,
+  CurrentArchitectureHead,
+  CurrentArchitecturePendingJudgment,
+  CurrentArchitectureResult,
+  CurrentArchitectureReviewTrigger,
+  CurrentArchitectureStatus,
+  CurrentArchitectureSupersededDecision,
 } from "./contracts.js";
 export {
   architectureEvolutionSchemaId,
+  currentArchitectureResultSchemaId,
   iterationScenarioSchemaId,
   iterationSliceSchemaId,
   lineageResultSchemaId,
@@ -79,3 +88,4 @@ export {
 } from "./iteration-loop.js";
 export { validateCheckerReview } from "./checker-review.js";
 export { resolveArchitectureLineage } from "./architecture-lineage.js";
+export { resolveCurrentArchitecture } from "./current-architecture.js";

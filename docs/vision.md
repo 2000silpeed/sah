@@ -67,7 +67,7 @@ SAH is not:
   or human accountability;
 - a diagram editor, source-code reverse-engineering product, or general project-management
   system;
-- a hosted architecture graph, database service, or automatic current-state authority;
+- a hosted architecture graph, database service, or persisted second current-state authority;
 - a promise that architecture can be made deterministic; only observable propositions can
   become hard checks;
 - a requirement to fill every artifact for every project. A low-risk CRUD system should

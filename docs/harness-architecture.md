@@ -92,6 +92,13 @@ explicit root, missing parents, stale fingerprints, cycles, dangling references,
 heads remain non-passing results. The CLI owns only invocation, presentation, and exit mapping;
 it does not scan Git, select a latest file, or resolve conflicts by date.
 
+The Phase 2 current-architecture projection consumes that lineage result and reads only its
+validated heads. It derives active and superseded qualified decisions, exact open triggers,
+pending judgment constraints, and overlapping-scope conflicts. It is a regenerable view rather
+than a current-state artifact or semantic authority; `ready` does not imply target evidence or
+judgment completion. [Current Architecture Projection](current-architecture.md) owns the field
+and status contract, and ADR-0026 owns the no-latest-wins boundary.
+
 TypeScript mapping is target-relative, schema-validated adapter context supplied explicitly by
 the caller. It relates complete declared source roots and path prefixes to Architecture element
 IDs, plus observable selectors to write symbols. It is neither inferred from directory names

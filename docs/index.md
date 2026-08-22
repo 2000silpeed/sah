@@ -36,6 +36,8 @@ MVP.
   result types, and exit codes for the executable structural slice.
 - [Architecture evolution](architecture-evolution.md) — owns immutable cross-bundle lineage,
   evolution IR, resolver boundaries, and non-passing conflict semantics.
+- [Current architecture projection](current-architecture.md) — owns the read-only active,
+  superseded, trigger, judgment, head, and conflict projection over lineage heads.
 - [Agent Skill guide](agent-skill.md) — owns Codex/Claude Code installation, invocation,
   progressive questioning, and the natural-language-to-implementation experience.
 - [Session resume](session-resume.md) — owns the local, model-neutral cross-session resume view.
@@ -109,6 +111,8 @@ MVP.
   execution policy to the portable agent skill without changing CLI/lifecycle authority.
 - [ADR-0025](adr/0025-preserve-cross-bundle-architecture-lineage.md) — adds optional evolution
   IR and explicit-root lineage without rewriting historical bundles or adding a service.
+- [ADR-0026](adr/0026-derive-current-architecture-from-lineage-heads.md) — derives a read-only
+  current architecture projection from explicit lineage heads without a second authority.
 
 ## JSON Schema contracts
 
@@ -135,6 +139,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   optional lineage metadata for evolved snapshots while preserving v0.4.
 - [Lineage result](../schemas/lineage-result.schema.json) — validates the derived read-only
   project lineage projection and its deterministic conflict summary.
+- [Current architecture result](../schemas/current-architecture-result.schema.json) — validates
+  the derived active/superseded decision, trigger, judgment, head, and conflict projection.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -173,12 +179,15 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Public contracts](../src/contracts.ts) and [entry point](../src/index.ts) — define and export
   framework-neutral diagnostics, results, stages, `validateBundle`, `advanceBundle`, `verifyBundle`,
   `runIterationChecks`, `acceptNextIteration`, `completeIterationLoop`, and
-  `validateCheckerReview`.
+  `validateCheckerReview`, and `resolveCurrentArchitecture`.
 - [Model Repository](../src/model-repository.ts) — owns manifest/artifact loading, containment,
   validation sequencing, stage transition, verification dispatch, and result separation.
 - [Architecture lineage resolver](../src/architecture-lineage.ts) and
   [evolution validation](../src/evolution-validation.ts) — own explicit-root bundle discovery,
   fingerprint-bound cross-bundle checks, graph diagnostics, and derived lineage results.
+- [Current architecture projection](../src/current-architecture.ts) and
+  [current-state contract](current-architecture.md) — derive head decisions and open triggers
+  without mutating canonical bundles or selecting a latest head.
 - [Iteration loop runtime](../src/iteration-loop.ts) — validates loop/outcome/completion artifacts,
   binds explicit target/design context, executes declared checks, routes risk, records outcomes
   atomically, accepts/repairs the next task, and enforces the local completion gate.

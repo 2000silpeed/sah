@@ -18,8 +18,19 @@ import type {
   LineageResult,
   LineageStatus,
   LineageTriggerEvent,
+  CurrentArchitectureConflict,
+  CurrentArchitectureDecision,
+  CurrentArchitectureHead,
+  CurrentArchitecturePendingJudgment,
+  CurrentArchitectureResult,
+  CurrentArchitectureReviewTrigger,
+  CurrentArchitectureStatus,
+  CurrentArchitectureSupersededDecision,
 } from "./contracts.js";
-import { lineageResultSchemaId } from "./contracts.js";
+import {
+  currentArchitectureResultSchemaId,
+  lineageResultSchemaId,
+} from "./contracts.js";
 
 function orderDiagnostics(diagnostics: SahDiagnostic[]): SahDiagnostic[] {
   return [...diagnostics].sort((left, right) =>
@@ -113,6 +124,77 @@ export function lineageResult(
     summary: {
       bundles: fields.bundles?.length ?? 0,
       edges: fields.edges?.length ?? 0,
+      conflicts: conflicts.length,
+      ...summarize(diagnostics),
+    },
+  };
+}
+
+export function currentArchitectureResult(
+  status: CurrentArchitectureStatus,
+  sahRoot: string,
+  fields: {
+    heads?: CurrentArchitectureHead[];
+    activeDecisions?: CurrentArchitectureDecision[];
+    supersededDecisions?: CurrentArchitectureSupersededDecision[];
+    openReviewTriggers?: CurrentArchitectureReviewTrigger[];
+    pendingJudgments?: CurrentArchitecturePendingJudgment[];
+    conflicts?: CurrentArchitectureConflict[];
+    diagnostics?: SahDiagnostic[];
+  } = {},
+): CurrentArchitectureResult {
+  const diagnostics = orderDiagnostics(fields.diagnostics ?? []);
+  const heads = [...(fields.heads ?? [])].sort((left, right) =>
+    [left.bundleId, left.path]
+      .join("\0")
+      .localeCompare([right.bundleId, right.path].join("\0")),
+  );
+  const activeDecisions = [...(fields.activeDecisions ?? [])].sort(
+    (left, right) => left.qualifiedRef.localeCompare(right.qualifiedRef),
+  );
+  const supersededDecisions = [...(fields.supersededDecisions ?? [])].sort(
+    (left, right) =>
+      [left.qualifiedRef, left.supersededBy]
+        .join("\0")
+        .localeCompare([right.qualifiedRef, right.supersededBy].join("\0")),
+  );
+  const openReviewTriggers = [...(fields.openReviewTriggers ?? [])].sort(
+    (left, right) =>
+      [left.decisionRef, left.trigger]
+        .join("\0")
+        .localeCompare([right.decisionRef, right.trigger].join("\0")),
+  );
+  const pendingJudgments = [...(fields.pendingJudgments ?? [])].sort(
+    (left, right) =>
+      [left.bundleId, left.constraintId]
+        .join("\0")
+        .localeCompare([right.bundleId, right.constraintId].join("\0")),
+  );
+  const conflicts = [...(fields.conflicts ?? [])].sort((left, right) =>
+    [left.code, ...left.bundleIds, left.message]
+      .join("\0")
+      .localeCompare(
+        [right.code, ...right.bundleIds, right.message].join("\0"),
+      ),
+  );
+  return {
+    $schema: currentArchitectureResultSchemaId,
+    currentVersion: "0.1.0",
+    status,
+    sahRoot,
+    heads,
+    activeDecisions,
+    supersededDecisions,
+    openReviewTriggers,
+    pendingJudgments,
+    conflicts,
+    diagnostics,
+    summary: {
+      heads: heads.length,
+      activeDecisions: activeDecisions.length,
+      supersededDecisions: supersededDecisions.length,
+      openReviewTriggers: openReviewTriggers.length,
+      pendingJudgments: pendingJudgments.length,
       conflicts: conflicts.length,
       ...summarize(diagnostics),
     },

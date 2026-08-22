@@ -236,6 +236,7 @@ export type ArchitectureDecisionModel = {
   logId: string;
   decisions: Array<{
     id: string;
+    title: string;
     status: "proposed" | "accepted" | "rejected" | "superseded";
     evidenceRefs: string[];
     affectedElementRefs: string[];

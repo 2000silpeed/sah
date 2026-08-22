@@ -58,6 +58,8 @@ and a reviewable decision trail without adding a service or model-specific autho
 
 The existing v0.4 fixture and lifecycle commands remain compatible. Evolved bundles can be locally
 validated without a project root, while `sah lineage` is required to claim resolved history. A
-future decision is required before adding `sah current`, stable trigger IDs, hosted storage, or
-target evidence joins. Reopen this ADR if bundle discovery scale, concurrent authorship, merge
-frequency, or revision semantics make explicit local resolution insufficient.
+future decision is required before adding stable trigger IDs, hosted storage, or target evidence
+joins. The current projection boundary is recorded separately in
+[ADR-0026](0026-derive-current-architecture-from-lineage-heads.md). Reopen this ADR if bundle
+discovery scale, concurrent authorship, merge frequency, or revision semantics make explicit local
+resolution insufficient.

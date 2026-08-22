@@ -310,14 +310,15 @@ If you answer “I don't know,” SAH records the uncertainty and owner. It bloc
 when a safe owned seam exists. Use the full profile for material architecture work and the short
 profile only for reversible, local, low-risk work.
 
-If the agent says the skill has no schemas or CLI, it found a detached copy or failed to resolve
-the link. Give it the absolute path explicitly: “The canonical SAH checkout is
-`/absolute/path/to/sah`; use its schemas and run `npm exec -- sah` there with absolute target and
-bundle paths. Do not download another copy.” See the complete
-[Codex and Claude Code guide](docs/agent-skill.md) for updates, removal, and troubleshooting.
+If the agent says the skill has no schemas or CLI, it found a detached copy or failed to resolve the
+link. Give it the absolute path explicitly: “The canonical SAH checkout is `/absolute/path/to/sah`;
+use its schemas and run `npm exec -- sah` there with absolute target and bundle paths. Do not download
+another copy.” See the complete [Codex and Claude Code guide](docs/agent-skill.md) for updates, removal,
+and troubleshooting.
 
-The same boundaries are available as `validateBundle`, `verifyBundle`, and `advanceBundle`. The
-package is not yet on npm; [Validation CLI and Library](docs/validation-cli.md) owns this contract.
+The same boundaries are available as `validateBundle`, `verifyBundle`, `advanceBundle`, and the
+read-only `resolveCurrentArchitecture` projection. The package is not yet on npm; [Validation CLI and
+Library](docs/validation-cli.md) owns this contract.
 
 ## Reading failures
 
@@ -371,7 +372,7 @@ npm run build
 npm run verify:schemas
 ~~~
 
-The current suite covers 238 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
+The current suite covers 280 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
 slice, file discipline, document budgets, and change workflow.
 
 ## Current boundaries
@@ -387,8 +388,7 @@ edited by the user's host agent under its existing permissions. SAH does not cur
 - automated LLM/human judgment execution; or
 - a published npm package.
 
-Missing capabilities remain explicit backlog or incomplete coverage; they never manufacture a
-pass.
+Missing capabilities remain explicit backlog or incomplete coverage; they never manufacture a pass.
 
 ## Where to read next
 

@@ -4,9 +4,15 @@ Use this reference after architecture selection, before editing product code, an
 
 ## Implementation preconditions
 
-For a full-path run, require a valid bundle at S12. Read the selected candidate, accepted decisions,
-constraints, and implementation handoff directly from canonical JSON. Do not infer authority from a
-diagram or prose summary.
+For a full-path run, require a valid bundle at S12. On an existing target with an explicit SAH root,
+run the read-only `sah current <sah-root> --json` preflight first, inspect its status and applicable
+head, then read the selected candidate, accepted decisions, constraints, and implementation handoff
+directly from canonical JSON. Do not infer authority from a diagram, prose summary, or a persisted
+current-state file.
+
+If current projection is `conflicted`, `incomplete`, or `operational-error`, do not implement against
+an arbitrary head. Resolve the authority/history issue or create a new evolution bundle before
+continuing.
 
 Implement only slices whose status is `ready`, in dependency order. A proposed decision listed in
 `blockedByDecisionRefs` is a real stop condition for that slice. Do not quietly choose it in code.

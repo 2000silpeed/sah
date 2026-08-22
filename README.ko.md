@@ -310,13 +310,13 @@ Host agent는 다음 순서로 진행합니다.
 seam이 있을 때만 관련 작업을 막습니다. 중요한 작업은 full profile을, 되돌리기 쉽고
 로컬인 저위험 작업에만 short profile을 사용합니다.
 
-에이전트가 skill에는 schema나 CLI가 없다고 말하면 detached copy를 찾았거나 symlink의
-실제 경로를 해석하지 못한 것입니다. 다음처럼 알려주세요. “Canonical SAH checkout은
-`/absolute/path/to/sah`야. 해당 경로의 schema를 사용하고 그곳에서 절대 target/bundle
-경로로 `npm exec -- sah`를 실행해. 새로 다운로드하지 마.” Update, 제거, troubleshooting은
-[Codex·Claude Code 상세 가이드](docs/agent-skill.md)를 참고하세요.
+에이전트가 skill에는 schema나 CLI가 없다고 말하면 detached copy를 찾았거나 symlink의 실제 경로를
+해석하지 못한 것입니다. 다음처럼 알려주세요. “Canonical SAH checkout은 `/absolute/path/to/sah`야.
+해당 경로의 schema를 사용하고 그곳에서 절대 target/bundle 경로로 `npm exec -- sah`를 실행해. 새로
+다운로드하지 마.” Update, 제거, troubleshooting은 [Codex·Claude Code 상세 가이드](docs/agent-skill.md)를
+참고하세요.
 
-같은 경계는 `validateBundle`, `verifyBundle`, `advanceBundle`로도 제공됩니다. 아직 npm에
+같은 경계는 `validateBundle`, `verifyBundle`, `advanceBundle`, read-only `resolveCurrentArchitecture`로도 제공됩니다. 아직 npm에
 게시되지 않았으며 [Validation CLI and Library](docs/validation-cli.md)가 계약을 소유합니다.
 
 ## 실패 결과 읽는 법
@@ -371,7 +371,7 @@ npm run build
 npm run verify:schemas
 ~~~
 
-현재 suite는 238개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
+현재 suite는 280개 test를 포함합니다. 정확한 실행 검증 slice, 파일 규율, 문서 line budget,
 변경 workflow는 [AGENTS.md](AGENTS.md)가 소유합니다.
 
 ## 현재 범위와 한계

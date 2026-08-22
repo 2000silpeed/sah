@@ -24,6 +24,8 @@ export type DiagnosticSeverity = "error" | "warning";
 export type ValidationStatus = "passed" | "violations" | "operational-error";
 export type LineageStatus =
   "passed" | "violations" | "incomplete" | "operational-error";
+export type CurrentArchitectureStatus =
+  "ready" | "conflicted" | "incomplete" | "operational-error";
 export type AdvanceStatus = "advanced" | "blocked" | "operational-error";
 export type VerificationCheckStatus =
   "pass" | "violation" | "pending" | "unsupported";
@@ -84,6 +86,8 @@ export const architectureEvolutionSchemaId =
   "https://sah.dev/schemas/architecture-evolution/v0.1.0" as const;
 export const lineageResultSchemaId =
   "https://sah.dev/schemas/lineage-result/v0.1.0" as const;
+export const currentArchitectureResultSchemaId =
+  "https://sah.dev/schemas/current-architecture-result/v0.1.0" as const;
 
 export type LineageBundle = {
   bundleId: string;
@@ -125,6 +129,63 @@ export type LineageResult = {
   summary: {
     bundles: number;
     edges: number;
+    conflicts: number;
+    errors: number;
+    warnings: number;
+  };
+};
+
+export type CurrentArchitectureHead = {
+  bundleId: string;
+  fingerprint: string;
+  path: string;
+};
+
+export type CurrentArchitectureDecision = {
+  qualifiedRef: string;
+  title: string;
+  scopeElementRefs: string[];
+};
+
+export type CurrentArchitectureSupersededDecision = {
+  qualifiedRef: string;
+  supersededBy: string;
+};
+
+export type CurrentArchitectureReviewTrigger = {
+  decisionRef: string;
+  trigger: string;
+};
+
+export type CurrentArchitecturePendingJudgment = {
+  bundleId: string;
+  constraintId: string;
+};
+
+export type CurrentArchitectureConflict = {
+  code: string;
+  bundleIds: string[];
+  message: string;
+};
+
+export type CurrentArchitectureResult = {
+  $schema: typeof currentArchitectureResultSchemaId;
+  currentVersion: "0.1.0";
+  status: CurrentArchitectureStatus;
+  sahRoot: string;
+  heads: CurrentArchitectureHead[];
+  activeDecisions: CurrentArchitectureDecision[];
+  supersededDecisions: CurrentArchitectureSupersededDecision[];
+  openReviewTriggers: CurrentArchitectureReviewTrigger[];
+  pendingJudgments: CurrentArchitecturePendingJudgment[];
+  conflicts: CurrentArchitectureConflict[];
+  diagnostics: SahDiagnostic[];
+  summary: {
+    heads: number;
+    activeDecisions: number;
+    supersededDecisions: number;
+    openReviewTriggers: number;
+    pendingJudgments: number;
     conflicts: number;
     errors: number;
     warnings: number;

@@ -30,6 +30,7 @@ sah advance <design-bundle-directory> <target-stage> [--verification-record <bun
 sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
 sah lineage <sah-root> [--json]
+sah current <sah-root> [--json]
 sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
 sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]
 sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
@@ -117,6 +118,14 @@ follows a symlink outside the root, rewrites a bundle, or selects a parallel hea
 filename. A resolved graph returns exit 0; stale/conflicting/cyclic/dangling semantic lineage
 returns exit 1; an inaccessible, unsafe, malformed, or incomplete root returns exit 2. Missing
 parents are represented as `incomplete`, never `passed`.
+
+`sah current <sah-root>` is also read-only. It derives active decisions, exact superseded
+qualified references, open review triggers, pending judgment-classified constraints, heads, and
+current-scope conflicts from the validated lineage heads. It never persists a current-state file or
+chooses a head by date, filename, or Git order. `ready` maps to exit 0; `conflicted` maps to exit
+1; `incomplete` and `operational-error` map to exit 2. `ready` means the projection is deterministic
+and conflict-free, not that pending judgment or target evidence has passed. See
+[Current Architecture Projection](current-architecture.md) for the field and transition rules.
 
 The loop command maps `fast`/ready, an accepted next iteration, and `complete` to exit 0;
 `reasoning`/escalate, blocked transitions, and completion-gate failures to exit 1; and malformed
@@ -269,6 +278,7 @@ import {
   validateCheckerReview,
   validateBundle,
   verifyBundle,
+  resolveCurrentArchitecture,
   type AdvanceOptions,
   type AdvanceResult,
   type ValidationResult,
@@ -277,6 +287,7 @@ import {
 } from "software-architect-harness";
 
 const validation: ValidationResult = await validateBundle("design/equipment");
+const current = await resolveCurrentArchitecture("project/.sah");
 const verification: VerificationResult = await verifyBundle(
   "design/equipment",
   "target/equipment",
