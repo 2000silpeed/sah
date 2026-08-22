@@ -64,5 +64,9 @@ was made.
   operational-error/exit-2 contract.
 - Post-approval read-only dogfood validates both bookmark bundles independently and the human
   lineage projection: two bundles, one edge, one head, and the expected trigger transition.
+- Workspace-wide explicit-root dogfood over `fixtures/` validates three independent snapshots,
+  one lineage edge, two independent heads, and zero conflicts; no separate target `.sah` root is
+  present in this checkout.
 - Markdown local-link audit covers 58 files; governed documents remain within 400 lines; and
-  `git diff --check` passes. No commit, push, or PR was made.
+  `git diff --check` passes. Commits `461fc51` and its follow-up verification record were made;
+  no push or PR was made.
