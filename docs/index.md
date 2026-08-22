@@ -14,7 +14,8 @@ read [vision](vision.md), [principles](principles.md), and the
 extension; [Run 24 plan](../.agent/plans/run-24.md) records the completed bounded continuous-mode
 extension; [Run 25 plan](../.agent/plans/run-25.md) records the approved Cross-Bundle Lineage
 MVP; [Run 27 plan](../.agent/plans/run-27.md) records the target-check evidence bridge; [Run 28
-plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture.
+plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture; [Run 29 plan](../.agent/plans/run-29.md)
+records the sandbox-safe direct CLI path.
 
 ## Product and reasoning authority
 
@@ -118,6 +119,8 @@ plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture.
   IR and explicit-root lineage without rewriting historical bundles or adding a service.
 - [ADR-0026](adr/0026-derive-current-architecture-from-lineage-heads.md) — derives a read-only
   current architecture projection from explicit lineage heads without a second authority.
+- [ADR-0028](adr/0028-use-direct-node-for-sandbox-safe-cli.md) — documents the direct Node
+  source-checkout path for read-only CLI use when npm side effects are unavailable.
 
 ## JSON Schema contracts
 
@@ -227,7 +230,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
   [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
-  [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
+  [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), [sandbox CLI tests](../test/sandbox-cli.test.ts),
+  and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   host-workflow packaging, output, and failure families without external network access.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

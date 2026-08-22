@@ -20,6 +20,20 @@ npm run build
 `npm test` builds before running its unit and CLI integration tests. The final standalone
 `npm run build` is still required to verify the production output independently.
 
+For a restricted source checkout where npm cache, config, install, or network writes are not
+available, build once and invoke the emitted CLI directly:
+
+```text
+npm run build
+node ./dist/cli.js validate fixtures/simple-crud --json
+node ./dist/cli.js lineage fixtures/bookmark-lineage --json
+node ./dist/cli.js current fixtures/bookmark-lineage --json
+```
+
+This path is read-only for the commands shown and has the same result/exit contract as the
+package binary. [ADR-0028](adr/0028-use-direct-node-for-sandbox-safe-cli.md) owns the boundary;
+the normal `npm exec -- sah` path remains supported.
+
 ## CLI
 
 An installed package exposes:
