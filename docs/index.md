@@ -56,6 +56,8 @@ records the sandbox-safe direct CLI path.
   vertical-slice acceptance evidence, and cross-session slice continuation above S0–S13.
 - [Benchmark strategy](benchmark-strategy.md) — owns run isolation, common scoring, judge
   roles, coverage, and dataset evolution.
+- [Benchmark run preparation](benchmark-run.md) — owns the executable FP-008 input-isolation
+  contract and evaluator-side preparation record.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
   harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,
@@ -121,6 +123,8 @@ records the sandbox-safe direct CLI path.
   current architecture projection from explicit lineage heads without a second authority.
 - [ADR-0028](adr/0028-use-direct-node-for-sandbox-safe-cli.md) — documents the direct Node
   source-checkout path for read-only CLI use when npm side effects are unavailable.
+- [ADR-0029](adr/0029-isolate-benchmark-inputs-before-execution.md) — isolates benchmark input
+  from hidden expectations before any model execution.
 
 ## JSON Schema contracts
 
@@ -149,6 +153,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   project lineage projection and its deterministic conflict summary.
 - [Current architecture result](../schemas/current-architecture-result.schema.json) — validates
   the derived active/superseded decision, trigger, judgment, head, and conflict projection.
+- [Benchmark run](../schemas/benchmark-run.schema.json) — validates evaluator-side treatment/control
+  preparation metadata without exposing hidden expectations to the participant target.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -196,6 +202,9 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Current architecture projection](../src/current-architecture.ts) and
   [current-state contract](current-architecture.md) — derive head decisions and open triggers
   without mutating canonical bundles or selecting a latest head.
+- [Benchmark run preparation](../src/benchmark-run.ts) and
+  [benchmark-run contract](benchmark-run.md) — create a fresh participant target containing only
+  problem.md and a sibling schema-validated evaluator record.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.
@@ -231,7 +240,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
   [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
   [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), [sandbox CLI tests](../test/sandbox-cli.test.ts),
-  and [iteration loop tests](../test/iteration-loop.test.ts)
+  [benchmark run tests](../test/benchmark-run.test.ts), and [iteration loop tests](../test/iteration-loop.test.ts)
   — generate isolated mutations and verify validation, atomic transition, fact execution,
   host-workflow packaging, output, and failure families without external network access.
 - [Simple-crud manifest](../fixtures/simple-crud/sah.bundle.json), [characterization](../fixtures/simple-crud/system-characterization.json),

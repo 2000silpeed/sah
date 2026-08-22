@@ -12,6 +12,7 @@ import type { DiagnosticCategory, SahDiagnostic } from "./contracts.js";
 import { escapePointer } from "./diagnostics.js";
 
 const schemaFiles = [
+  "benchmark-run.schema.json",
   "design-bundle-manifest.schema.json",
   "design-bundle-manifest-v0.5.0.schema.json",
   "architecture-evolution.schema.json",

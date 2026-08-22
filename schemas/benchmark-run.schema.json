@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-run/v0.1.0",
+  "title": "SAH isolated benchmark run",
+  "description": "Evaluator-side metadata for one isolated treatment or control benchmark target.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "runVersion",
+    "runId",
+    "comparisonId",
+    "benchmarkId",
+    "mode",
+    "preparedAt",
+    "input",
+    "isolatedTarget",
+    "capture"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-run/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "runVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "mode": {
+      "enum": ["treatment", "control"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-runner"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "preparedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "problemPath",
+        "problemDigest",
+        "instructionPolicy"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "const": "problem.md"
+          },
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-evaluator", "benchmark-runner"]
+          }
+        },
+        "problemPath": {
+          "const": "problem.md",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-runner", "benchmark-evaluator"]
+          }
+        },
+        "problemDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+          }
+        },
+        "instructionPolicy": {
+          "const": "normal-sah-operating-instructions",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-runner", "benchmark-evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-runner", "benchmark-evaluator"]
+      }
+    },
+    "isolatedTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root"],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-runner", "benchmark-evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-runner", "benchmark-evaluator"]
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outputDirectory", "trajectoryPath"],
+      "properties": {
+        "outputDirectory": {
+          "const": "output",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-runner", "benchmark-evaluator"]
+          }
+        },
+        "trajectoryPath": {
+          "const": "trajectory.jsonl",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-preparer"],
+            "readBy": ["benchmark-runner", "benchmark-evaluator"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-preparer"],
+        "readBy": ["benchmark-runner", "benchmark-evaluator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-run/v0.1.0",
+      "runVersion": "0.1.0",
+      "runId": "simple-crud-treatment-001",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "mode": "treatment",
+      "preparedAt": "2026-08-22T00:00:00.000Z",
+      "input": {
+        "files": ["problem.md"],
+        "problemPath": "problem.md",
+        "problemDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "instructionPolicy": "normal-sah-operating-instructions"
+      },
+      "isolatedTarget": {
+        "root": "/tmp/sah-benchmark-runs/simple-crud-treatment-001"
+      },
+      "capture": {
+        "outputDirectory": "output",
+        "trajectoryPath": "trajectory.jsonl"
+      }
+    }
+  ]
+}

@@ -41,6 +41,9 @@ export type LoopResultRoute = LoopRoute | "complete";
 export type LoopResultStatus =
   "ready" | "escalate" | "blocked" | "complete" | "operational-error";
 
+export type BenchmarkRunMode = "treatment" | "control";
+export type BenchmarkRunStatus = "prepared" | "operational-error";
+
 export type SourceLocation = {
   line: number;
   column: number;
@@ -88,6 +91,46 @@ export const lineageResultSchemaId =
   "https://sah.dev/schemas/lineage-result/v0.1.0" as const;
 export const currentArchitectureResultSchemaId =
   "https://sah.dev/schemas/current-architecture-result/v0.1.0" as const;
+export const benchmarkRunSchemaId =
+  "https://sah.dev/schemas/benchmark-run/v0.1.0" as const;
+
+export type BenchmarkRun = {
+  $schema: typeof benchmarkRunSchemaId;
+  runVersion: "0.1.0";
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  preparedAt: string;
+  input: {
+    files: ["problem.md"];
+    problemPath: "problem.md";
+    problemDigest: string;
+    instructionPolicy: "normal-sah-operating-instructions";
+  };
+  isolatedTarget: {
+    root: string;
+  };
+  capture: {
+    outputDirectory: "output";
+    trajectoryPath: "trajectory.jsonl";
+  };
+};
+
+export type BenchmarkPreparationOptions = {
+  runId: string;
+  comparisonId: string;
+  mode: BenchmarkRunMode;
+};
+
+export type BenchmarkRunResult = {
+  status: BenchmarkRunStatus;
+  runDirectory: string;
+  recordPath?: string;
+  run?: BenchmarkRun;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
 
 export type LineageBundle = {
   bundleId: string;

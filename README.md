@@ -203,6 +203,7 @@ produce eligible completion evidence.
 | sah validate BUNDLE | Validate the stored bundle at its declared lifecycle stage | No |
 | sah verify BUNDLE TARGET | Validate the bundle and check target facts | No, unless --record is supplied |
 | sah advance BUNDLE STAGE | Validate the exact next gate and update lifecycle atomically | Yes, only after success |
+| sah benchmark-prepare BENCHMARK RUN | Create an isolated benchmark target and evaluator-side run record | Yes, fresh paths only |
 
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.
@@ -215,8 +216,7 @@ Exit codes are stable across the CLI:
 | 1 | Valid input contains validation/gate defects, advancement is blocked, or target facts violate a deterministic constraint |
 | 2 | Invocation/operation failed, or verification is incomplete because review, blockers, unsafe binding, or adapter coverage remains pending |
 
-See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result
-envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees.
+See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees. See [Benchmark run preparation](docs/benchmark-run.md) for the benchmark isolation command and its hidden-expectation boundary.
 
 ## Install the conversational skill
 
@@ -372,8 +372,8 @@ npm run build
 npm run verify:schemas
 ~~~
 
-The current suite covers 280 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation
-slice, file discipline, document budgets, and change workflow.
+The current suite covers 293 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation slice,
+file discipline, document budgets, and change workflow.
 
 ## Current boundaries
 

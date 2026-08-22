@@ -18,6 +18,8 @@ import {
   type CheckerReviewResult,
   type LineageResult,
   type CurrentArchitectureResult,
+  type BenchmarkRunResult,
+  type BenchmarkRunMode,
 } from "./contracts.js";
 import { result } from "./diagnostics.js";
 import {
@@ -37,6 +39,7 @@ import {
   completeIterationLoop,
 } from "./iteration-loop.js";
 import { validateCheckerReview } from "./checker-review.js";
+import { prepareBenchmarkRun } from "./benchmark-run.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -45,6 +48,7 @@ const usage = [
   "       sah resume <design-bundle-directory> [--json]",
   "       sah lineage <sah-root> [--json]",
   "       sah current <sah-root> [--json]",
+  "       sah benchmark-prepare <benchmark-directory> <run-directory> --run-id <run-id> --comparison-id <comparison-id> --mode <treatment|control> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -65,6 +69,9 @@ type ParsedArguments = {
   cwd?: string;
   targetRevision?: string;
   designFingerprint?: string;
+  benchmarkRunId?: string;
+  benchmarkComparisonId?: string;
+  benchmarkMode?: string;
   repair?: boolean;
   error?: string;
 };
@@ -79,6 +86,9 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   let cwd: string | undefined;
   let targetRevision: string | undefined;
   let designFingerprint: string | undefined;
+  let benchmarkRunId: string | undefined;
+  let benchmarkComparisonId: string | undefined;
+  let benchmarkMode: string | undefined;
   let repair = false;
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -97,6 +107,38 @@ function parseArguments(arguments_: string[]): ParsedArguments {
           error: "--repair may be supplied only once.",
         };
       repair = true;
+      continue;
+    }
+    if (
+      argument === "--run-id" ||
+      argument === "--comparison-id" ||
+      argument === "--mode"
+    ) {
+      const current =
+        argument === "--run-id"
+          ? benchmarkRunId
+          : argument === "--comparison-id"
+            ? benchmarkComparisonId
+            : benchmarkMode;
+      if (current !== undefined) {
+        return {
+          positional,
+          json,
+          error: `${argument} may be supplied only once.`,
+        };
+      }
+      const value = arguments_[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        return {
+          positional,
+          json,
+          error: `${argument} requires one value.`,
+        };
+      }
+      if (argument === "--run-id") benchmarkRunId = value;
+      else if (argument === "--comparison-id") benchmarkComparisonId = value;
+      else benchmarkMode = value;
+      index += 1;
       continue;
     }
     if (argument === "--mapping") {
@@ -230,6 +272,9 @@ function parseArguments(arguments_: string[]): ParsedArguments {
     ...(cwd === undefined ? {} : { cwd }),
     ...(targetRevision === undefined ? {} : { targetRevision }),
     ...(designFingerprint === undefined ? {} : { designFingerprint }),
+    ...(benchmarkRunId === undefined ? {} : { benchmarkRunId }),
+    ...(benchmarkComparisonId === undefined ? {} : { benchmarkComparisonId }),
+    ...(benchmarkMode === undefined ? {} : { benchmarkMode }),
     ...(repair ? { repair: true } : {}),
   };
 }
@@ -394,13 +439,15 @@ function exitCode(
     | IterationChecksResult
     | IterationLoopResult
     | CheckerReviewResult
-    | CurrentArchitectureResult,
+    | CurrentArchitectureResult
+    | BenchmarkRunResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
     case "advanced":
     case "ready":
     case "complete":
+    case "prepared":
       return 0;
     case "escalate":
       return 1;
@@ -652,8 +699,37 @@ function formatCurrentArchitectureHuman(
   ].join("\n\n");
 }
 
+function formatBenchmarkRunHuman(runResult: BenchmarkRunResult): string {
+  const title =
+    runResult.status === "prepared"
+      ? "SAH benchmark run prepared"
+      : "SAH benchmark run could not be prepared";
+  const run = runResult.run;
+  return [
+    title,
+    `Target: ${runResult.runDirectory}`,
+    ...(run === undefined
+      ? []
+      : [
+          `Run: ${run.runId} (${run.mode}, comparison ${run.comparisonId})`,
+          `Benchmark: ${run.benchmarkId}`,
+          `Problem: ${run.input.problemPath} (${run.input.problemDigest})`,
+          `Capture: ${run.capture.outputDirectory}/${run.capture.trajectoryPath}`,
+        ]),
+    ...(runResult.recordPath === undefined
+      ? []
+      : [`Record: ${runResult.recordPath}`]),
+    ...runResult.diagnostics.map(humanDiagnostic),
+    `Summary: ${runResult.summary.errors} error(s), ${runResult.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 function isStage(value: string | undefined): value is Stage {
   return value !== undefined && (stages as readonly string[]).includes(value);
+}
+
+function isBenchmarkMode(value: string | undefined): value is BenchmarkRunMode {
+  return value === "treatment" || value === "control";
 }
 
 async function main(arguments_: string[]): Promise<number> {
@@ -672,6 +748,20 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     process.stdout.write(`${usage}\n`);
     return 0;
+  }
+
+  const benchmarkOptionUsed =
+    parsed.benchmarkRunId !== undefined ||
+    parsed.benchmarkComparisonId !== undefined ||
+    parsed.benchmarkMode !== undefined;
+  if (benchmarkOptionUsed && positional[0] !== "benchmark-prepare") {
+    const invalid = invocationError(
+      "--run-id, --comparison-id, and --mode are supported only by benchmark-prepare.",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    );
+    return 2;
   }
 
   if (parsed.cwd !== undefined && positional[0] !== "loop-checks") {
@@ -720,6 +810,46 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
+  }
+
+  if (
+    positional.length === 3 &&
+    positional[0] === "benchmark-prepare" &&
+    parsed.benchmarkRunId !== undefined &&
+    parsed.benchmarkComparisonId !== undefined &&
+    parsed.benchmarkMode !== undefined &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.checkRecordPath === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.repair !== true
+  ) {
+    if (!isBenchmarkMode(parsed.benchmarkMode)) {
+      const invalid = invocationError(
+        `${parsed.benchmarkMode} is not a valid benchmark mode; use treatment or control.`,
+      );
+      process.stdout.write(
+        `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      );
+      return 2;
+    }
+    const prepared = await prepareBenchmarkRun(
+      positional[1] ?? "",
+      positional[2] ?? "",
+      {
+        runId: parsed.benchmarkRunId,
+        comparisonId: parsed.benchmarkComparisonId,
+        mode: parsed.benchmarkMode,
+      },
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(prepared, null, 2) : formatBenchmarkRunHuman(prepared)}\n`,
+    );
+    return exitCode(prepared);
   }
 
   if (

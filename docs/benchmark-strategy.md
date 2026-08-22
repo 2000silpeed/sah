@@ -22,6 +22,11 @@ document length, method vocabulary, or agreement with one exact architecture.
    3 points; otherwise a human benchmark steward adjudicates that category.
 5. Keep raw scores and explanations. A regression is not hidden by updating expectations.
 
+The executable preparation seam is documented in [Benchmark run preparation](benchmark-run.md).
+`sah benchmark-prepare` creates a fresh participant target containing only `problem.md` and a
+sibling evaluator-side `benchmark-run` record. It reserves trajectory/output paths but does not
+invoke a model, capture raw trajectory, read expectations, or score a result.
+
 ## Common score: 100 points
 
 | Category | Points | Scorer | Full-credit evidence |

@@ -62,9 +62,15 @@ export type {
   CurrentArchitectureReviewTrigger,
   CurrentArchitectureStatus,
   CurrentArchitectureSupersededDecision,
+  BenchmarkPreparationOptions,
+  BenchmarkRun,
+  BenchmarkRunMode,
+  BenchmarkRunResult,
+  BenchmarkRunStatus,
 } from "./contracts.js";
 export {
   architectureEvolutionSchemaId,
+  benchmarkRunSchemaId,
   currentArchitectureResultSchemaId,
   iterationScenarioSchemaId,
   iterationSliceSchemaId,
@@ -89,3 +95,4 @@ export {
 export { validateCheckerReview } from "./checker-review.js";
 export { resolveArchitectureLineage } from "./architecture-lineage.js";
 export { resolveCurrentArchitecture } from "./current-architecture.js";
+export { prepareBenchmarkRun } from "./benchmark-run.js";
