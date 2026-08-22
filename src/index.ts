@@ -67,6 +67,9 @@ export type {
   BenchmarkRunMode,
   BenchmarkRunResult,
   BenchmarkRunStatus,
+  BenchmarkFreeze,
+  BenchmarkFreezeResult,
+  BenchmarkFrozenOutputFile,
   BenchmarkTrajectoryAppendOptions,
   BenchmarkTrajectoryAppendResult,
   BenchmarkTrajectoryEntry,
@@ -76,6 +79,7 @@ export type {
 } from "./contracts.js";
 export {
   architectureEvolutionSchemaId,
+  benchmarkFreezeSchemaId,
   benchmarkRunSchemaId,
   benchmarkTrajectoryEntrySchemaId,
   currentArchitectureResultSchemaId,
@@ -105,5 +109,6 @@ export { resolveCurrentArchitecture } from "./current-architecture.js";
 export { prepareBenchmarkRun } from "./benchmark-run.js";
 export {
   appendBenchmarkTrajectoryEntry,
+  freezeBenchmarkCapture,
   inspectBenchmarkTrajectory,
 } from "./benchmark-trajectory.js";

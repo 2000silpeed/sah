@@ -157,9 +157,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 
 Expected result: one passing deterministic check for the equipment-owns-writes constraint.
 
-Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-target` is the target,
-and the target-relative mapping connects source paths/symbols to architecture element IDs.
-Verification is read-only unless --record is supplied.
+Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-target` is the target, and the target-relative mapping connects source paths/symbols to architecture element IDs. Verification is read-only unless --record is supplied.
 
 ## Complete S13 with recorded full evidence
 
@@ -204,6 +202,7 @@ produce eligible completion evidence.
 | sah advance BUNDLE STAGE | Validate the exact next gate and update lifecycle atomically | Yes, only after success |
 | sah benchmark-prepare BENCHMARK RUN | Create an isolated benchmark target and evaluator-side run record | Yes, fresh paths only |
 | sah benchmark-trajectory RUN | Validate-append or inspect the isolated run's raw trajectory capture | --entry-file appends; --status does not |
+| sah benchmark-freeze RUN | Pin a completed capture and output inventory into an immutable evaluator-side record | Yes, fresh record only |
 
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.

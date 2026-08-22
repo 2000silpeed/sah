@@ -182,6 +182,46 @@ export type BenchmarkTrajectoryInspectResult = {
   summary: ValidationSummary;
 };
 
+export const benchmarkFreezeSchemaId =
+  "https://sah.dev/schemas/benchmark-freeze/v0.1.0" as const;
+
+export type BenchmarkFreezeStatus = "frozen" | "operational-error";
+
+export type BenchmarkFrozenOutputFile = {
+  path: string;
+  byteSize: number;
+  sha256Digest: string;
+};
+
+export type BenchmarkFreeze = {
+  $schema: typeof benchmarkFreezeSchemaId;
+  freezeVersion: "0.1.0";
+  runId: string;
+  comparisonId: string;
+  benchmarkId: string;
+  mode: BenchmarkRunMode;
+  frozenAt: string;
+  capture: {
+    trajectoryDigest: string;
+    trajectoryByteSize: number;
+    entryCount: number;
+    firstSeq: number;
+    lastSeq: number;
+    firstRecordedAt: string;
+    lastRecordedAt: string;
+  };
+  outputFiles: BenchmarkFrozenOutputFile[];
+};
+
+export type BenchmarkFreezeResult = {
+  status: BenchmarkFreezeStatus;
+  runDirectory: string;
+  freezePath?: string;
+  freeze?: BenchmarkFreeze;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
 export type LineageBundle = {
   bundleId: string;
   path: string;

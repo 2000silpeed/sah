@@ -21,6 +21,7 @@ import {
   type CurrentArchitectureResult,
   type BenchmarkRunResult,
   type BenchmarkRunMode,
+  type BenchmarkFreezeResult,
   type BenchmarkTrajectoryAppendOptions,
   type BenchmarkTrajectoryAppendResult,
   type BenchmarkTrajectoryEntryKind,
@@ -47,6 +48,7 @@ import { validateCheckerReview } from "./checker-review.js";
 import { prepareBenchmarkRun } from "./benchmark-run.js";
 import {
   appendBenchmarkTrajectoryEntry,
+  freezeBenchmarkCapture,
   inspectBenchmarkTrajectory,
 } from "./benchmark-trajectory.js";
 
@@ -59,6 +61,7 @@ const usage = [
   "       sah current <sah-root> [--json]",
   "       sah benchmark-prepare <benchmark-directory> <run-directory> --run-id <run-id> --comparison-id <comparison-id> --mode <treatment|control> [--json]",
   "       sah benchmark-trajectory <run-directory> (--entry-file <entry-file> | --status) [--json]",
+  "       sah benchmark-freeze <run-directory> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -491,7 +494,8 @@ function exitCode(
     | CurrentArchitectureResult
     | BenchmarkRunResult
     | BenchmarkTrajectoryAppendResult
-    | BenchmarkTrajectoryInspectResult,
+    | BenchmarkTrajectoryInspectResult
+    | BenchmarkFreezeResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -500,6 +504,7 @@ function exitCode(
     case "complete":
     case "prepared":
     case "appended":
+    case "frozen":
     case "ok":
       return 0;
     case "escalate":
@@ -878,6 +883,31 @@ function formatTrajectoryHuman(
   ].join("\n\n");
 }
 
+function formatFreezeHuman(freezeResult: BenchmarkFreezeResult): string {
+  const title =
+    freezeResult.status === "frozen"
+      ? "SAH benchmark capture frozen"
+      : "SAH benchmark capture could not be frozen";
+  const freeze = freezeResult.freeze;
+  return [
+    title,
+    `Run: ${freezeResult.runDirectory}`,
+    ...(freeze === undefined
+      ? []
+      : [
+          `Run id: ${freeze.runId} (${freeze.mode}, comparison ${freeze.comparisonId})`,
+          `Benchmark: ${freeze.benchmarkId}`,
+          `Capture: ${String(freeze.capture.entryCount)} entr${freeze.capture.entryCount === 1 ? "y" : "ies"}, ${freeze.capture.trajectoryDigest}`,
+          `Output files: ${String(freeze.outputFiles.length)}`,
+        ]),
+    ...(freezeResult.freezePath === undefined
+      ? []
+      : [`Record: ${freezeResult.freezePath}`]),
+    ...freezeResult.diagnostics.map(humanDiagnostic),
+    `Summary: ${freezeResult.summary.errors} error(s), ${freezeResult.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 async function runBenchmarkTrajectory(
   positional: string[],
   parsed: ParsedArguments,
@@ -1079,6 +1109,31 @@ async function main(arguments_: string[]): Promise<number> {
 
   if (positional[0] === "benchmark-trajectory") {
     return runBenchmarkTrajectory(positional, parsed);
+  }
+
+  if (
+    positional.length === 2 &&
+    positional[0] === "benchmark-freeze" &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.checkRecordPath === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.benchmarkRunId === undefined &&
+    parsed.benchmarkComparisonId === undefined &&
+    parsed.benchmarkMode === undefined &&
+    parsed.benchmarkTrajectoryEntryPath === undefined &&
+    parsed.benchmarkTrajectoryStatus !== true &&
+    parsed.repair !== true
+  ) {
+    const frozen = await freezeBenchmarkCapture(positional[1] ?? "");
+    process.stdout.write(
+      `${json ? JSON.stringify(frozen, null, 2) : formatFreezeHuman(frozen)}\n`,
+    );
+    return exitCode(frozen);
   }
 
   if (

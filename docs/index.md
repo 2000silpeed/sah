@@ -131,6 +131,8 @@ records the benchmark trajectory capture seam.
   from hidden expectations before any model execution.
 - [ADR-0030](adr/0030-capture-benchmark-trajectory-locally.md) — adds a local, preparation-bound
   raw trajectory capture seam without model invocation, scoring, or semantic payload claims.
+- [ADR-0031](adr/0031-freeze-completed-benchmark-captures-before-scoring.md) — pins completed
+  captures with an immutable evaluator-side freeze record that blocks later appends.
 
 ## JSON Schema contracts
 
@@ -163,6 +165,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   preparation metadata without exposing hidden expectations to the participant target.
 - [Benchmark trajectory entry](../schemas/benchmark-trajectory-entry.schema.json) — validates one
   raw JSONL trajectory line captured beside a prepared benchmark run.
+- [Benchmark freeze](../schemas/benchmark-freeze.schema.json) — validates the evaluator-side pin
+  of one run's completed trajectory capture and output inventory.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -215,7 +219,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   problem.md and a sibling schema-validated evaluator record.
 - [Benchmark trajectory capture](../src/benchmark-trajectory.ts) and
   [trajectory contract](benchmark-trajectory.md) — append schema-valid JSONL entries to the
-  reserved capture path and inspect them read-only.
+  reserved capture path, inspect them read-only, and freeze completed captures.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.

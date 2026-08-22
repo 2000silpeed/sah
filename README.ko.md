@@ -161,8 +161,7 @@ mapping은 source path/symbol을 Architecture element ID와 연결합니다. --r
 
 ## Full evidence를 기록하고 S13 완료하기
 
-advance는 sah.bundle.json을 변경합니다. 체크인된 fixture에서 직접 실험하지 말고 복사본을
-만드세요.
+advance는 sah.bundle.json을 변경합니다. 체크인된 fixture에서 직접 실험하지 말고 복사본을 만드세요.
 
 ~~~sh
 bundle_root="$(mktemp -d)"
@@ -202,6 +201,7 @@ SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전�
 | sah advance BUNDLE STAGE | 정확히 다음 gate를 검증하고 lifecycle을 원자적으로 변경 | 성공한 경우에만 있음 |
 | sah benchmark-prepare BENCHMARK RUN | 격리된 벤치마크 target과 evaluator 측 run record 생성 | 있음, 새 경로만 |
 | sah benchmark-trajectory RUN | 격리된 run의 raw trajectory capture 검증-append 또는 조회 | --entry-file은 추가, --status는 없음 |
+| sah benchmark-freeze RUN | 완료된 캡처와 output 인벤토리를 evaluator 측 불변 기록으로 고정 | 있음, 새 record만 |
 
 Advance는 정방향으로 정확히 한 stage만 이동합니다. 현재 실행 가능한 target gate는
 S5부터 S13까지입니다.

@@ -15,7 +15,9 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   appendBenchmarkTrajectoryEntry,
+  benchmarkFreezeSchemaId,
   benchmarkTrajectoryEntrySchemaId,
+  freezeBenchmarkCapture,
   inspectBenchmarkTrajectory,
   prepareBenchmarkRun,
 } from "../src/index.js";
@@ -464,5 +466,198 @@ describe("benchmark trajectory capture", () => {
       const inspected = await inspectBenchmarkTrajectory(run);
       expect(inspected.status).toBe("ok");
     }
+  });
+});
+
+const freezeSuffix = ".benchmark-freeze.json";
+
+describe("benchmark capture freeze", () => {
+  it("pins a completed capture and its output inventory", async () => {
+    const fixture = await createPreparedRun();
+    await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(1, "2026-08-22T00:00:01.000Z", "system-event"),
+    );
+    await appendBenchmarkTrajectoryEntry(fixture.run, {
+      ...entry(2, "2026-08-22T00:00:02.000Z", "tool-result"),
+      payload: { exitCode: 0 },
+    });
+    const notesDirectory = join(fixture.run, "output", "notes");
+    await mkdir(notesDirectory);
+    await writeFile(join(notesDirectory, "result.txt"), "participant output\n");
+
+    const frozen = await freezeBenchmarkCapture(fixture.run);
+    expect(frozen.status).toBe("frozen");
+    expect(frozen.freezePath?.endsWith(`treatment${freezeSuffix}`)).toBe(true);
+    expect(frozen.freeze?.runId).toBe("bookmark-treatment-001");
+    expect(frozen.freeze?.capture.entryCount).toBe(2);
+    expect(frozen.freeze?.capture.firstSeq).toBe(1);
+    expect(frozen.freeze?.capture.lastSeq).toBe(2);
+    expect(frozen.freeze?.outputFiles).toEqual([
+      {
+        path: "output/notes/result.txt",
+        byteSize: Buffer.byteLength("participant output\n"),
+        sha256Digest: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
+      },
+    ]);
+
+    const loaded = await loadSchemaRegistry();
+    expect(loaded.ok).toBe(true);
+    if (loaded.ok) {
+      expect(
+        loaded.registry.validate(
+          benchmarkFreezeSchemaId,
+          frozen.freeze,
+          frozen.freezePath ?? "freeze.json",
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it("refuses to bless an empty capture without creating a record", async () => {
+    const fixture = await createPreparedRun();
+    const frozen = await freezeBenchmarkCapture(fixture.run);
+    expect(frozen.status).toBe("operational-error");
+    expect(frozen.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_FREEZE_EMPTY_CAPTURE",
+    ]);
+    expect(frozen.freezePath).toBeUndefined();
+  });
+
+  it("never overwrites an existing freeze record", async () => {
+    const fixture = await createPreparedRun();
+    await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(1, "2026-08-22T00:00:01.000Z"),
+    );
+    const firstFreeze = await freezeBenchmarkCapture(fixture.run);
+    expect(firstFreeze.status).toBe("frozen");
+    const recordPath = firstFreeze.freezePath ?? "";
+    const bytesBefore = await readFile(recordPath);
+
+    const secondFreeze = await freezeBenchmarkCapture(fixture.run);
+    expect(secondFreeze.status).toBe("operational-error");
+    expect(secondFreeze.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_FREEZE_EXISTS",
+    ]);
+    expect(await readFile(recordPath)).toEqual(bytesBefore);
+  });
+
+  it("blocks appends once the capture is frozen", async () => {
+    const fixture = await createPreparedRun();
+    await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(1, "2026-08-22T00:00:01.000Z"),
+    );
+    const frozen = await freezeBenchmarkCapture(fixture.run);
+    expect(frozen.status).toBe("frozen");
+
+    const appended = await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(2, "2026-08-22T00:00:02.000Z"),
+    );
+    expect(appended.status).toBe("operational-error");
+    expect(appended.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_TRAJECTORY_FROZEN",
+    ]);
+    const inspected = await inspectBenchmarkTrajectory(fixture.run);
+    expect(inspected.view?.entryCount).toBe(1);
+  });
+
+  it("inherits preparation binding and corruption rejections", async () => {
+    const fixture = await createPreparedRun();
+    const unprepared = join(fixture.root, "unprepared-run");
+    await mkdir(unprepared);
+    const missing = await freezeBenchmarkCapture(unprepared);
+    expect(missing.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_TRAJECTORY_RECORD_MISSING",
+    ]);
+
+    await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(1, "2026-08-22T00:00:01.000Z"),
+    );
+    const trajectoryPath = join(fixture.run, "output", "trajectory.jsonl");
+    const validBytes = (await trajectoryBytes(fixture.run)).toString("utf8");
+    await writeFile(trajectoryPath, `${validBytes}{"seq":2,"broken`);
+    const corrupted = await freezeBenchmarkCapture(fixture.run);
+    expect(corrupted.status).toBe("operational-error");
+    expect(corrupted.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_TRAJECTORY_CORRUPT",
+    ]);
+  });
+
+  it("rejects symlinked entries inside the captured output tree", async () => {
+    const fixture = await createPreparedRun();
+    await appendBenchmarkTrajectoryEntry(
+      fixture.run,
+      entry(1, "2026-08-22T00:00:01.000Z"),
+    );
+    const outside = join(fixture.root, "outside.txt");
+    await writeFile(outside, "outside\n");
+    await symlink(outside, join(fixture.run, "output", "linked.txt"));
+
+    const frozen = await freezeBenchmarkCapture(fixture.run);
+    expect(frozen.status).toBe("operational-error");
+    expect(frozen.diagnostics.map(({ code }) => code)).toEqual([
+      "BENCHMARK_TRAJECTORY_OUTPUT_UNSAFE",
+    ]);
+    expect(frozen.diagnostics[0]?.artifactPath).toBe("output/linked.txt");
+  });
+
+  it("exposes freezing through the CLI", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sah-freeze-cli-test-"));
+    temporaryDirectories.push(root);
+    const run = join(root, "simple-crud-run");
+    await runCli([
+      "benchmark-prepare",
+      resolve("benchmarks/simple-crud"),
+      run,
+      "--run-id",
+      "simple-crud-treatment-001",
+      "--comparison-id",
+      "simple-crud-ab-001",
+      "--mode",
+      "treatment",
+      "--json",
+    ]);
+
+    const emptyFreeze = await runCli(["benchmark-freeze", run, "--json"]);
+    expect(emptyFreeze.code).toBe(2);
+
+    const entryPath = join(root, "entry.json");
+    await writeFile(
+      entryPath,
+      `${JSON.stringify({
+        seq: 1,
+        recordedAt: "2026-08-22T00:00:01.000Z",
+        kind: "agent-message",
+        payload: { note: "start" },
+      })}\n`,
+    );
+    await runCli(["benchmark-trajectory", run, "--entry-file", entryPath]);
+
+    const frozen = await runCli(["benchmark-freeze", run, "--json"]);
+    const freezeOutput = JSON.parse(frozen.stdout) as {
+      status: string;
+      freeze: { capture: { entryCount: number }; outputFiles: unknown[] };
+      diagnostics: unknown[];
+    };
+    expect(frozen.code).toBe(0);
+    expect(frozen.stderr).toBe("");
+    expect(freezeOutput.status).toBe("frozen");
+    expect(freezeOutput.freeze.capture.entryCount).toBe(1);
+
+    const refreeze = await runCli(["benchmark-freeze", run]);
+    expect(refreeze.code).toBe(2);
+    expect(refreeze.stdout).toContain("already frozen");
+
+    const blockedAppend = await runCli([
+      "benchmark-trajectory",
+      run,
+      "--entry-file",
+      entryPath,
+    ]);
+    expect(blockedAppend.code).toBe(2);
   });
 });

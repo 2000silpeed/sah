@@ -1,10 +1,22 @@
 import { createHash } from "node:crypto";
-import { lstat, mkdir, open, readFile, realpath, rm } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  open,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+} from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 
 import {
+  benchmarkFreezeSchemaId,
   benchmarkRunSchemaId,
   benchmarkTrajectoryEntrySchemaId,
+  type BenchmarkFreeze,
+  type BenchmarkFreezeResult,
+  type BenchmarkFrozenOutputFile,
   type BenchmarkRun,
   type BenchmarkTrajectoryAppendOptions,
   type BenchmarkTrajectoryAppendResult,
@@ -17,6 +29,7 @@ import { summarize } from "./diagnostics.js";
 import { loadSchemaRegistry } from "./schema-validation.js";
 
 const recordSuffix = ".benchmark-run.json";
+const freezeSuffix = ".benchmark-freeze.json";
 const outputDirectoryName = "output";
 const trajectoryFileName = "trajectory.jsonl";
 
@@ -339,6 +352,24 @@ export async function appendBenchmarkTrajectoryEntry(
     return appendResult("operational-error", runDirectory, context.diagnostics);
   }
 
+  const freezePath = join(
+    dirname(context.runRoot),
+    `${basename(context.runRoot)}${freezeSuffix}`,
+  );
+  const frozenRecord = await existingPath(freezePath).catch(() => undefined);
+  if (frozenRecord !== undefined) {
+    return appendResult("operational-error", runDirectory, [
+      diagnostic({
+        code: "BENCHMARK_TRAJECTORY_FROZEN",
+        path: freezePath,
+        message: "This run's capture is already frozen and cannot be appended.",
+        expected: "an unfrozen prepared run directory for trajectory capture",
+        repair:
+          "Prepare a fresh benchmark run directory for additional capture attempts.",
+      }),
+    ]);
+  }
+
   const envelope: BenchmarkTrajectoryEntry = {
     $schema: benchmarkTrajectoryEntrySchemaId,
     seq: entry.seq,
@@ -530,6 +561,76 @@ function inspectResult(
   };
 }
 
+type StoredLine = { number: number; text: string };
+
+type ValidatedStoredLines =
+  | { ok: true; entries: BenchmarkTrajectoryEntry[]; lines: StoredLine[] }
+  | { ok: false; diagnostic: SahDiagnostic };
+
+function corruptLineDiagnostic(
+  trajectoryPath: string,
+  lineNumber: number,
+  parseFailure: boolean,
+): SahDiagnostic {
+  return diagnostic({
+    code: "BENCHMARK_TRAJECTORY_CORRUPT",
+    path: trajectoryPath,
+    reference: `line ${String(lineNumber)}`,
+    message: parseFailure
+      ? "A stored trajectory line is not parseable JSON."
+      : "A stored trajectory line violates the entry schema.",
+    expected: "every stored line to parse as one valid trajectory entry",
+    repair: "Restore the captured trajectory from its owner before evaluation.",
+  });
+}
+
+function validatedStoredLines(
+  bytes: Buffer,
+  trajectoryPath: string,
+  validateEntry: (value: unknown) => SahDiagnostic[],
+): ValidatedStoredLines {
+  const rawLines = bytes.toString("utf8").split("\n");
+  const lines: StoredLine[] = [];
+  for (let index = 0; index < rawLines.length; index += 1) {
+    const text = rawLines[index] ?? "";
+    if (text.trim().length === 0) continue;
+    lines.push({ number: index + 1, text });
+  }
+
+  const entries: BenchmarkTrajectoryEntry[] = [];
+  for (const line of lines) {
+    let value: unknown;
+    try {
+      value = JSON.parse(line.text) as unknown;
+    } catch {
+      return {
+        ok: false,
+        diagnostic: corruptLineDiagnostic(trajectoryPath, line.number, true),
+      };
+    }
+    if (validateEntry(value).length > 0) {
+      return {
+        ok: false,
+        diagnostic: corruptLineDiagnostic(trajectoryPath, line.number, false),
+      };
+    }
+    entries.push(value as BenchmarkTrajectoryEntry);
+  }
+  return { ok: true, entries, lines };
+}
+
+async function readTrajectoryBytes(
+  trajectoryPath: string,
+): Promise<Buffer | undefined> {
+  try {
+    return await readFile(trajectoryPath);
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
+      throw error;
+    return undefined;
+  }
+}
+
 export async function inspectBenchmarkTrajectory(
   runDirectory: string,
 ): Promise<BenchmarkTrajectoryInspectResult> {
@@ -547,13 +648,7 @@ export async function inspectBenchmarkTrajectory(
     return inspectResult("operational-error", runDirectory, loaded.diagnostics);
   }
 
-  let bytes: Buffer | undefined;
-  try {
-    bytes = await readFile(context.trajectoryPath);
-  } catch (error) {
-    if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
-      throw error;
-  }
+  const bytes = await readTrajectoryBytes(context.trajectoryPath);
 
   if (bytes === undefined || bytes.byteLength === 0) {
     return inspectResult("ok", runDirectory, [], {
@@ -562,61 +657,31 @@ export async function inspectBenchmarkTrajectory(
     });
   }
 
-  const rawLines = bytes.toString("utf8").split("\n");
-  const meaningful: Array<{ number: number; text: string }> = [];
-  for (let index = 0; index < rawLines.length; index += 1) {
-    const text = rawLines[index] ?? "";
-    if (text.trim().length === 0) continue;
-    meaningful.push({ number: index + 1, text });
+  const stored = validatedStoredLines(bytes, context.trajectoryPath, (value) =>
+    loaded.registry.validate(
+      benchmarkTrajectoryEntrySchemaId,
+      value,
+      context.trajectoryPath,
+      "operational",
+    ),
+  );
+  if (!stored.ok) {
+    return inspectResult("operational-error", runDirectory, [
+      stored.diagnostic,
+    ]);
   }
 
   const view = emptyView();
   view.byteSize = bytes.byteLength;
   view.sha256Digest = digest(bytes);
-  view.entryCount = meaningful.length;
+  view.entryCount = stored.entries.length;
 
   let firstSeq: number | null = null;
   let firstRecordedAt: string | null = null;
   let lastSeq: number | null = null;
   let lastRecordedAt: string | null = null;
 
-  for (const line of meaningful) {
-    let value: unknown;
-    try {
-      value = JSON.parse(line.text) as unknown;
-    } catch {
-      return inspectResult("operational-error", runDirectory, [
-        diagnostic({
-          code: "BENCHMARK_TRAJECTORY_CORRUPT",
-          path: context.trajectoryPath,
-          reference: `line ${String(line.number)}`,
-          message: "A stored trajectory line is not parseable JSON.",
-          expected: "every stored line to parse as one valid trajectory entry",
-          repair:
-            "Restore the captured trajectory from its owner before evaluation.",
-        }),
-      ]);
-    }
-    const lineDiagnostics = loaded.registry.validate(
-      benchmarkTrajectoryEntrySchemaId,
-      value,
-      context.trajectoryPath,
-      "operational",
-    );
-    if (lineDiagnostics.length > 0) {
-      return inspectResult("operational-error", runDirectory, [
-        diagnostic({
-          code: "BENCHMARK_TRAJECTORY_CORRUPT",
-          path: context.trajectoryPath,
-          reference: `line ${String(line.number)}`,
-          message: "A stored trajectory line violates the entry schema.",
-          expected: "every stored line to satisfy the trajectory entry schema",
-          repair:
-            "Restore the captured trajectory from its owner before evaluation.",
-        }),
-      ]);
-    }
-    const entry = value as BenchmarkTrajectoryEntry;
+  for (const entry of stored.entries) {
     if (firstSeq === null) {
       firstSeq = entry.seq;
       firstRecordedAt = entry.recordedAt;
@@ -634,4 +699,234 @@ export async function inspectBenchmarkTrajectory(
     trajectoryPath: context.trajectoryPath,
     view,
   });
+}
+
+function freezeResult(
+  status: BenchmarkFreezeResult["status"],
+  runDirectory: string,
+  diagnostics: SahDiagnostic[],
+  fields: { freezePath?: string; freeze?: BenchmarkFreeze } = {},
+): BenchmarkFreezeResult {
+  const ordered = orderDiagnostics(diagnostics);
+  return {
+    status,
+    runDirectory,
+    ...fields,
+    diagnostics: ordered,
+    summary: summarize(ordered),
+  };
+}
+
+const trajectoryRunRelative = `${outputDirectoryName}/${trajectoryFileName}`;
+
+async function outputInventory(
+  outputDirectory: string,
+): Promise<
+  | { ok: true; files: BenchmarkFrozenOutputFile[] }
+  | { ok: false; diagnostic: SahDiagnostic }
+> {
+  const entries = await readdir(outputDirectory, {
+    withFileTypes: true,
+    recursive: true,
+  });
+  const rootPrefix = resolve(outputDirectory);
+  const inventory: Array<{
+    path: string;
+    byteSize: number;
+    sha256Digest: string;
+  }> = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) continue;
+    const parent = entry.parentPath;
+    const relativePath = join(parent, entry.name)
+      .slice(rootPrefix.length + 1)
+      .replaceAll("\\", "/");
+    const runRelativePath = `${outputDirectoryName}/${relativePath}`;
+    let stat;
+    try {
+      stat = await lstat(join(parent, entry.name));
+    } catch (error) {
+      return {
+        ok: false,
+        diagnostic: diagnostic({
+          code: "BENCHMARK_FREEZE_OUTPUT_UNREADABLE",
+          path: runRelativePath,
+          message: errorMessage(
+            error,
+            "A captured output file could not be inspected.",
+          ),
+          expected: "a readable regular captured output file",
+          repair: "Restore access to the captured output tree before freezing.",
+        }),
+      };
+    }
+    if (stat.isSymbolicLink() || !stat.isFile()) {
+      return {
+        ok: false,
+        diagnostic: diagnostic({
+          code: "BENCHMARK_TRAJECTORY_OUTPUT_UNSAFE",
+          path: runRelativePath,
+          message:
+            "The captured output tree contains a non-regular entry and was not frozen.",
+          expected:
+            "only regular captured output files under the output directory",
+          repair:
+            "Remove unsafe captured entries only with their owner's consent.",
+        }),
+      };
+    }
+    if (runRelativePath === trajectoryRunRelative) continue;
+    const bytes = await readFile(join(parent, entry.name));
+    inventory.push({
+      path: runRelativePath,
+      byteSize: bytes.byteLength,
+      sha256Digest: digest(bytes),
+    });
+  }
+  inventory.sort((left, right) => left.path.localeCompare(right.path));
+  return { ok: true, files: inventory };
+}
+
+export async function freezeBenchmarkCapture(
+  runDirectory: string,
+): Promise<BenchmarkFreezeResult> {
+  const context = await resolveRunContext(runDirectory);
+  if (!context.ok) {
+    return freezeResult("operational-error", runDirectory, context.diagnostics);
+  }
+
+  const freezePath = join(
+    dirname(context.runRoot),
+    `${basename(context.runRoot)}${freezeSuffix}`,
+  );
+  const existingFreeze = await existingPath(freezePath).catch(() => undefined);
+  if (existingFreeze !== undefined) {
+    return freezeResult("operational-error", runDirectory, [
+      diagnostic({
+        code: "BENCHMARK_FREEZE_EXISTS",
+        path: freezePath,
+        message:
+          "This run's capture is already frozen and the pin was not overwritten.",
+        expected: "an absent benchmark-freeze record for a fresh freeze",
+        repair:
+          "Keep the existing freeze unchanged or prepare a new run directory to capture again.",
+      }),
+    ]);
+  }
+
+  const loaded = await loadSchemaRegistry();
+  if (!loaded.ok) {
+    return freezeResult("operational-error", runDirectory, loaded.diagnostics);
+  }
+
+  const bytes = await readTrajectoryBytes(context.trajectoryPath);
+  if (bytes === undefined || bytes.byteLength === 0) {
+    return freezeResult("operational-error", runDirectory, [
+      diagnostic({
+        code: "BENCHMARK_FREEZE_EMPTY_CAPTURE",
+        path: context.trajectoryPath,
+        message: "The capture holds no trajectory entries and was not frozen.",
+        expected: "at least one stored trajectory entry before freezing",
+        repair:
+          "Append the run's captured trajectory entries or discard the empty attempt with its owner.",
+      }),
+    ]);
+  }
+
+  const stored = validatedStoredLines(bytes, context.trajectoryPath, (value) =>
+    loaded.registry.validate(
+      benchmarkTrajectoryEntrySchemaId,
+      value,
+      context.trajectoryPath,
+      "operational",
+    ),
+  );
+  if (!stored.ok) {
+    return freezeResult("operational-error", runDirectory, [stored.diagnostic]);
+  }
+
+  const firstEntry = stored.entries[0];
+  const lastEntry = stored.entries[stored.entries.length - 1];
+  if (
+    firstEntry === undefined ||
+    lastEntry === undefined ||
+    context.record.isolatedTarget.root === ""
+  ) {
+    return freezeResult("operational-error", runDirectory, [
+      diagnostic({
+        code: "BENCHMARK_FREEZE_EMPTY_CAPTURE",
+        path: context.trajectoryPath,
+        message:
+          "The capture could not be resolved into a bounded entry range.",
+        expected: "a non-empty validated trajectory capture",
+        repair:
+          "Inspect the capture with benchmark-trajectory --status before freezing.",
+      }),
+    ]);
+  }
+
+  const inventory = await outputInventory(context.outputDirectory);
+  if (!inventory.ok) {
+    return freezeResult("operational-error", runDirectory, [
+      inventory.diagnostic,
+    ]);
+  }
+
+  const freeze: BenchmarkFreeze = {
+    $schema: benchmarkFreezeSchemaId,
+    freezeVersion: "0.1.0",
+    runId: context.record.runId,
+    comparisonId: context.record.comparisonId,
+    benchmarkId: context.record.benchmarkId,
+    mode: context.record.mode,
+    frozenAt: new Date().toISOString(),
+    capture: {
+      trajectoryDigest: digest(bytes),
+      trajectoryByteSize: bytes.byteLength,
+      entryCount: stored.entries.length,
+      firstSeq: firstEntry.seq,
+      lastSeq: lastEntry.seq,
+      firstRecordedAt: firstEntry.recordedAt,
+      lastRecordedAt: lastEntry.recordedAt,
+    },
+    outputFiles: inventory.files,
+  };
+
+  const schemaDiagnostics = loaded.registry.validate(
+    benchmarkFreezeSchemaId,
+    freeze,
+    freezePath,
+    "operational",
+  );
+  if (schemaDiagnostics.length > 0) {
+    return freezeResult("operational-error", runDirectory, schemaDiagnostics);
+  }
+
+  let handle: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    handle = await open(freezePath, "wx", 0o600);
+    await handle.writeFile(`${JSON.stringify(freeze, null, 2)}\n`, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+    return freezeResult("frozen", runDirectory, [], { freezePath, freeze });
+  } catch (error) {
+    return freezeResult("operational-error", runDirectory, [
+      diagnostic({
+        code: "BENCHMARK_FREEZE_WRITE_FAILED",
+        path: freezePath,
+        message: errorMessage(
+          error,
+          "The benchmark freeze record could not be written.",
+        ),
+        expected: "one durable sibling benchmark-freeze record",
+        repair: "Restore writability of the run parent directory and retry.",
+      }),
+    ]);
+  } finally {
+    if (handle !== undefined) {
+      await handle.close().catch(() => undefined);
+      await rm(freezePath, { force: true }).catch(() => undefined);
+    }
+  }
 }

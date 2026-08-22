@@ -1,10 +1,10 @@
 # Benchmark Trajectory Capture
 
-This document owns the executable raw-trajectory capture contract for the FP-008
-benchmark protocol. [Benchmark run preparation](benchmark-run.md) owns input
-isolation and the preparation record; [Benchmark strategy](benchmark-strategy.md)
-remains authoritative for scoring, judges, and dataset evolution. This slice
-validates and stores entries; it does not produce them.
+This document owns the executable raw-trajectory capture and freeze contracts for
+the FP-008 benchmark protocol. [Benchmark run preparation](benchmark-run.md) owns
+input isolation and the preparation record; [Benchmark strategy](benchmark-strategy.md)
+remains authoritative for scoring, judges, and dataset evolution. These slices
+validate and store entries; they do not produce them.
 
 ## Command
 
@@ -13,6 +13,7 @@ From a built SAH checkout:
 ```text
 sah benchmark-trajectory <run-directory> --entry-file <entry-file> [--json]
 sah benchmark-trajectory <run-directory> --status [--json]
+sah benchmark-freeze <run-directory> [--json]
 ```
 
 Exactly one action is required. `--entry-file` reads one UTF-8 JSON envelope
@@ -59,12 +60,37 @@ not an error. Any corrupt or schema-invalid line fails operationally with its
 line number so evaluators learn the capture is broken instead of receiving a
 quietly partial view.
 
+## Freezing a completed capture
+
+`sah benchmark-freeze` pins a completed capture into a fresh sibling
+`<run>.benchmark-freeze.json` record validated by
+[the freeze schema](../schemas/benchmark-freeze.schema.json). The record copies
+the preparation identity (run, comparison, benchmark, mode), stamps `frozenAt`,
+and stores the full trajectory digest, byte size, entry count, sequence and time
+ranges, plus an inventory of every other regular file under `output/` with its
+own byte size and SHA-256 digest. It claims nothing about when or whether a
+model executed; it is capture-time evidence only.
+
+Freezing is a boundary, not a bookmark:
+
+- appends are refused once the freeze record exists, so frozen captures are
+  immutable by construction rather than by convention;
+- an empty capture is refused — a runner that produced nothing must not be
+  blessed as a scored attempt;
+- freezing is fresh-only; re-freezing after more capture requires a new run
+  directory, matching preparation semantics;
+- every stored line is validated during freeze, and symlinked or non-regular
+  entries anywhere in the output tree fail operationally with their path.
+
+Successful freezes return exit code `0`; every rejection is operational exit
+`2`.
+
 ## Scope boundary
 
 SAH provides the durable format and integrity seam for the reasoning trajectory
 that the run protocol freezes before scoring. It does not execute a model, invoke
-a provider, generate payload content, score outputs, or freeze evaluation inputs;
-those remain subsequent slices. Appends assume a single local writer and use no
-locking. Caller-supplied timestamps are claims about capture time, not observed
-execution times. Hidden expectations never enter the run directory or this
-contract.
+a provider, generate payload content, score outputs, or open hidden expectations;
+those remain subsequent slices. Appends and freezes assume a single local writer
+and use no locking. Caller-supplied timestamps are claims about capture time, not
+observed execution times. Hidden expectations never enter the run directory or
+these contracts.

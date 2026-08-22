@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-freeze/v0.1.0",
+  "title": "SAH benchmark capture freeze",
+  "description": "Evaluator-side immutable pin of one prepared run's completed trajectory capture and output inventory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "freezeVersion",
+    "runId",
+    "comparisonId",
+    "benchmarkId",
+    "mode",
+    "frozenAt",
+    "capture",
+    "outputFiles"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-freeze/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "freezeVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "description": "Copied from the preparation record so the freeze artifact stays self-contained.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "mode": {
+      "enum": ["treatment", "control"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "frozenAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Capture-time pinning timestamp; it claims nothing about when an execution ran.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-regression-comparator"]
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trajectoryDigest",
+        "trajectoryByteSize",
+        "entryCount",
+        "firstSeq",
+        "lastSeq",
+        "firstRecordedAt",
+        "lastRecordedAt"
+      ],
+      "properties": {
+        "trajectoryDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        },
+        "trajectoryByteSize": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator"]
+          }
+        },
+        "entryCount": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        },
+        "firstSeq": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        },
+        "lastSeq": {
+          "type": "integer",
+          "minimum": 1,
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        },
+        "firstRecordedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        },
+        "lastRecordedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-sah-trace": {
+            "writtenBy": ["benchmark-evaluator"],
+            "readBy": ["benchmark-evaluator", "benchmark-judge"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-judge"]
+      }
+    },
+    "outputFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "byteSize", "sha256Digest"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^output/.+$",
+            "description": "Run-root-relative regular file under the reserved output directory, excluding trajectory.jsonl itself.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-evaluator", "benchmark-judge"]
+            }
+          },
+          "byteSize": {
+            "type": "integer",
+            "minimum": 0,
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-evaluator"]
+            }
+          },
+          "sha256Digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-evaluator", "benchmark-judge"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["benchmark-evaluator"],
+          "readBy": ["benchmark-evaluator", "benchmark-judge"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator", "benchmark-judge"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-freeze/v0.1.0",
+      "freezeVersion": "0.1.0",
+      "runId": "simple-crud-treatment-001",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "mode": "treatment",
+      "frozenAt": "2026-08-22T12:00:00.000Z",
+      "capture": {
+        "trajectoryDigest": "sha256:d69f05a168df61321bb29f40067e36b6bdc7bb5b6f59ae47cc89ddaa9e807ca8",
+        "trajectoryByteSize": 178,
+        "entryCount": 2,
+        "firstSeq": 1,
+        "lastSeq": 2,
+        "firstRecordedAt": "2026-08-22T10:00:00.000Z",
+        "lastRecordedAt": "2026-08-22T10:00:05.000Z"
+      },
+      "outputFiles": []
+    }
+  ]
+}
