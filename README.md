@@ -14,6 +14,32 @@ The short version:
 
 SAH is currently a pre-1.0, local-first Agent Skill plus a TypeScript validation kernel. The repository is public, but the npm package is private and runs from a source checkout.
 
+## Quickstart
+
+Clone SAH once, link its conversational skill into your host agent, then start a project in your own repository. Requirements: Node.js 22+, npm, and Codex or Claude Code.
+
+1. Build the SAH checkout once:
+
+~~~sh
+git clone https://github.com/2000silpeed/sah.git
+cd sah && npm install && npm run build
+~~~
+
+2. From inside your project, link the skill (Claude Code shown; Codex uses `.agents/skills` instead):
+
+~~~sh
+cd /path/to/your-project
+mkdir -p .claude/skills && ln -s /absolute/path/to/sah/skills/sah .claude/skills/sah
+~~~
+
+3. Open the project in your host agent and state the outcome, hard constraints, and what completion means:
+
+~~~text
+Use $sah (/sah) to build <feature> end to end. Read this repository first, ask focused questions, and finish when ready slices are implemented, target tests pass, and full SAH evidence is recorded.
+~~~
+
+The host skill writes `.sah/design`, validates S0–S12, implements ready slices, and records verification evidence. Full details: [Install the conversational skill](#install-the-conversational-skill) and [Use SAH in a new project](#use-sah-in-a-new-project).
+
 ## Why SAH exists
 
 Coding agents can generate working code while still making expensive structural mistakes:
@@ -121,16 +147,7 @@ For a real project, install the conversational skill below; this fixture only pr
 
 ### 1. Clone and install
 
-Requirements: Node.js 22 or newer and npm.
-
-~~~sh
-git clone https://github.com/2000silpeed/sah.git
-cd sah
-npm install
-npm run build
-~~~
-
-No global installation is required. npm exec uses the binary built from this checkout.
+Clone and build once exactly as shown in [Quickstart](#quickstart). Node.js 22 or newer and npm are required, and no global installation is needed because `npm exec` runs the binary built from this checkout.
 
 ### 2. Validate the example design bundle
 
@@ -169,15 +186,7 @@ npm exec -- sah validate "$bundle_root/bundle" --json
 
 ### Changed-scoped verification is for feedback, not completion
 
-Use --changed to run constraints assigned to slices affected by explicit target-relative paths:
-
-~~~sh
-npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
-~~~
-
-SAH does not inspect Git. You must supply every changed path explicitly; if a path is unmapped, ambiguous, or outside declared roots, selection expands to full-fallback.
-
-Even when every selected check passes—or fallback runs every check—the invocation remains change-scoped evidence and cannot complete S13; run a fresh verification without --changed for eligible completion evidence.
+`verify --changed <target-relative paths>` runs only the checks assigned to slices affected by those paths. SAH does not inspect Git; unmapped, ambiguous, or out-of-root paths expand selection to full-fallback, and even an all-pass change-scoped result cannot complete S13 — run fresh full verification for eligible completion evidence. Exact syntax lives in [Validation CLI and Library](docs/validation-cli.md).
 
 ## CLI reference
 

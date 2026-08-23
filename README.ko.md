@@ -13,6 +13,32 @@ SAH는 코딩 에이전트를 위한 방법론 중립적 설계 추론 하네스
 
 현재 SAH는 1.0 이전의 로컬 우선 Agent Skill과 TypeScript 검증 커널입니다. GitHub 저장소는 공개되어 있지만 npm 패키지는 private이므로 소스 체크아웃에서 실행합니다.
 
+## 퀵스타트
+
+SAH를 한 번 빌드하고, 대화형 skill을 host agent에 연결한 뒤, 내 저장소에서 프로젝트를 시작합니다. 필요한 것: Node.js 22 이상, npm, Codex 또는 Claude Code.
+
+1. SAH checkout을 한 번 빌드합니다:
+
+~~~sh
+git clone https://github.com/2000silpeed/sah.git
+cd sah && npm install && npm run build
+~~~
+
+2. 프로젝트 안에서 skill을 연결합니다(Claude Code 기준, Codex는 `.agents/skills`를 사용):
+
+~~~sh
+cd /path/to/your-project
+mkdir -p .claude/skills && ln -s /absolute/path/to/sah/skills/sah .claude/skills/sah
+~~~
+
+3. Host에서 프로젝트를 열고 결과, hard constraint, 완료 조건을 알려줍니다:
+
+~~~text
+$sah(/sah)로 <기능>을 end-to-end로 만들어줘. 먼저 이 저장소를 읽고 필요하면 집중적으로 질문하고, ready slice 구현, target test 통과, full SAH evidence 기록까지 완료해줘.
+~~~
+
+Host skill이 `.sah/design`을 만들고 S0–S12를 검증하며 ready slice를 구현하고 검증 증거를 기록합니다. 자세한 내용은 [대화형 skill 설치하기](#대화형-skill-설치하기)와 [신규 프로젝트에 적용하기](#신규-프로젝트에-적용하기)에 있습니다.
+
 ## 왜 SAH가 필요한가요?
 
 코딩 에이전트는 동작하는 코드를 만들면서도 다음과 같은 비싼 구조적 실수를 할 수
@@ -118,16 +144,7 @@ Adapter가 없으면 **unsupported**이며 pass가 아닙니다. 이름 냄새, 
 
 ### 1. Clone과 설치
 
-Node.js 22 이상과 npm이 필요합니다.
-
-~~~sh
-git clone https://github.com/2000silpeed/sah.git
-cd sah
-npm install
-npm run build
-~~~
-
-전역 설치는 필요 없습니다. npm exec가 현재 체크아웃에서 빌드한 binary를 실행합니다.
+[퀵스타트](#퀵스타트)와 똑같이 한 번 clone하고 빌드합니다. Node.js 22 이상과 npm이 필요하고 전역 설치는 필요 없습니다. npm exec가 현재 체크아웃에서 빌드한 binary를 실행합니다.
 
 ### 2. 예제 설계 번들 검증
 
@@ -167,16 +184,7 @@ npm exec -- sah validate "$bundle_root/bundle" --json
 
 ### Changed-scoped 검증은 빠른 피드백용입니다
 
-명시한 대상 상대 경로가 영향을 주는 slice의 constraint만 실행하려면 --changed를
-사용합니다.
-
-~~~sh
-npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
-~~~
-
-SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전달해야 하며, 경로가 mapping되지 않았거나 모호하거나 선언한 source root 밖이면 full-fallback으로 확장됩니다.
-
-선택한 check가 모두 pass하거나 fallback이 전체 check를 실행했더라도 호출 자체는 여전히 change-scoped evidence입니다. S13 완료 증거가 될 수 없습니다. --changed 없이 새로운 full verification을 실행해야 합니다.
+`verify --changed <대상 상대 경로>`는 해당 경로가 영향을 주는 slice의 constraint만 실행합니다. SAH는 Git 상태를 읽지 않고, mapping되지 않았거나 모호하거나 선언한 source root 밖인 경로가 있으면 full-fallback으로 확장됩니다. 모든 check가 pass해도 change-scoped 결과는 S13 완료 증거가 아니므로 eligible 완료 증거에는 --changed 없는 새로운 full verification이 필요합니다. 정확한 문법은 [Validation CLI and Library](docs/validation-cli.md)에 있습니다.
 
 ## CLI 빠른 참조
 
