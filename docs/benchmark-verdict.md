@@ -54,6 +54,31 @@ adjudication exit 1 or 2 per their operational family. `--record` writes the
 verdict fresh-only with exclusive create; an existing record is never
 overwritten.
 
+## Comparing treatment and control
+
+```text
+sah benchmark-compare <treatment-verdict> <control-verdict> [--json]
+```
+
+The command validates both fresh verdict records, requires one treatment and
+one control verdict bound to the same `benchmarkId`, `problemDigest`, and
+`comparisonId`, then emits [the comparison projection](../schemas/benchmark-comparison.schema.json):
+per-category deltas with raw points preserved, the total delta, and an outcome
+of `treatment-improved`, `within-tolerance`, or `treatment-regressed`. The
+published release-regression tolerance governs the total only: a treatment that
+loses more than five points against its control is flagged as a regression;
+per-category breach flags are informational. Comparison is read-only and exits 0
+when compared, 1 for rejected inputs, 2 for unreadable files.
+
+Observational discipline metrics from the protocol design — unrequested surface,
+trigger recall, supersession correctness — remain judgment observations recorded
+in judge explanations and steward reviews; this projection computes only what
+the frozen verdicts determine.
+
+Exit codes recap for this document's commands: `benchmark-verdict` exits 0 on a
+passed assembly, 1 on a failed verdict or rejected inputs, 2 on unreadable
+inputs; `benchmark-compare` follows the same families.
+
 ## Scope boundary
 
 Assembly consumes preserved evidence; it does not execute judges, re-open

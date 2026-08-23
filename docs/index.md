@@ -141,6 +141,8 @@ records the benchmark trajectory capture seam.
   evaluator-executed judge records deterministically without the runtime invoking models.
 - [ADR-0033](adr/0033-assemble-benchmark-verdicts-from-preserved-evidence.md) — assembles verdicts
   from preserved evidence with binary deterministic categories, steward adjudication, and fresh-only records.
+- [ADR-0034](adr/0034-compare-treatment-and-control-verdicts.md) — compares treatment/control
+  verdict pairs deterministically under the published five-point release tolerance.
 
 ## JSON Schema contracts
 
@@ -181,6 +183,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Benchmark adjudication](../schemas/benchmark-adjudication.schema.json) and
   [verdict](../schemas/benchmark-verdict.schema.json) — validate steward resolutions of disputed
   categories and the assembled total with penalties, caps, and thresholds.
+- [Benchmark comparison](../schemas/benchmark-comparison.schema.json) — validates the treatment-
+  versus-control delta projection with the published five-point release tolerance.
 - [TypeScript source mapping](../schemas/typescript-source-mapping.schema.json) — non-semantic,
   target-local project config, exhaustive source roots, Architecture element path prefixes,
   and write-target symbols.
@@ -239,7 +243,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   deterministic two-judge agreement view without executing any judgment.
 - [Benchmark verdict assembly](../src/benchmark-verdict.ts) and
   [verdict contract](benchmark-verdict.md) — score deterministic categories, consume steward
-  adjudications, and assemble capped totals with pass thresholds.
+  adjudications, assemble capped totals with pass thresholds, and compare treatment/control pairs.
 - [Target-check evidence adapter](../src/target-check-evidence-adapter.ts) and
   [target-check contract](target-check-evidence.md) — bind one explicit iteration outcome to
   verification without running the recorded command.

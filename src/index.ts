@@ -81,6 +81,10 @@ export type {
   BenchmarkVerdictResult,
   BenchmarkVerdictResultStatus,
   BenchmarkVerdictStatus,
+  BenchmarkComparison,
+  BenchmarkComparisonOutcome,
+  BenchmarkComparisonResult,
+  BenchmarkComparisonResultStatus,
   BenchmarkTrajectoryAppendOptions,
   BenchmarkTrajectoryAppendResult,
   BenchmarkTrajectoryEntry,
@@ -96,6 +100,7 @@ export {
   benchmarkScoreSchemaId,
   benchmarkAdjudicationSchemaId,
   benchmarkVerdictSchemaId,
+  benchmarkComparisonSchemaId,
   benchmarkTrajectoryEntrySchemaId,
   currentArchitectureResultSchemaId,
   iterationScenarioSchemaId,
@@ -129,3 +134,4 @@ export {
 } from "./benchmark-trajectory.js";
 export { aggregateBenchmarkJudgeReviews } from "./benchmark-judging.js";
 export { assembleBenchmarkVerdict } from "./benchmark-verdict.js";
+export { compareBenchmarkVerdicts } from "./benchmark-comparison.js";

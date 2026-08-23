@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/benchmark-comparison/v0.1.0",
+  "title": "SAH benchmark verdict comparison",
+  "description": "Deterministic treatment-versus-control delta over two assembled benchmark verdicts of the same problem.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "comparisonVersion",
+    "comparisonId",
+    "benchmarkId",
+    "problemDigest",
+    "treatmentRunId",
+    "controlRunId",
+    "categoryDeltas",
+    "treatmentTotal",
+    "controlTotal",
+    "totalDelta",
+    "tolerancePoints",
+    "regressionBeyondTolerance",
+    "outcome"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/benchmark-comparison/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["schema-registry", "benchmark-evaluator"]
+      }
+    },
+    "comparisonVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-evaluator"]
+      }
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "description": "Copied from the paired runs' shared comparison identity.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "problemDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "treatmentRunId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "controlRunId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "categoryDeltas": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "delta", "toleranceBreached"],
+        "properties": {
+          "category": {
+            "enum": [
+              "boundaries",
+              "characterization",
+              "continuous-enforcement",
+              "quality-trade-offs",
+              "responsibilities",
+              "strategy"
+            ],
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-regression-comparator"]
+            }
+          },
+          "delta": {
+            "type": "number",
+            "description": "Treatment final points minus control final points for this category.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-regression-comparator"]
+            }
+          },
+          "toleranceBreached": {
+            "type": "boolean",
+            "description": "True when the category lost more than the tolerance points relative to control.",
+            "x-sah-trace": {
+              "writtenBy": ["benchmark-evaluator"],
+              "readBy": ["benchmark-regression-comparator"]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["benchmark-evaluator"],
+          "readBy": ["benchmark-regression-comparator"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "treatmentTotal": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 100,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "controlTotal": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 100,
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "totalDelta": {
+      "type": "number",
+      "description": "Treatment total minus control total; negative values are losses.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "tolerancePoints": {
+      "const": 5,
+      "description": "The published release-regression tolerance: no benchmark may lose more than five points.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "regressionBeyondTolerance": {
+      "type": "boolean",
+      "description": "True when the treatment loses more than five points relative to control.",
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    },
+    "outcome": {
+      "enum": ["treatment-improved", "within-tolerance", "treatment-regressed"],
+      "x-sah-trace": {
+        "writtenBy": ["benchmark-evaluator"],
+        "readBy": ["benchmark-regression-comparator"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/benchmark-comparison/v0.1.0",
+      "comparisonVersion": "0.1.0",
+      "comparisonId": "simple-crud-ab-001",
+      "benchmarkId": "simple-crud",
+      "problemDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "treatmentRunId": "simple-crud-treatment-001",
+      "controlRunId": "simple-crud-control-001",
+      "categoryDeltas": [
+        { "category": "boundaries", "delta": 0, "toleranceBreached": false },
+        {
+          "category": "characterization",
+          "delta": 1,
+          "toleranceBreached": false
+        },
+        {
+          "category": "continuous-enforcement",
+          "delta": -1,
+          "toleranceBreached": false
+        },
+        {
+          "category": "quality-trade-offs",
+          "delta": 2,
+          "toleranceBreached": false
+        },
+        {
+          "category": "responsibilities",
+          "delta": 3,
+          "toleranceBreached": false
+        },
+        { "category": "strategy", "delta": -4, "toleranceBreached": true }
+      ],
+      "treatmentTotal": 79,
+      "controlTotal": 82,
+      "totalDelta": -3,
+      "tolerancePoints": 5,
+      "regressionBeyondTolerance": false,
+      "outcome": "within-tolerance"
+    }
+  ]
+}

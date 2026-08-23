@@ -200,6 +200,7 @@ SAH는 Git 상태를 읽지 않습니다. 변경된 모든 경로를 직접 전�
 | sah benchmark-freeze RUN | 완료된 캡처와 output 인벤토리를 evaluator 측 불변 기록으로 고정 | 있음, 새 record만 |
 | sah benchmark-judge RECORD-A RECORD-B | 두 독립 judge 기록을 검증하고 합의 뷰를 산출 | 없음 |
 | sah benchmark-verdict SCORE --bundle BUNDLE | 결정론 카테고리를 채점하고 캡 적용 총점을 조립 | --record 사용 시 있음, 새 record만 |
+| sah benchmark-compare TREATMENT CONTROL | 5점 허용 오차 안에서 두 verdict의 델타를 산출 | 없음 |
 
 Advance는 정방향으로 정확히 한 stage만 이동합니다. 현재 실행 가능한 target gate는
 S5부터 S13까지입니다.

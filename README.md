@@ -203,6 +203,7 @@ produce eligible completion evidence.
 | sah benchmark-freeze RUN | Pin a completed capture and output inventory into an immutable evaluator-side record | Yes, fresh record only |
 | sah benchmark-judge RECORD-A RECORD-B | Validate two independent judge records and project the agreement view | No |
 | sah benchmark-verdict SCORE --bundle BUNDLE | Score deterministic categories and assemble the capped total | Yes with --record, fresh only |
+| sah benchmark-compare TREATMENT CONTROL | Delta two verdicts under the five-point release tolerance | No |
 
 Advancement is forward-only and exactly one stage. The currently executable target gates are
 S5 through S13.

@@ -24,6 +24,7 @@ import {
   type BenchmarkFreezeResult,
   type BenchmarkScoreResult,
   type BenchmarkVerdictResult,
+  type BenchmarkComparisonResult,
   type BenchmarkTrajectoryAppendOptions,
   type BenchmarkTrajectoryAppendResult,
   type BenchmarkTrajectoryEntryKind,
@@ -55,6 +56,7 @@ import {
 } from "./benchmark-trajectory.js";
 import { aggregateBenchmarkJudgeReviews } from "./benchmark-judging.js";
 import { assembleBenchmarkVerdict } from "./benchmark-verdict.js";
+import { compareBenchmarkVerdicts } from "./benchmark-comparison.js";
 
 const usage = [
   "Usage: sah validate <design-bundle-directory> [--json]",
@@ -68,6 +70,7 @@ const usage = [
   "       sah benchmark-freeze <run-directory> [--json]",
   "       sah benchmark-judge <judge-record-a> <judge-record-b> [--json]",
   "       sah benchmark-verdict <judge-score.json> --bundle <participant-bundle-directory> [--adjudication <adjudication-file>] [--record <verdict-file>] [--json]",
+  "       sah benchmark-compare <treatment-verdict> <control-verdict> [--json]",
   "       sah loop <sah.loop.json> [--json]",
   "       sah loop-bind <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
   "       sah loop-checks <sah.loop.json> --cwd <target-directory> --target-revision <target-revision> --design-fingerprint <sha256> [--json]",
@@ -553,7 +556,8 @@ function exitCode(
     | BenchmarkTrajectoryInspectResult
     | BenchmarkFreezeResult
     | BenchmarkScoreResult
-    | BenchmarkVerdictResult,
+    | BenchmarkVerdictResult
+    | BenchmarkComparisonResult,
 ): 0 | 1 | 2 {
   switch (outcome.status) {
     case "passed":
@@ -564,6 +568,7 @@ function exitCode(
     case "appended":
     case "frozen":
     case "scored":
+    case "compared":
     case "ok":
       return 0;
     case "escalate":
@@ -1039,6 +1044,37 @@ function formatVerdictHuman(result: BenchmarkVerdictResult): string {
   ].join("\n\n");
 }
 
+function formatCompareHuman(result: BenchmarkComparisonResult): string {
+  const title =
+    result.status === "compared"
+      ? result.comparison?.regressionBeyondTolerance
+        ? "SAH benchmark comparison: treatment regressed beyond tolerance"
+        : "SAH benchmark comparison complete"
+      : result.status === "violations"
+        ? "SAH benchmark comparison inputs rejected"
+        : "SAH benchmark comparison could not run";
+  const comparison = result.comparison;
+  return [
+    title,
+    `Records: ${result.treatmentPath} | ${result.controlPath}`,
+    ...(comparison === undefined
+      ? []
+      : [
+          `Run pair: ${comparison.treatmentRunId} vs ${comparison.controlRunId} (${comparison.benchmarkId})`,
+          ...comparison.categoryDeltas.map(
+            (categoryDelta) =>
+              `${categoryDelta.category}: ${categoryDelta.delta >= 0 ? "+" : ""}${String(categoryDelta.delta)}${
+                categoryDelta.toleranceBreached ? " (breach)" : ""
+              }`,
+          ),
+          `Total: ${comparison.treatmentTotal} vs ${comparison.controlTotal} (delta ${comparison.totalDelta >= 0 ? "+" : ""}${String(comparison.totalDelta)})`,
+          `Outcome: ${comparison.outcome}`,
+        ]),
+    ...result.diagnostics.map(humanDiagnostic),
+    `Summary: ${result.summary.errors} error(s), ${result.summary.warnings} warning(s)`,
+  ].join("\n\n");
+}
+
 async function runBenchmarkTrajectory(
   positional: string[],
   parsed: ParsedArguments,
@@ -1339,6 +1375,36 @@ async function main(arguments_: string[]): Promise<number> {
       `${json ? JSON.stringify(assembled, null, 2) : formatVerdictHuman(assembled)}\n`,
     );
     return exitCode(assembled);
+  }
+
+  if (
+    positional.length === 3 &&
+    positional[0] === "benchmark-compare" &&
+    parsed.benchmarkBundleDirectory === undefined &&
+    parsed.benchmarkAdjudicationFile === undefined &&
+    parsed.sourceMappingPath === undefined &&
+    parsed.changedPaths === undefined &&
+    parsed.checkRecordPath === undefined &&
+    parsed.recordPath === undefined &&
+    parsed.verificationRecordPath === undefined &&
+    parsed.cwd === undefined &&
+    parsed.targetRevision === undefined &&
+    parsed.designFingerprint === undefined &&
+    parsed.benchmarkRunId === undefined &&
+    parsed.benchmarkComparisonId === undefined &&
+    parsed.benchmarkMode === undefined &&
+    parsed.benchmarkTrajectoryEntryPath === undefined &&
+    parsed.benchmarkTrajectoryStatus !== true &&
+    parsed.repair !== true
+  ) {
+    const compared = await compareBenchmarkVerdicts(
+      positional[1] ?? "",
+      positional[2] ?? "",
+    );
+    process.stdout.write(
+      `${json ? JSON.stringify(compared, null, 2) : formatCompareHuman(compared)}\n`,
+    );
+    return exitCode(compared);
   }
 
   if (

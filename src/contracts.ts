@@ -376,6 +376,45 @@ export type BenchmarkVerdictResult = {
   summary: ValidationSummary;
 };
 
+export const benchmarkComparisonSchemaId =
+  "https://sah.dev/schemas/benchmark-comparison/v0.1.0" as const;
+
+export type BenchmarkComparisonOutcome =
+  "treatment-improved" | "within-tolerance" | "treatment-regressed";
+
+export type BenchmarkComparison = {
+  $schema: typeof benchmarkComparisonSchemaId;
+  comparisonVersion: "0.1.0";
+  comparisonId: string;
+  benchmarkId: string;
+  problemDigest: string;
+  treatmentRunId: string;
+  controlRunId: string;
+  categoryDeltas: Array<{
+    category: BenchmarkJudgeCategory;
+    delta: number;
+    toleranceBreached: boolean;
+  }>;
+  treatmentTotal: number;
+  controlTotal: number;
+  totalDelta: number;
+  tolerancePoints: 5;
+  regressionBeyondTolerance: boolean;
+  outcome: BenchmarkComparisonOutcome;
+};
+
+export type BenchmarkComparisonResultStatus =
+  "compared" | "violations" | "operational-error";
+
+export type BenchmarkComparisonResult = {
+  status: BenchmarkComparisonResultStatus;
+  treatmentPath: string;
+  controlPath: string;
+  comparison?: BenchmarkComparison;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
 export type LineageBundle = {
   bundleId: string;
   path: string;
