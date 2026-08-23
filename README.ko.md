@@ -135,14 +135,7 @@ npm run build
 npm exec -- sah validate fixtures/simple-crud
 ~~~
 
-예상 결과는 `equipment-register (S12, short)` 번들의 `SAH validation passed`입니다. Schema,
-reference, 저장 stage gate가 통과했다는 뜻이며 아직 대상 코드는 검사하지 않았습니다.
-
-다른 도구나 에이전트가 결과를 읽어야 하면 --json을 추가하세요.
-
-~~~sh
-npm exec -- sah validate fixtures/simple-crud --json
-~~~
+예상 결과는 `equipment-register (S12, short)` 번들의 `SAH validation passed`입니다. Schema, reference, 저장 stage gate가 통과했다는 뜻이며 아직 대상 코드는 검사하지 않았습니다. 다른 도구나 에이전트가 결과를 읽어야 하면 --json을 추가하세요.
 
 ### 3. 예제 TypeScript 대상 검증
 
@@ -170,10 +163,7 @@ npm exec -- sah advance "$bundle_root/bundle" S13 --verification-record verifica
 npm exec -- sah validate "$bundle_root/bundle" --json
 ~~~
 
-`verify --record`는 전체 결과와 design fingerprint를 저장하고, `advance`는 coverage, byte,
-현재 design을 다시 검사한 뒤 S13과 함께 원자적으로 고정합니다. 저장만으로 lifecycle이
-진행되지는 않습니다. Schema-valid **full**, passed, current, complete-coverage record만
-S12→S13을 승인할 수 있습니다.
+`verify --record`는 전체 결과와 design fingerprint를 저장하고, `advance`는 coverage, byte, 현재 design을 다시 검사한 뒤 S13과 함께 원자적으로 고정합니다. 저장만으로 lifecycle이 진행되지는 않습니다. Schema-valid **full**, passed, current, complete-coverage record만 S12→S13을 승인할 수 있습니다.
 
 ### Changed-scoped 검증은 빠른 피드백용입니다
 
@@ -217,6 +207,13 @@ CLI exit code:
 [Validation CLI and Library](docs/validation-cli.md)가 소유합니다. 벤치마크 격리 명령, 숨겨진
 expectation 경계, raw trajectory entry capture는 [Benchmark run preparation](docs/benchmark-run.md)과
 [Benchmark trajectory capture](docs/benchmark-trajectory.md)가 소유합니다.
+
+## 벤치마크 평가 워크스루
+
+FP-008 체인은 운영 에이전트가 끝까지 실행할 수 있습니다: prepare → capture → freeze → judge →
+aggregate → (adjudicate) → verdict → compare. 단계별 정확한 명령, 사전 조건, 성공 판정, 어떤 역할이
+어느 단계를 실행하는지, 실패 시 규율은 [벤치마크 평가 워크스루](docs/benchmark-walkthrough.md)에
+있습니다. 산출물마다 [schemas](schemas/) 아래 스키마 계약과 docs/ 아래 소유 문서가 있습니다.
 
 ## 대화형 skill 설치하기
 
@@ -322,20 +319,15 @@ seam이 있을 때만 관련 작업을 막습니다. 중요한 작업은 full pr
 
 먼저 status를 보고 diagnostic 또는 check code를 확인하세요.
 
-- **violations / exit 1** — 입력을 정상적으로 읽었지만 schema, gate, reference, 대상
-  fact와 모순됩니다. expected와 repair를 따라가세요.
-- **incomplete / exit 2** — review, blocker, adapter, 지원하지 않는 source form 때문에
-  pass/violation을 정직하게 결론 낼 수 없습니다.
-- **operational-error / exit 2** — 호출, 경로 안전성, I/O, parsing, 설정에 실패했습니다.
-  아키텍처를 해석하기 전에 실행 문제부터 고치세요.
-- **blocked / exit 1** — 다음 stage 후보를 평가했지만 gate를 통과하지 못했습니다.
-  Manifest는 이전 stage에 그대로 남습니다.
+- **violations / exit 1** — 입력을 정상적으로 읽었지만 schema, gate, reference, 대상 fact와 모순됩니다. expected와 repair를 따라가세요.
+- **incomplete / exit 2** — review, blocker, adapter, 지원하지 않는 source form 때문에 pass/violation을 정직하게 결론 낼 수 없습니다.
+- **operational-error / exit 2** — 호출, 경로 안전성, I/O, parsing, 설정에 실패했습니다. 아키텍처를 해석하기 전에 실행 문제부터 고치세요.
+- **blocked / exit 1** — 다음 stage 후보를 평가했지만 gate를 통과하지 못했습니다. Manifest는 이전 stage에 그대로 남습니다.
 
 초보자가 자주 하는 실수:
 
 - 체크인된 fixture에서 advance 실행
-- --changed가 Git 상태를 자동으로 읽는다고 가정
-- changed-scoped pass를 S13 완료 증거로 사용
+- --changed가 Git 상태를 자동으로 읽는다고 가정하거나 그 pass를 S13 완료 증거로 사용
 - TypeScript source-graph constraint에서 --mapping 누락
 - unsupported를 pass로 해석
 - canonical JSON은 모순된 채 Markdown만 수정

@@ -66,6 +66,8 @@ records the benchmark trajectory capture seam.
   agreement gate, and the evaluator-side independence protocol.
 - [Benchmark verdict](benchmark-verdict.md) — owns deterministic category scoring, steward
   adjudication consumption, cap/threshold assembly, and fresh-only verdict records.
+- [Benchmark evaluation walkthrough](benchmark-walkthrough.md) — the sequential operator runbook
+  executing the whole FP-008 chain step by step with commands, checks, and failure discipline.
 - [Dogfood](dogfood.md) — owns the manual walkthroughs, conversational skill forward test, and
   harness repairs they forced.
 - [Glossary](glossary.md) — owns canonical English terms, Korean equivalents, definitions,

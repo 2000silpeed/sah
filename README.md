@@ -138,14 +138,7 @@ No global installation is required. npm exec uses the binary built from this che
 npm exec -- sah validate fixtures/simple-crud
 ~~~
 
-Expected result: `SAH validation passed` for bundle `equipment-register (S12, short)`. This proves
-that schemas, references, and stored-stage gates pass; it does not inspect target code.
-
-Add --json when another tool or agent should consume one machine-readable result:
-
-~~~sh
-npm exec -- sah validate fixtures/simple-crud --json
-~~~
+Expected result: `SAH validation passed` for bundle `equipment-register (S12, short)`. This proves that schemas, references, and stored-stage gates pass; it does not inspect target code. Append `--json` whenever another tool or agent should consume one machine-readable result.
 
 ### 3. Verify the example TypeScript target
 
@@ -159,8 +152,7 @@ Here `fixtures/simple-crud` is the design bundle, `fixtures/s13-typescript-targe
 
 ## Complete S13 with recorded full evidence
 
-Advancement mutates sah.bundle.json, so never experiment on the checked-in fixture. Make a
-disposable copy:
+Advancement mutates sah.bundle.json, so never experiment on the checked-in fixture; make a disposable copy:
 
 ~~~sh
 bundle_root="$(mktemp -d)"
@@ -173,9 +165,7 @@ npm exec -- sah advance "$bundle_root/bundle" S13 --verification-record verifica
 npm exec -- sah validate "$bundle_root/bundle" --json
 ~~~
 
-`verify --record` stores the complete result and design fingerprint; `advance` revalidates its
-coverage, bytes, and current design before atomically pinning it with S13. Publishing alone never
-advances lifecycle. Only a schema-valid **full**, passed, current, completely covered record can.
+`verify --record` stores the complete result and design fingerprint; `advance` revalidates coverage, bytes, and the current design before atomically pinning S13. Only a schema-valid **full**, passed, current, completely covered record can advance; publishing alone never does.
 
 ### Changed-scoped verification is for feedback, not completion
 
@@ -187,9 +177,7 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 
 SAH does not inspect Git. You must supply every changed path explicitly; if a path is unmapped, ambiguous, or outside declared roots, selection expands to full-fallback.
 
-Even when every selected check passes—or fallback runs every check—the invocation is still
-change-scoped evidence and cannot complete S13. Run a new verification without --changed to
-produce eligible completion evidence.
+Even when every selected check passes—or fallback runs every check—the invocation remains change-scoped evidence and cannot complete S13; run a fresh verification without --changed for eligible completion evidence.
 
 ## CLI reference
 
@@ -217,6 +205,14 @@ Exit codes are stable across the CLI:
 | 2 | Invocation/operation failed, or verification is incomplete because review, blockers, unsafe binding, or adapter coverage remains pending |
 
 See [Validation CLI and Library](docs/validation-cli.md) for exact syntax, options, result envelopes, transition rules, path confinement, adapter coverage, and atomicity guarantees. See [Benchmark run preparation](docs/benchmark-run.md) and [Benchmark trajectory capture](docs/benchmark-trajectory.md) for the benchmark isolation command, its hidden-expectation boundary, and raw trajectory entry capture.
+
+## Benchmark evaluation walkthrough
+
+The FP-008 chain is executable end to end by an operator agent: prepare → capture → freeze →
+judge → aggregate → (adjudicate) → verdict → compare. The sequential runbook — exact commands,
+preconditions, success checks per step, which role executes which step, and failure discipline —
+lives in [Benchmark evaluation walkthrough](docs/benchmark-walkthrough.md). Every artifact it
+produces has a schema contract under [schemas](schemas/) and an owning document under docs/.
 
 ## Install the conversational skill
 
@@ -324,20 +320,15 @@ Library](docs/validation-cli.md) owns this contract.
 
 Start with status, then diagnostic or check code:
 
-- **violations / exit 1** — the input was understood and contradicts a schema, gate, reference,
-  or deterministic target fact. Follow expected and repair fields.
-- **incomplete / exit 2** — SAH cannot honestly conclude pass or violation because a review,
-  blocker, adapter, or source form remains unsupported.
-- **operational-error / exit 2** — invocation, path safety, I/O, parsing, or configuration
-  failed. Fix the operation before interpreting architecture.
-- **blocked / exit 1** — an advance candidate was validly evaluated but its next-stage gate did
-  not pass. The manifest remains at its previous stage.
+- **violations / exit 1** — input understood but contradicts a schema, gate, reference, or deterministic target fact; follow expected and repair fields.
+- **incomplete / exit 2** — SAH cannot honestly conclude pass or violation; review, blocker, adapter, or source-form support is pending.
+- **operational-error / exit 2** — invocation, path safety, I/O, parsing, or configuration failed; fix before interpreting architecture.
+- **blocked / exit 1** — advance evaluated validly but its next-stage gate failed; the manifest stays at its previous stage.
 
 Common beginner mistakes:
 
 - running advance on the checked-in fixture instead of a disposable copy;
-- assuming --changed reads Git state;
-- treating a changed-scoped pass as S13 completion evidence;
+- assuming --changed reads Git state or treating its pass as S13 completion evidence;
 - omitting --mapping for the TypeScript source-graph constraint;
 - treating unsupported as pass;
 - editing Markdown while leaving canonical JSON contradictory; or
@@ -372,7 +363,7 @@ npm run build
 npm run verify:schemas
 ~~~
 
-The current suite covers 293 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation slice,
+The current suite covers 330 tests. [AGENTS.md](AGENTS.md) owns the exact executable validation slice,
 file discipline, document budgets, and change workflow.
 
 ## Current boundaries
