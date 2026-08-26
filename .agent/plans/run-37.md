@@ -41,7 +41,7 @@ disposition.
 | 2 | Implement schema, types, validator, resolver, CLI, and S13 gate | complete |
 | 3 | Add fixtures/tests and update authoritative docs | complete |
 | 4 | Run full SAH verification and CLI smoke checks | complete |
-| 5 | Adopt the record in ARN M-008, advance S13, review, commit, and push | in_progress |
+| 5 | Adopt the record in ARN M-008, advance S13, review, commit, and push | complete |
 
 ## Verification contract
 
@@ -64,6 +64,9 @@ authority's contextual judgment.
   `sha256:e6f35ae7ff560ee88e86daf5d3f1ae65c9632c1f9991ad669a5c2874ae962501`. Full verification
   records 3/3 accepted contextual checks (1 judgment, 2 assisted), and S13 advances atomically;
   five retained S9 assisted warnings remain non-blocking.
+- SAH is published at `d93022e` and ARN M-008 is published at `f661d19`; both intended working
+  trees are clean apart from the pre-existing user-owned ARN `.claude/` and SAH future-proof design
+  document, which were intentionally not staged.
 
 ## Handoff and stop conditions
 
