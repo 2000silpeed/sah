@@ -1,6 +1,11 @@
 import type { VerificationCheck, VerificationStatus } from "./contracts.js";
 import type { CodeFactAdapter } from "./code-fact-adapter.js";
 import type { LoadedModels } from "./internal-model.js";
+import {
+  reviewDispositionCapability,
+  resolveReviewDisposition,
+  type ContextualDispositionInput,
+} from "./review-disposition.js";
 
 export type VerificationExecutionFailure = {
   code: string;
@@ -70,6 +75,7 @@ export async function verifyConstraints(
   models: LoadedModels,
   adapters: readonly CodeFactAdapter[],
   affectedElementRefs?: ReadonlySet<string>,
+  contextualDisposition?: ContextualDispositionInput,
 ): Promise<ConstraintVerification> {
   const architecture = models.architecture;
   const handoff = models.implementationHandoff;
@@ -93,6 +99,14 @@ export async function verifyConstraints(
   }
 
   const assignments = collectConstraintAssignments(models, affectedElementRefs);
+  const assignedContextualConstraintIds = new Set(
+    architecture.constraints
+      .filter(
+        ({ id, classification }) =>
+          classification !== "deterministic" && assignments.has(id),
+      )
+      .map(({ id }) => id),
+  );
 
   const checks: VerificationCheck[] = [];
   const failures: VerificationExecutionFailure[] = [];
@@ -125,6 +139,30 @@ export async function verifyConstraints(
     }
 
     if (constraint.classification !== "deterministic") {
+      if (contextualDisposition !== undefined) {
+        const outcome = resolveReviewDisposition({
+          disposition: contextualDisposition,
+          constraint,
+          assignment,
+          assignedConstraintIds: assignedContextualConstraintIds,
+        });
+        checks.push({
+          ...common,
+          capability: reviewDispositionCapability,
+          code: outcome.code,
+          status:
+            outcome.kind === "accepted"
+              ? "pass"
+              : outcome.kind === "rejected"
+                ? "violation"
+                : outcome.kind,
+          message: outcome.message,
+          expected: outcome.expected,
+          observed: outcome.observed,
+          repair: outcome.repair,
+        });
+        continue;
+      }
       checks.push({
         ...common,
         code: "CONSTRAINT_REVIEW_PENDING",

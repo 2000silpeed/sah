@@ -18,6 +18,8 @@ plan](../.agent/plans/run-28.md) records the bookmark HTTP smoke fixture; [Run 2
 records the sandbox-safe direct CLI path; [Run 30 plan](../.agent/plans/run-30.md)
 records the isolated benchmark preparation contract; [Run 31 plan](../.agent/plans/run-31.md)
 records the benchmark trajectory capture seam.
+The [Run 37 plan](../.agent/plans/run-37.md) records the contextual disposition evidence path and
+ARN M-008 adoption.
 
 ## Product and reasoning authority
 
@@ -38,6 +40,8 @@ records the benchmark trajectory capture seam.
   continuous enforcement, and exceptions.
 - [Validation CLI and library](validation-cli.md) — owns install, invocation, output, public
   result types, and exit codes for the executable structural slice.
+- [Review disposition](review-disposition.md) — owns the bounded, revision-bound human disposition
+  evidence contract for assisted and judgment constraints.
 - [Architecture evolution](architecture-evolution.md) — owns immutable cross-bundle lineage,
   evolution IR, resolver boundaries, and non-passing conflict semantics.
 - [Current architecture projection](current-architecture.md) — owns the read-only active,
@@ -145,6 +149,8 @@ records the benchmark trajectory capture seam.
   from preserved evidence with binary deterministic categories, steward adjudication, and fresh-only records.
 - [ADR-0034](adr/0034-compare-treatment-and-control-verdicts.md) — compares treatment/control
   verdict pairs deterministically under the published five-point release tolerance.
+- [ADR-0035](adr/0035-human-disposition-for-contextual-verification.md) — binds caller-supplied
+  contextual dispositions to exact S12 constraints without relabeling them deterministic.
 
 ## JSON Schema contracts
 
@@ -193,6 +199,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
 - [Verification record](../schemas/verification-record.schema.json), [result](../schemas/verification-result.schema.json),
   [check](../schemas/verification-check.schema.json), and [diagnostic](../schemas/verification-diagnostic.schema.json)
   — validate the complete runtime evidence envelope used by the S13 completion gate.
+- [Review disposition](../schemas/review-disposition.schema.json) — validates revision-bound
+  contextual authority, evidence, residual risk, disposition, and expiry records.
 - [Resume result](../schemas/resume-result.schema.json) — validates the cross-session handoff
   projection emitted by `sah resume`.
 - [Iteration loop](../schemas/iteration-loop.schema.json), [outcome](../schemas/iteration-outcome.schema.json),
@@ -258,6 +266,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   mode preservation, source conflict detection, cleanup, and the rename commit point.
 - [Verification record runtime](../src/verification-record.ts) — owns design fingerprints,
   confined atomic publication, record loading, and deterministic S13 evidence checks.
+- [Review disposition runtime](../src/review-disposition.ts) — validates caller-supplied
+  contextual dispositions and resolves them against the exact verification context.
 - [Internal model view](../src/internal-model.ts) — gives strict private shapes to already
   schema-validated artifacts without becoming another serialized contract.
 - [Schema validation](../src/schema-validation.ts) — privately adapts Ajv Draft 2020-12 errors
@@ -280,6 +290,7 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   [TypeScript verification tests](../test/typescript-verification.test.ts),
   [CLI tests](../test/cli.test.ts), [schema contract tests](../test/schema-contracts.test.ts), and
   [skill contract tests](../test/skill-contracts.test.ts), [target-check evidence tests](../test/target-check-evidence.test.ts),
+  [review disposition tests](../test/review-disposition.test.ts),
   [bookmark HTTP smoke tests](../test/bookmark-http-smoke.test.ts), [sandbox CLI tests](../test/sandbox-cli.test.ts),
   [benchmark run tests](../test/benchmark-run.test.ts), [benchmark trajectory tests](../test/benchmark-trajectory.test.ts),
 and [iteration loop tests](../test/iteration-loop.test.ts)

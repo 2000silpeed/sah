@@ -18,6 +18,7 @@ import {
   resolve,
 } from "node:path";
 
+import { reviewDispositionCapability } from "./review-disposition.js";
 import {
   verificationRecordSchemaId,
   type SahDiagnostic,
@@ -649,7 +650,7 @@ export function validateS13VerificationRecord(input: {
       );
       continue;
     }
-    const eligible =
+    const deterministicEligible =
       check.code === "CONSTRAINT_PASSED" &&
       check.status === "pass" &&
       check.classification === "deterministic" &&
@@ -660,6 +661,20 @@ export function validateS13VerificationRecord(input: {
       sameMembers(check.sliceRefs, [...new Set(assignment.sliceRefs)]) &&
       check.blockerDecisionRefs === undefined &&
       check.expected === constraint.observable?.expected;
+    const dispositionEligible =
+      constraint.classification !== "deterministic" &&
+      check.code === "CONSTRAINT_DISPOSITION_ACCEPTED" &&
+      check.status === "pass" &&
+      check.classification === constraint.classification &&
+      check.decisionRef === constraint.decisionRef &&
+      check.capability === reviewDispositionCapability &&
+      sameMembers(check.scopeElementRefs, constraint.scopeElementRefs) &&
+      sameMembers(check.invariantRefs, constraint.invariantRefs) &&
+      sameMembers(check.sliceRefs, [...new Set(assignment.sliceRefs)]) &&
+      check.blockerDecisionRefs === undefined &&
+      check.expected === "accepted contextual disposition" &&
+      check.observed !== undefined;
+    const eligible = deterministicEligible || dispositionEligible;
     if (!eligible) {
       diagnostics.push(
         gateDiagnostic({
@@ -669,7 +684,7 @@ export function validateS13VerificationRecord(input: {
           reference: constraint.id,
           message: `Recorded check ${constraint.id} is not the passing check for its current S12 assignment and constraint contract.`,
           expected:
-            "one current deterministic CONSTRAINT_PASSED check with matching trace fields",
+            "one current deterministic CONSTRAINT_PASSED or accepted contextual CONSTRAINT_DISPOSITION_ACCEPTED check with matching trace fields",
           repair:
             "Resolve the check outcome or design drift and record a new full verification.",
         }),

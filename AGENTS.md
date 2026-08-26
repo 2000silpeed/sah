@@ -153,13 +153,17 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
+npm exec -- sah review-disposition /path/to/target/.sah/disposition.json --target-revision <revision> --design-fingerprint sha256:<64-lowercase-hex> --json
+npm exec -- sah verify /path/to/disposable-s12-bundle /path/to/target --disposition-record .sah/disposition.json --target-revision <revision> --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 ```
 
 The installed package exposes `sah validate`, mutating `sah advance`, and normally read-only
 `sah verify`; opt-in `verify --record <bundle-relative-record>` atomically publishes a result
-without changing lifecycle. S12→S13 `advance --verification-record <bundle-relative-record>`
-atomically pins eligible full evidence and the new stage. Run mutating forms only on the
+without changing lifecycle. `verify --disposition-record` consumes explicit, revision-bound
+contextual evidence without relabeling assisted/judgment constraints. S12→S13
+`advance --verification-record <bundle-relative-record>` atomically pins eligible full evidence
+and the new stage. Run mutating forms only on the
 intended working bundle or a disposable copy. Public library entry points remain
 `validateBundle`, `advanceBundle`, and `verifyBundle`; [validation CLI usage](docs/validation-cli.md)
 owns their result, transition, record, mapping, atomicity, and exit-code contracts.

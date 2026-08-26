@@ -37,6 +37,7 @@ const schemaFiles = [
   "verification-diagnostic.schema.json",
   "verification-record.schema.json",
   "verification-result.schema.json",
+  "review-disposition.schema.json",
   "resume-result.schema.json",
   "iteration-completion.schema.json",
   "iteration-scenario.schema.json",

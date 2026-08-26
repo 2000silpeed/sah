@@ -41,7 +41,7 @@ An installed package exposes:
 ```text
 sah validate <design-bundle-directory> [--json]
 sah advance <design-bundle-directory> <target-stage> [--verification-record <bundle-relative-record>] [--json]
-sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--check-record <target-relative-iteration-outcome>] [--target-revision <target-revision>] [--record <bundle-relative-record>] [--json]
+sah verify <design-bundle-directory> <target-directory> [--mapping <target-relative-mapping-file>] [--changed <target-relative-file>]... [--check-record <target-relative-iteration-outcome>] [--disposition-record <target-relative-review-disposition>] [--target-revision <target-revision>] [--record <bundle-relative-record>] [--json]
 sah loop <sah.loop.json> [--json]
 sah lineage <sah-root> [--json]
 sah current <sah-root> [--json]
@@ -51,6 +51,7 @@ sah loop-record <sah.loop.json> <iteration-outcome.json> [--json]
 sah loop-accept-next <sah.loop.json> --target-revision <target-revision> --design-fingerprint <sha256> [--repair] [--json]
 sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]
 sah checker-review <checker-review.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]
+sah review-disposition <review-disposition.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]
 ```
 
 From this source checkout, use the package binary without global installation:
@@ -67,6 +68,8 @@ npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --map
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --json
 npm exec -- sah verify fixtures/simple-crud fixtures/s13-typescript-target --mapping sah.source-map.json --changed src/equipment-operations/save-equipment.ts --json
 npm exec -- sah verify /path/to/s12-bundle /path/to/target --check-record .sah/iteration-001.outcome.json --target-revision git:abc123 --json
+npm exec -- sah review-disposition /path/to/target/.sah/disposition.json --target-revision git:abc123 --design-fingerprint sha256:<64-lowercase-hex> --json
+npm exec -- sah verify /path/to/s12-bundle /path/to/target --disposition-record .sah/disposition.json --target-revision git:abc123 --record verification-record.json --json
 npm exec -- sah verify /path/to/disposable-s12-bundle fixtures/s13-typescript-target --mapping sah.source-map.json --record verification-record.json --json
 npm exec -- sah advance /path/to/disposable-s12-bundle S13 --verification-record verification-record.json --json
 npm exec -- sah loop /path/to/target/.sah/sah.loop.json --json
@@ -103,9 +106,17 @@ high/medium finding may remain. The verdict is judgment evidence and remains sep
 deterministic architecture validation. When supplied, `--target-revision` and
 `--design-fingerprint` are explicit expected context and any mismatch is a non-passing result;
 SAH never discovers either value.
+`review-disposition` is read-only and validates one caller-produced contextual authority record.
+It checks shape, exact entry coverage, optional expected target context, and expiry; it does not
+authenticate the authority, inspect evidence adequacy, run a command, invoke a model, or mutate
+lifecycle. `verify --disposition-record` reads a target-relative record, requires an explicit
+`--target-revision`, binds it to the current target root/design fingerprint/S12 bundle and exact
+constraint traces, and emits accepted contextual risk as a pass with its original assisted or
+judgment classification. Rejected entries are violations; deferred, expired, stale, or incomplete
+entries are non-passing. See [Review Disposition Contract](review-disposition.md).
 Default output is human-readable. `--json` writes exactly one command-specific result (`ValidationResult`,
-`AdvanceResult`, `VerificationResult`, `LineageResult`, `IterationLoopResult`, `CheckerReviewResult`, or a
-schema-valid iteration outcome)
+`AdvanceResult`, `VerificationResult`, `LineageResult`, `IterationLoopResult`, `CheckerReviewResult`,
+`ReviewDispositionResult`, or a schema-valid iteration outcome)
 and no prose. Validation diagnostics preserve stable
 code, category, severity, artifact path, JSON Pointer, reference, message, expected condition,
 repair, and owning stage when applicable. Verification checks preserve constraint, decision,
@@ -180,16 +191,20 @@ references exact [result](../schemas/verification-result.schema.json),
 [diagnostic](../schemas/verification-diagnostic.schema.json) contracts. These are runtime
 evidence schemas, not semantic IR. The manifest pins one record path, schema ID, and SHA-256
 digest only when that record authorizes completed S13.
+The [review disposition schema](../schemas/review-disposition.schema.json) is v0.1.0. It is
+caller-produced contextual evidence and is not a semantic IR or an authenticated identity token.
 
 ## Continuous verification
 
 `verify` first validates the stored bundle at its declared lifecycle stage. S12 must be
 complete because Implementation Handoff supplies constraint-to-slice applicability. A
-constraint assigned only to blocked slices is `pending`; assisted and judgment constraints
-are also `pending`. A ready deterministic constraint runs only when its declared adapter
-capability is available. Missing adapters and unsupported bindings are `unsupported`, never
-pass. Any pending or unsupported check makes the overall result `incomplete`; a known
-violation takes precedence.
+constraint assigned only to blocked slices is `pending`. A ready deterministic constraint runs
+only when its declared adapter capability is available. An assisted or judgment constraint is
+`pending` without a matching disposition; an accepted, unexpired disposition emits a pass while
+retaining its original classification. Rejected entries are violations, and deferred, expired,
+stale, or unsupported bindings remain non-passing. Missing adapters and unsupported bindings are
+`unsupported`, never pass. Any pending or unsupported check makes the overall result `incomplete`;
+a known violation takes precedence.
 
 When changed paths are present, the mapping first resolves them to Architecture elements. SAH
 selects constraints assigned to S12 slices containing those elements; blocked-only affected
@@ -262,7 +277,8 @@ execute them.
 At S13, the record must be schema-valid, `scope=full`, `status=passed`, free of selection
 metadata and non-pass checks, internally summary-consistent, produced from this bundle at S12,
 and fingerprinted against the current semantic artifacts. Every constraint assigned by the
-current handoff must have exactly one matching deterministic passing check. A valid changed,
+current handoff must have exactly one matching deterministic passing check or accepted contextual
+disposition check. A valid changed,
 stale, violating, incomplete, or operational-error record is a gate defect: advancement is
 `blocked` and exit 1. Unsafe, missing, malformed, schema-invalid, digest-mismatched, or
 concurrently changed record input is operational and exit 2.
@@ -297,6 +313,7 @@ import {
   runIterationChecks,
   recordIterationOutcome,
   validateCheckerReview,
+  validateReviewDisposition,
   validateBundle,
   verifyBundle,
   resolveCurrentArchitecture,
@@ -338,6 +355,10 @@ const next = await recordIterationOutcome(
 const checker = await validateCheckerReview(
   ".sah/checker-review.json",
 );
+const disposition = await validateReviewDisposition(
+  ".sah/review-disposition.json",
+  { targetRevision: "git:abc123" },
+);
 ```
 
 Validation `status` is `passed`, `violations`, or `operational-error`. Advancement `status` is
@@ -365,9 +386,10 @@ mechanical diagnostics separately.
 
 The library applies all gates through `sah.bundle.json.lifecycle.completedStage`; callers
 cannot override stage/profile and create a different interpretation of the same checked-in
-bundle. `verifyBundle` executes only the two exact capabilities above. The optional
-`VerificationOptions` exposes `sourceMappingPath`, readonly `changedPaths`, and an opt-in
+bundle. `verifyBundle` executes the confined fact adapters plus the optional contextual
+disposition capability. The optional `VerificationOptions` exposes `sourceMappingPath`, readonly
+`changedPaths`, `checkRecordPath`, `dispositionRecordPath`, `targetRevision`, and an opt-in
 `verificationRecordPath`; `AdvanceOptions` exposes that path only as S13 evidence. Public
 declarations contain no Ajv, TypeScript compiler, filesystem, git, or CLI parser types. It does
-not run LLM review, infer ownership without configuration, compile general predicates, or
-accept non-full evidence as completed S13.
+not run LLM review, authenticate authority, infer ownership without configuration, compile general
+predicates, or accept non-full evidence as completed S13.

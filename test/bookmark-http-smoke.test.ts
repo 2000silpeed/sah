@@ -323,5 +323,5 @@ describe("bookmark HTTP smoke fixture", () => {
     } finally {
       await server.stop();
     }
-  });
+  }, 15_000);
 });

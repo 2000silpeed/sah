@@ -61,6 +61,7 @@ import {
   designFingerprint,
   type LoadedVerificationRecord,
 } from "./verification-record.js";
+import { loadReviewDisposition } from "./review-disposition.js";
 
 const manifestName = "sah.bundle.json";
 const legacyManifestSchemaId =
@@ -918,8 +919,40 @@ export async function verifyBundle(
   }
 
   if (
+    options.dispositionRecordPath !== undefined &&
+    options.targetRevision === undefined
+  ) {
+    return finishVerification(
+      prepared,
+      options,
+      verificationResult(
+        "operational-error",
+        prepared.bundleRoot,
+        targetDirectory.trim() === ""
+          ? targetDirectory
+          : resolve(targetDirectory),
+        [],
+        [
+          operationalDiagnostic({
+            code: "VERIFICATION_DISPOSITION_REVISION_REQUIRED",
+            capability: "Contextual review disposition evidence",
+            message:
+              "A target revision is required when contextual disposition evidence is supplied.",
+            expected:
+              "dispositionRecordPath and targetRevision supplied together",
+            repair:
+              "Pass --disposition-record with the corresponding --target-revision.",
+          }),
+        ],
+        validation.bundle,
+      ),
+    );
+  }
+
+  if (
     options.targetRevision !== undefined &&
-    options.checkRecordPath === undefined
+    options.checkRecordPath === undefined &&
+    options.dispositionRecordPath === undefined
   ) {
     return finishVerification(
       prepared,
@@ -936,10 +969,11 @@ export async function verifyBundle(
             code: "VERIFICATION_TARGET_REVISION_WITHOUT_CHECK_RECORD",
             capability: "Target-check evidence record",
             message:
-              "An explicit target revision is meaningful only when a target-check evidence record is supplied.",
-            expected: "checkRecordPath and targetRevision supplied together",
+              "An explicit target revision is meaningful only when target evidence is supplied.",
+            expected:
+              "checkRecordPath or dispositionRecordPath and targetRevision supplied together",
             repair:
-              "Pass --check-record with the corresponding --target-revision, or omit both options.",
+              "Pass target evidence with the corresponding --target-revision, or omit both options.",
           }),
         ],
         validation.bundle,
@@ -970,6 +1004,10 @@ export async function verifyBundle(
   }
 
   const models = toModels(prepared.artifacts);
+  const currentDesignFingerprint = designFingerprint(
+    prepared.manifest,
+    prepared.artifacts,
+  );
   const adapters: CodeFactAdapter[] = [target.adapter];
   if (options.checkRecordPath !== undefined) {
     const targetCheck = await prepareTargetCheckEvidenceAdapter({
@@ -999,6 +1037,40 @@ export async function verifyBundle(
       );
     }
     adapters.push(targetCheck.adapter);
+  }
+  let contextualDisposition;
+  if (options.dispositionRecordPath !== undefined) {
+    const disposition = await loadReviewDisposition({
+      targetRoot: target.targetRoot,
+      dispositionRecordPath: options.dispositionRecordPath,
+      registry: prepared.registry,
+    });
+    if (!disposition.ok) {
+      return finishVerification(
+        prepared,
+        options,
+        verificationResult(
+          "operational-error",
+          prepared.bundleRoot,
+          target.targetRoot,
+          [],
+          disposition.diagnostics,
+          validation.bundle,
+        ),
+      );
+    }
+    contextualDisposition = {
+      record: disposition.disposition.record,
+      context: {
+        targetRoot: target.targetRoot,
+        targetRevision: options.targetRevision ?? "",
+        designFingerprint: currentDesignFingerprint,
+        bundle: {
+          bundleId: prepared.manifest.bundleId,
+          completedStage: "S12" as const,
+        },
+      },
+    };
   }
   let selection: VerificationSelection | undefined;
   if (options.sourceMappingPath !== undefined) {
@@ -1038,6 +1110,7 @@ export async function verifyBundle(
     models,
     adapters,
     affectedElementRefs,
+    contextualDisposition,
   );
   const executionDiagnostics = execution.failures.map((failure) => {
     const constraintIndex =

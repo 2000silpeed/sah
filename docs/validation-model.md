@@ -61,10 +61,11 @@ has no complete observable specification.
 | Implementation dependency order                                  |     D | Slice references resolve with no self-dependency or cycle.                                                                 |
 | Implementation handoff adequacy                                  |     J | Judge slice cohesion, acceptance checks, migration, rollback, and executable usefulness.                                   |
 | Verification record integrity                                    |     D | Record schema, byte digest, bundle metadata, invocation scope, result summaries, and design fingerprint.                   |
+| Contextual review disposition integrity                          |     D | Caller-supplied authority, exact S12 constraint traces, target/revision/fingerprint context, evidence references, and expiry; semantic adequacy remains judgment. |
 | Checker review record integrity                                  |     D | Require revision/fingerprint context, independent read-only flags, exact check evidence, and a valid verdict shape.    |
 | Target-check execution evidence                                 |     D | Exact schema-valid loop check ID/status/exit/cwd/digests bound to caller-supplied target revision and design fingerprint; no command execution or adequacy judgment. |
 | Checker review adequacy                                           |     J | Judge residual risks, counter-evidence, and whether the independent review actually covers the Task scope.              |
-| S13 completion evidence                                          |     D | Full passed record with one current passing check per S12-assigned constraint; changed scope cannot qualify.               |
+| S13 completion evidence                                          |     D | Full passed record with one current deterministic pass or accepted, unexpired contextual disposition per S12-assigned constraint; changed scope cannot qualify. |
 | Source-to-element mapping syntax                                 |     D | Configured path/symbol selectors resolve uniquely or fail as unsupported.                                                  |
 | Source-to-element mapping inference                              |     A | Suggest mappings from paths/symbols/ownership; human confirms before hard checks.                                          |
 | Forbidden dependency/import direction                            |     D | Extracted source graph against an accepted allow/deny relation.                                                            |
@@ -99,6 +100,11 @@ may trigger a smell finding but cannot prove incohesion. Judgment checks cite th
 input bundle, model/version, confidence, and counter-evidence; low confidence escalates rather
 than silently accepting.
 
+A disposition record can carry an authorized human decision for an assisted or judgment constraint,
+but it cannot change that classification or prove the cited evidence is adequate. SAH checks only
+the record's structure, exact current references, target context, and expiry; the named authority
+and target owner remain responsible for the substance.
+
 ## Continuous enforcement loop
 
 1. On every IR change, run schema, reference, stage, trace, and decision-integrity checks.
@@ -109,7 +115,9 @@ than silently accepting.
    of bounds, repeated exceptions accumulate, or a decision's review trigger fires.
 5. When a Task requires a second pair of eyes, delegate a read-only independent Checker and
    validate its revision-bound record; keep its adequacy as judgment evidence.
-6. Route a code contradiction to implementation repair, a mapping gap to adapter backlog,
+6. When an authorized contextual decision is required, record a revision-bound disposition with
+   rationale, evidence, residual risks, and expiry; keep its adequacy as judgment evidence.
+7. Route a code contradiction to implementation repair, a mapping gap to adapter backlog,
    and changed design forces to the earliest S0–S10 stage.
 
 ## Executable structural slice
@@ -145,8 +153,9 @@ blocker coverage a deterministic predicate. The runtime supports exact targets S
 
 Run 7 executes the first S13 fact binding. It selects constraints through canonical S12 slice
 assignment and supports only a confined target-relative regular-file-presence predicate.
-Blocked-only and contextual constraints remain pending; unavailable capabilities and unsafe
-bindings are unsupported; target access failures are operational. The exact capability is
+Blocked-only constraints remain pending; contextual constraints remain pending unless an exact,
+unexpired disposition is supplied. Unavailable capabilities and unsafe bindings are unsupported;
+target access failures are operational. The exact capability is
 owned by [Validation CLI usage](validation-cli.md), while ADR-0010 owns its scope decision.
 A structurally valid deterministic observable still is not a claim that target code passes it.
 
@@ -188,6 +197,15 @@ adapter never executes the recorded command and cannot judge test adequacy. Stal
 duplicate, or incomplete evidence remains unsupported; malformed or unsafe input is operational.
 ADR-0027 owns this boundary.
 
+Run 37 adds one bounded contextual evidence capability. A target-relative schema-valid
+`review-disposition/v0.1.0` can satisfy an assisted or judgment constraint only when its exact
+target root, caller-supplied revision, current design fingerprint, S12 bundle ID, decision,
+scope, invariant, and slice traces, authority fields, evidence, residual risks, and expiry match.
+An accepted unexpired entry emits `CONSTRAINT_DISPOSITION_ACCEPTED` with its original
+classification; rejected entries violate, deferred/expired entries remain pending, and stale or
+mis-scoped records are unsupported. SAH does not authenticate the authority, inspect evidence
+adequacy, execute a command, or invoke a model. ADR-0035 owns this boundary.
+
 Each result reports capability, classification, applicable decision, scope, observed facts,
 expected proposition, status (`pass`, `violation`, `finding`, `pending`, `unsupported`, or
 `error`), and remediation/exception path. Runs 7–10 formalize the deterministic subset as public
@@ -198,7 +216,8 @@ remain diagnostics rather than fabricated checks.
 
 An exception names the violated constraint, authority, rationale, compensating check, issue,
 and expiry. Expiry is mandatory unless the decision itself is superseded. An exception never
-changes the underlying result to pass; reports show accepted risk separately. Repeated or
+changes a deterministic underlying result to pass; disposition-backed S13 evidence reports
+accepted contextual risk separately. Repeated or
 renewed exceptions trigger S10 review because they are evidence that the decision or mapping
 may be wrong.
 

@@ -820,6 +820,7 @@ export type VerificationOptions = {
   sourceMappingPath?: string;
   changedPaths?: readonly string[];
   checkRecordPath?: string;
+  dispositionRecordPath?: string;
   targetRevision?: string;
   verificationRecordPath?: string;
 };
@@ -837,4 +838,65 @@ export type VerificationRecord = {
     changedPaths?: string[];
   };
   result: VerificationResult & { bundle: ValidatedBundle };
+};
+
+export const reviewDispositionSchemaId =
+  "https://sah.dev/schemas/review-disposition/v0.1.0" as const;
+
+export type ReviewDisposition = {
+  $schema: typeof reviewDispositionSchemaId;
+  dispositionVersion: "0.1.0";
+  dispositionId: string;
+  target: {
+    targetRoot: string;
+    targetRevision: string;
+    designFingerprint: string;
+  };
+  scope: {
+    bundleId: string;
+    completedStage: "S12";
+    constraintIds: string[];
+  };
+  authority: {
+    id: string;
+    role: string;
+    scope: string;
+  };
+  recordedBy: {
+    id: string;
+    role: string;
+  };
+  entries: Array<{
+    constraintId: string;
+    decisionRef: string;
+    classification: "assisted" | "judgment";
+    capability: string;
+    scopeElementRefs: string[];
+    invariantRefs: string[];
+    sliceRefs: string[];
+    disposition: "accepted" | "rejected" | "deferred";
+    rationale: string;
+    evidenceRefs: string[];
+    residualRisks: string[];
+    expiresAt: string;
+  }>;
+  reviewedAt: string;
+};
+
+export type ReviewDispositionStatus =
+  "passed" | "violations" | "incomplete" | "operational-error";
+
+export type ReviewDispositionResult = {
+  status: ReviewDispositionStatus;
+  dispositionPath: string;
+  dispositionId?: string;
+  diagnostics: SahDiagnostic[];
+  summary: ValidationSummary;
+};
+
+export type ReviewDispositionValidationOptions = {
+  targetRoot?: string;
+  targetRevision?: string;
+  designFingerprint?: string;
+  bundleId?: string;
 };

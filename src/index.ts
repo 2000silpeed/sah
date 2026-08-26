@@ -18,6 +18,10 @@ export type {
   VerificationCheckStatus,
   VerificationOptions,
   VerificationRecord,
+  ReviewDisposition,
+  ReviewDispositionResult,
+  ReviewDispositionStatus,
+  ReviewDispositionValidationOptions,
   VerificationResult,
   VerificationSelection,
   VerificationSelectionIssue,
@@ -106,6 +110,7 @@ export {
   iterationScenarioSchemaId,
   iterationSliceSchemaId,
   lineageResultSchemaId,
+  reviewDispositionSchemaId,
   verificationRecordSchemaId,
 } from "./contracts.js";
 export { checkerReviewSchemaId } from "./contracts.js";
@@ -124,6 +129,7 @@ export {
   completeIterationLoop,
 } from "./iteration-loop.js";
 export { validateCheckerReview } from "./checker-review.js";
+export { validateReviewDisposition } from "./review-disposition.js";
 export { resolveArchitectureLineage } from "./architecture-lineage.js";
 export { resolveCurrentArchitecture } from "./current-architecture.js";
 export { prepareBenchmarkRun } from "./benchmark-run.js";

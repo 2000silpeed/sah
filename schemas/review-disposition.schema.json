@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sah.dev/schemas/review-disposition/v0.1.0",
+  "title": "SAH Contextual Review Disposition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "dispositionVersion",
+    "dispositionId",
+    "target",
+    "scope",
+    "authority",
+    "recordedBy",
+    "entries",
+    "reviewedAt"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://sah.dev/schemas/review-disposition/v0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "SAH verification adapter"]
+      }
+    },
+    "dispositionVersion": {
+      "const": "0.1.0",
+      "x-sah-trace": {
+        "writtenBy": ["SAH disposition contract"],
+        "readBy": ["SAH disposition validator", "SAH verification adapter"]
+      }
+    },
+    "dispositionId": {
+      "type": "string",
+      "minLength": 1,
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "target owner"]
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetRoot", "targetRevision", "designFingerprint"],
+      "properties": {
+        "targetRoot": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        },
+        "targetRevision": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        },
+        "designFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "x-sah-trace": {
+            "writtenBy": ["SAH disposition author"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "SAH verification adapter"]
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundleId", "completedStage", "constraintIds"],
+      "properties": {
+        "bundleId": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        },
+        "completedStage": {
+          "const": "S12",
+          "x-sah-trace": {
+            "writtenBy": ["S12 bundle context"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        },
+        "constraintIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 },
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "SAH verification adapter"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "SAH verification adapter"]
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "scope"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "target owner"]
+          }
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "target owner"]
+          }
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition author"],
+            "readBy": ["SAH disposition validator", "target owner"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "target owner"]
+      }
+    },
+    "recordedBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition recorder"],
+            "readBy": ["SAH disposition validator", "target owner"]
+          }
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "x-sah-trace": {
+            "writtenBy": ["disposition recorder"],
+            "readBy": ["SAH disposition validator", "target owner"]
+          }
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["disposition recorder"],
+        "readBy": ["SAH disposition validator", "target owner"]
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "constraintId",
+          "decisionRef",
+          "classification",
+          "capability",
+          "scopeElementRefs",
+          "invariantRefs",
+          "sliceRefs",
+          "disposition",
+          "rationale",
+          "evidenceRefs",
+          "residualRisks",
+          "expiresAt"
+        ],
+        "properties": {
+          "constraintId": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["disposition author"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "decisionRef": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["disposition author"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "classification": {
+            "enum": ["assisted", "judgment"],
+            "x-sah-trace": {
+              "writtenBy": ["S11 constraint classification"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "capability": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["S11 constraint enforcement"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "scopeElementRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["S11 constraint scope"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "invariantRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["S11 constraint scope"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "sliceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["S12 implementation handoff"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter"
+              ]
+            }
+          },
+          "disposition": {
+            "enum": ["accepted", "rejected", "deferred"],
+            "x-sah-trace": {
+              "writtenBy": ["named authority"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter",
+                "S13 gate"
+              ]
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "x-sah-trace": {
+              "writtenBy": ["named authority"],
+              "readBy": ["target owner", "SAH disposition validator"]
+            }
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["named authority"],
+              "readBy": ["target owner", "SAH disposition validator"]
+            }
+          },
+          "residualRisks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "x-sah-trace": {
+              "writtenBy": ["named authority"],
+              "readBy": ["target owner", "SAH disposition validator"]
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "x-sah-trace": {
+              "writtenBy": ["named authority"],
+              "readBy": [
+                "SAH disposition validator",
+                "SAH verification adapter",
+                "S13 gate"
+              ]
+            }
+          }
+        },
+        "x-sah-trace": {
+          "writtenBy": ["disposition author"],
+          "readBy": ["SAH disposition validator", "SAH verification adapter"]
+        }
+      },
+      "x-sah-trace": {
+        "writtenBy": ["disposition author"],
+        "readBy": ["SAH disposition validator", "SAH verification adapter"]
+      }
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-sah-trace": {
+        "writtenBy": ["named authority"],
+        "readBy": ["SAH disposition validator", "target owner"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://sah.dev/schemas/review-disposition/v0.1.0",
+      "dispositionVersion": "0.1.0",
+      "dispositionId": "fixture-contextual-approval",
+      "target": {
+        "targetRoot": "/workspace/target",
+        "targetRevision": "git:fixture-revision",
+        "designFingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "scope": {
+        "bundleId": "fixture-bundle",
+        "completedStage": "S12",
+        "constraintIds": ["fixture-contextual-constraint"]
+      },
+      "authority": {
+        "id": "fixture-owner",
+        "role": "product owner",
+        "scope": "fixture contextual risk"
+      },
+      "recordedBy": {
+        "id": "fixture-recorder",
+        "role": "coding agent"
+      },
+      "entries": [
+        {
+          "constraintId": "fixture-contextual-constraint",
+          "decisionRef": "fixture-decision",
+          "classification": "judgment",
+          "capability": "human-review",
+          "scopeElementRefs": ["fixture-element"],
+          "invariantRefs": ["fixture-invariant"],
+          "sliceRefs": ["fixture-slice"],
+          "disposition": "accepted",
+          "rationale": "The bounded residual risk is accepted for this revision.",
+          "evidenceRefs": ["artifact://fixture/review"],
+          "residualRisks": [
+            "Production integration remains a separate review."
+          ],
+          "expiresAt": "2026-12-31T00:00:00Z"
+        }
+      ],
+      "reviewedAt": "2026-08-26T00:00:00Z"
+    }
+  ]
+}

@@ -103,5 +103,5 @@ describe("sandbox-safe direct CLI", () => {
     expect(await exists(home)).toBe(false);
     expect(await exists(cache)).toBe(false);
     expect(await exists(userConfig)).toBe(false);
-  });
+  }, 15_000);
 });

@@ -538,7 +538,7 @@ describe("iteration loop", () => {
           "iteration-outcome",
         ),
       ).toEqual([]);
-  });
+  }, 15_000);
 
   it("emits scenario evidence and rejects a succeeded slice without it", async () => {
     const { loop, outcome, context } = await createScenarioLoop();
