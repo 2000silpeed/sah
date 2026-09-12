@@ -124,6 +124,10 @@ scope elements, invariants, slices, capability, status, expected/observed facts,
 repair. Malformed JSON also reports a one-based source line and column when the runtime
 supplies an error offset.
 
+Every command also accepts `--json=compact`: the same complete JSON without indentation, followed
+by one newline. It preserves strings, diagnostics, schemas, exit codes, and stored evidence bytes.
+Use it for agent context; `--json` retains its existing formatting. The modes are mutually exclusive.
+
 `--changed` is repeatable and requires `--mapping`. It accepts normalized target-relative file
 paths and does not require a path to still exist, so deleted files remain selectable. SAH does
 not inspect git state. Unsafe input, an empty library change set, or missing mapping is an

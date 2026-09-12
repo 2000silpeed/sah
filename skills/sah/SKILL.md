@@ -5,232 +5,116 @@ description: Use Software Architect Harness to turn a natural-language software 
 
 # Software Architect Harness
 
-Use the host coding agent as the conversational reasoner and implementer. Use SAH's canonical
-JSON bundle and CLI as the durable evidence and deterministic gate. The goal is working software
-whose important structural choices remain explainable and checkable—not an architecture report
-that stops before code.
+Use the host agent to reason and implement; use canonical JSON and the local CLI for durable
+architecture evidence and deterministic gates. Deliver working, verified software. Do not stop after producing suggestions or JSON when authorized implementation remains.
 
-For repeated product work, use the separate schema-validated iteration loop: `sah loop` routes a
-declared task to `fast`, `reasoning`, or `blocked`; `sah loop-bind` records the caller-supplied
-target revision and design-bundle fingerprint; `sah loop-checks --cwd <target>
---target-revision <revision> --design-fingerprint <sha256>` executes its declared checks with the
-same explicit context; `sah loop-record` atomically records an outcome;
-and `sah loop-accept-next` explicitly creates the next planned task with its new context (`--repair`
-is required from a blocked iteration). For agile product work, declare user-observable
-`direction.scenarios` and select them in a task `slice` with explicit acceptance check IDs;
-`sah loop-checks` emits their structured evidence and `sah loop-record` gates a succeeded slice on
-passing exit-zero acceptance checks. `sah loop-complete` additionally requires exact scenario
-coverage when scenarios are declared. The loop selects work and gates evidence; S0–S13 remains
-the authority for material architecture decisions and S13 completion.
+## Establish authority and runtime
+
+Obey the target's instructions, inspect Git state, and preserve existing work. Distinguish the
+**target checkout** (product code and design artifacts) from the **SAH checkout** (this runtime).
+Resolve the skill directory through any host symlink. If its physical path ends in `skills/sah`,
+the SAH checkout is two parents above it. Confirm `package.json` names
+`software-architect-harness` and `schemas/` exists; do not use
+`command -v sah` as an installation test. For a detached copy, obtain the checkout path before
+claiming validation. Run commands from that checkout with absolute target/bundle paths. Build
+with `npm run build` when needed; install with `npm install` only within existing authorization.
+Never download software or call a paid model without authorization.
+
+The SAH checkout's `AGENTS.md`, schemas, and linked authority override this condensed guide.
+JSON is canonical; Markdown, diagrams, and CLI projections are views. Preserve source prompts
+verbatim. Do not infer accepted facts from prose, file dates, names, or conversation memory.
+
+## Select the route before loading references
+
+Read only the current task's authority and the references needed for its route. Reuse inspected
+context until its source changes. Keep IDs, paths, fingerprints, unresolved questions, and check
+results in the handoff; retrieve details when required. Do not load all history or a whole
+schema/guide directory speculatively. Use `--json=compact` for machine results when the installed
+CLI supports it; it preserves every field and diagnostic. Existing `--json` remains available.
+
+| Route | Required context and action |
+| --- | --- |
+| Reversible local change with no invariant, owner/boundary, migration, security/privacy, or external-consistency change | Use the fast feedback loop below; no new design bundle solely for ceremony. |
+| New system or changed architectural premise; repeated fast-loop failure | Read [elicitation and method selection](references/elicitation-and-method-selection.md); reason in the order below. |
+| Create or change a design bundle | First read [artifacts and lifecycle](references/artifacts-and-lifecycle.md); use stable IDs and normal lifecycle gates. |
+| Any product code change or completion claim | First read [implementation and verification](references/implementation-and-verification.md); its S12 precondition applies to full-path work. |
+| Task contract requires independent review | Read [Checker review](references/checker-review.md), delegate a read-only independent Checker, and validate its revision-bound record. |
+| Review-only request | Inspect and report; mutate code or lifecycle only when requested. |
+
+An existing loop's `sah loop` route and accepted target authority take precedence over an inferred
+fast path. A proposed decision blocks its dependent slice. The short architecture profile is
+available only when its recorded evidence meets every short-path condition.
+
+## Existing-target current-state preflight
+
+If the target has an explicit `.sah` root, run `sah current <sah-root> --json` before authoring a
+new design. Inspect heads, active/superseded decisions, exact open triggers, pending judgments,
+and conflicts. Run `sah resume <selected-head-bundle> --json` only after the current result is
+ready and head authority is explicit. The skill never selects a head by date, filename, Git
+order, or model preference. `ready` means a conflict-free projection, not passed target evidence.
+An applicable trigger, stale parent, missing history, or conflicting head reopens reasoning;
+create a new evolution snapshot instead of rewriting its parent.
+
+## Fast feedback loop
+
+Inspect → smallest coherent change → target formatter/linter → typecheck → relevant tests/build
+→ review the diff. Repair failures, or reopen reasoning if they expose an invalid premise.
+Preserve accepted decisions and exact commands/results. A target-check failure blocks completion
+but is not automatically an architecture violation. Successful fast-path work is not an S13 claim.
+
+## Full reasoning and implementation
+
+Ask one or two questions at a time, only for consequential facts unavailable from local evidence.
+Use each answer to choose the next question. Record unknowns with consequence and resolution
+owner; label delegated reversible choices as assumptions with confidence and reversal evidence.
+The host model has no independent risk authority. Block only dependent work behind an owned seam;
+continue other authorized work. Never choose a consequential unresolved decision silently.
+
+Follow this order: scope/evidence → characterization and measurable quality scenarios → fitting
+strategy and simpler alternative → responsibilities/invariants → ownership/collaboration →
+boundaries/contracts → representation → architecture candidates and costs → accepted decisions,
+observable constraints, and dependency-ordered slices → implementation and verification.
+An imposed technology is a hard constraint, not permission to skip ownership reasoning.
+
+For a new bundle use `.sah/design/` unless the target specifies another location. Update the
+earliest invalid premise and mark dependent artifacts stale. Validate an existing bundle and
+resume at its earliest invalid or incomplete stage. Keep consequential choices proposed until
+accepted by the authorized decision owner. Never hand-edit lifecycle to simulate advancement.
+
+A full-path implementation requires valid S12 evidence. Read the selected architecture, accepted
+decisions, constraints, and handoff directly from JSON; implement ready slices in dependency
+order. Use explicit changed paths for early feedback. Final S13 needs a fresh full verification
+record and atomic `S12 -> S13` advance; changed or `full-fallback` evidence is insufficient.
+Run target checks as well as SAH checks. Missing adapter coverage stays `unsupported`/`incomplete`;
+assisted findings and judgment never become deterministic architectural truth.
+
+## Iteration evidence
+
+When a schema-valid loop exists, `sah loop` routes work to `fast`, `reasoning`, or `blocked`.
+Bind explicit revision/fingerprint using `loop-bind`, execute declared checks with `loop-checks
+--cwd <target> --target-revision <revision> --design-fingerprint <sha256>`, then `loop-record`
+the outcome. `loop-accept-next` creates only the declared next task with its new context;
+`--repair` is required from a blocked iteration. Never infer the revision from Git.
+
+For scenario-centered work, declare user-observable `direction.scenarios`, choose the task
+`slice`, and name acceptance check IDs. `loop-checks` emits structured slice evidence;
+`loop-record` requires passing exit-zero acceptance checks. `loop-complete` requires exact
+scenario coverage when declared. The loop selects work; the bundle retains S0–S13 authority.
 
 ## Optional bounded continuous mode
 
-The default is still interactive: after a successful iteration, the host agent may present the
-declared next task before calling `loop-accept-next`. If the user explicitly requests “continuous
-mode” (or equivalent) they must also give a positive `maxIterations` bound, for example:
+Require the user's explicit request and a positive `maxIterations` bound. Repeat only ready,
+declared tasks through implementation, checks, recording, and accepting executable learning.
+It does not invent a next task or product direction. Stop at the bound, reasoning/blocked route,
+failed/partial/incomplete/operational evidence, stale context, missing next-task checks, required
+Checker/stakeholder decision, or user acceptance/S13 gate. Do not auto-repair a blocked iteration
+or call `loop-complete` automatically. Keep a resumable handoff. The default remains interactive;
+existing CLI/library commands, result schemas, and exit codes are unchanged by this mode.
 
-```text
-Use $sah in bounded continuous mode for at most 8 iterations. Continue ready implementation
-slices and their checks automatically; pause only at an owned SAH gate and leave a resumable
-handoff.
-```
+## Completion and handoff
 
-In this mode the host agent repeats the ordinary sequence—inspect canonical authority, implement
-only ready work, run target checks, run `sah loop-checks`, record the schema-valid outcome, and
-atomically accept the latest declared executable learning. It does not invent a next task or
-product direction. Stop and report when the bound is reached, the route is `reasoning` or
-`blocked`, evidence is failed/partial/incomplete/operational, the next task is missing checks,
-context is stale, a Checker or stakeholder decision is required, or user acceptance/S13 remains.
-Do not auto-repair a blocked iteration, call `loop-complete`, or bypass a lifecycle gate. The
-existing CLI/library commands, result schemas, and exit codes are unchanged; an interruption is
-safe because each canonical transition is already atomic.
-
-## Required references
-
-Read these files from this skill package at the point named below:
-
-- Read [elicitation-and-method-selection.md](references/elicitation-and-method-selection.md)
-  before asking design questions or selecting a strategy.
-- Read [artifacts-and-lifecycle.md](references/artifacts-and-lifecycle.md) before creating or
-  changing a design bundle.
-- Read [implementation-and-verification.md](references/implementation-and-verification.md)
-  before changing product code or claiming completion.
-- Read [checker-review.md](references/checker-review.md) when the Task contract or risk route
-  requires an independent Checker review before handoff.
-
-Do not load unrelated repository documents speculatively. When the SAH source checkout is
-available, treat its `AGENTS.md`, schemas, and linked authority documents as canonical over these
-condensed operating instructions.
-
-## Outcome contract
-
-Unless the user explicitly narrows the task, continue through this whole loop:
-
-1. inspect the target repository and supplied requirements;
-2. ask adaptive questions until consequential uncertainty is resolved or honestly recorded;
-3. characterize each problem region and select the least elaborate fitting design strategy;
-4. discover responsibilities, invariants, ownership, boundaries, and contracts before choosing
-   implementation forms;
-5. compare credible architecture candidates and record consequential decisions;
-6. produce a dependency-ordered implementation handoff;
-7. implement every ready in-scope slice and run its acceptance checks, including the target's
-   formatter/linter when the repository defines one;
-8. verify observable architecture constraints and report deterministic, assisted, and judgment
-   results separately;
-9. when required by the Task, delegate a read-only independent Checker, validate its
-   revision-bound record, and report its judgment separately;
-10. advance lifecycle only through supported public gates and only when their evidence qualifies.
-
-Do not stop after producing suggestions or JSON when safe, authorized implementation work remains.
-Do not implement a slice whose consequential decision is unresolved.
-
-## Establish the two repositories
-
-Distinguish:
-
-- **target checkout** — the user's software and the place where code and its design bundle live;
-- **SAH checkout** — this skill's source repository, containing `package.json`, `schemas/`, and the
-  built `sah` CLI.
-
-First obey the target checkout's `AGENTS.md` or equivalent instructions and inspect its Git state.
-Resolve the skill directory through any host symlink before inferring paths. When that physical
-directory ends in `skills/sah`, the SAH checkout is exactly two parents above it. Confirm the
-checkout by reading package name `software-architect-harness` and checking `schemas/`; do not use
-`command -v sah` as the installation test because the CLI is intentionally non-global. If the skill
-was copied without the runtime, ask for the SAH checkout path before claiming deterministic
-validation. Never download software or invoke a paid model without authorization.
-
-Run CLI commands with the SAH checkout as the working directory and pass absolute target/bundle
-paths. Install/build the runtime there when needed:
-
-```text
-npm install
-npm run build
-```
-
-## Choose a proportionate route
-
-- **New or materially changed system:** run the full outcome contract. Use the short profile only
-  when the recorded evidence meets every short-path condition.
-- **Existing SAH bundle:** validate it, read its completed stage and unresolved items, then resume
-  at the earliest invalid or incomplete premise.
-- **Implementation-only follow-up:** if accepted S12 evidence remains current, implement its ready
-  slices and continue at S13. Reopen reasoning if code work exposes a changed force or missing rule.
-- **Review-only request:** inspect and report against the relevant evidence; do not mutate code or
-  lifecycle unless the user also requests changes.
-
-A stakeholder-imposed technology is a hard constraint, not permission to skip responsibility and
-ownership analysis.
-
-### Existing-target current-state preflight
-
-When an existing target has an explicit `.sah` root, run the read-only current projection before
-authoring a new design:
-
-1. locate the explicit SAH root and run `sah current <sah-root> --json`;
-2. inspect heads, active/superseded decisions, exact open triggers, pending judgments, and
-   conflicts;
-3. use `sah resume` for the selected head bundle only after the current result is ready;
-4. route an applicable open trigger, conflicting head, stale parent, or missing history to the
-   reasoning/authority path and create a new evolution snapshot rather than editing a parent.
-
-The current result is a derived view, not a semantic authority. The skill never selects a head by
-date, filename, Git order, or model/provider preference. `ready` does not mean judgment or target
-evidence has passed; it only means the projection is deterministic and conflict-free.
-
-## Run progressive elicitation
-
-Inspect before asking. Mine requirements, source, tests, configs, ADRs, issue text, and operational
-evidence for answers already present. Then follow the question loop in the elicitation reference.
-
-Ask one or two questions at a time, prioritized by decision impact, uncertainty, and inability to
-observe the answer locally. Explain briefly what decision the answer affects. Use each response to
-choose the next question; do not dump a generic questionnaire. For a missing user scenario or
-acceptance boundary, ask before inventing an outcome.
-
-Continue asking while a missing answer could change scope, a critical invariant, consistency,
-authority, security/privacy, failure recovery, a hard constraint, or an expensive architecture
-choice. Stop asking when the next decision has sufficient evidence and proceed automatically.
-
-If the user does not know, preserve an unresolved question with its consequence and resolution
-owner. If the user delegates the choice, record an explicit assumption, confidence, and reversal
-evidence. Never present an inferred preference as stakeholder evidence. A material unresolved item
-blocks only the dependent implementation slice when an owned seam can isolate it; otherwise stop
-before implementation and ask for authority.
-
-## Reason before naming implementation forms
-
-Apply this order to every materially different problem region:
-
-1. scope and evidence;
-2. characterization and quality scenarios;
-3. strategy and simpler alternative;
-4. responsibilities and invariants;
-5. ownership and collaboration;
-6. boundaries and contracts;
-7. representation;
-8. architecture candidates and measured trade-offs;
-9. accepted decisions, observable constraints, and implementation slices;
-10. implementation and continuous verification.
-
-Do not begin with layers, services, classes, functions, events, agents, stores, or queues. Choose
-them only after the preceding evidence identifies what they protect. Keep decisions proposed until
-an authorized person accepts them; the host model has no independent risk authority.
-
-## Maintain evidence while working
-
-Default a new target bundle to `.sah/design/` unless target instructions choose another location.
-Preserve user-supplied provenance verbatim. Use stable kebab-case IDs and references rather than
-copying claims between artifacts. Treat JSON as canonical; Markdown, diagrams, and conversation
-summaries are views.
-
-After each meaningful answer or discovery:
-
-- update the earliest affected artifact;
-- identify downstream artifacts that are now stale;
-- validate as soon as a complete bundle checkpoint exists;
-- summarize what became known, what remains assumed, and what decision comes next.
-
-Follow the lifecycle reference exactly. In particular, never edit an existing manifest's completed
-stage to simulate advancement, never skip a stage, and never treat a schema-valid file as proof that
-contextual architecture judgment passed.
-
-## Implement and verify
-
-Before code edits, read the implementation reference and require a valid S12 handoff for full-path
-work. Implement dependency-ordered ready slices using the target repository's normal workflow.
-Keep scope tied to accepted decisions, but allow evidence from implementation to reopen an earlier
-stage.
-
-Run the target's formatter/linter, typechecker, tests, and build throughout the implementation
-loop. Bind each iteration to the target revision and design fingerprint, then use
-`sah loop-checks --cwd <target> --target-revision <revision> --design-fingerprint <sha256>` when
-the current loop declares these commands; it records the exact command, working directory,
-timestamps, exit code, output digests, and any declared slice evidence. A required
-non-zero lint result blocks the iteration's done contract, but is not automatically an SAH
-architecture violation. Use changed-scoped SAH
-verification only for fast feedback. Final S13 eligibility requires a new full verification record and an atomic
-`S12 -> S13` advance. `incomplete`, `violations`, `operational-error`, changed scope, and
-`full-fallback` selected from a changed request never satisfy completion.
-
-When a deterministic constraint is explicitly bound to a loop check, pass the schema-valid outcome
-to `sah verify` with `--check-record <target-relative-outcome>` and the same explicit
-`--target-revision`. The target-check adapter is read-only and never executes the recorded command;
-stale or unsupported evidence remains `incomplete`, and test adequacy remains a judgment.
-
-When the available adapter cannot observe a claim, report `unsupported`/`incomplete`; do not call
-it pass. The software may still be implemented and tested, but S13 remains incomplete until the
-declared review or adapter coverage exists.
-
-## Communicate progress and completion
-
-Keep the user in the conversation during long work. At decision points, state the evidence,
-assumption, selected option, real costs, and reversal trigger in plain language. At completion,
-lead with the working outcome and include:
-
-- implemented behavior and affected boundaries;
-- questions answered, assumptions retained, and decisions still proposed;
-- target tests and SAH checks actually run;
-- deterministic violations, assisted findings, judgment items, and unsupported coverage;
-- lifecycle stage reached and why it did or did not qualify;
-- commits or external actions performed, without claiming any unrun check.
+Report implemented behavior, remaining assumptions/decisions, actual checks, and commits/external
+actions. Separate target test results, deterministic checks, assisted dispositions, judgment,
+and unsupported coverage. State the lifecycle stage and evidence scope reached; do not claim an
+unrun check or that a projection proves implementation quality. Keep progress concise and retain
+locators for the evidence the next session needs.

@@ -196,6 +196,57 @@ describe("architecture lineage resolver", () => {
     );
   });
 
+  it("reports one canonical directed path for a multi-bundle cycle", async () => {
+    const root = await copyBookmarkLineage();
+    const cycle = ["cycle-a", "cycle-b", "cycle-c"];
+    for (const bundleId of cycle) {
+      const directory = join(root, bundleId);
+      await cp(join(root, "shared-operations"), directory, { recursive: true });
+      await mutateJson<{ bundleId: string }>(
+        directory,
+        "sah.bundle.json",
+        (manifest) => {
+          manifest.bundleId = bundleId;
+        },
+      );
+      await mutateJson<{
+        currentBundleId: string;
+        evolutionId: string;
+        parents: Array<{ bundleId: string }>;
+      }>(directory, "architecture-evolution.json", (evolution) => {
+        evolution.currentBundleId = bundleId;
+        evolution.evolutionId = `${bundleId}-evolution`;
+        const parent = evolution.parents[0];
+        if (parent !== undefined) {
+          parent.bundleId =
+            bundleId === "cycle-a"
+              ? "cycle-c"
+              : bundleId === "cycle-b"
+                ? "cycle-a"
+                : "cycle-b";
+        }
+      });
+    }
+
+    const result = await resolveArchitectureLineage(root);
+    const diagnostics = result.diagnostics.filter(
+      ({ code }) => code === "LINEAGE_CYCLE",
+    );
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]?.reference).toBe(
+      "cycle-a -> cycle-b -> cycle-c -> cycle-a",
+    );
+    const hops = diagnostics[0]?.reference?.split(" -> ") ?? [];
+    for (let index = 0; index < hops.length - 1; index += 1) {
+      expect(result.edges).toContainEqual({
+        fromBundleId: hops[index],
+        toBundleId: hops[index + 1],
+        relationship: "derives-from",
+      });
+    }
+  });
+
   it("reports parallel heads with a shared ancestor", async () => {
     const root = await copyBookmarkLineage();
     const alternate = join(root, "alternate-operations");

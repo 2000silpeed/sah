@@ -107,7 +107,8 @@ describe("portable SAH Agent Skill", () => {
     contents.forEach((content, index_) => {
       expect(content, skillFiles[index_]).not.toMatch(/TODO|placeholder/u);
     });
-    expect(contents[0]?.split("\n").length).toBeLessThanOrEqual(500);
+    expect(contents[0]?.split("\n").length).toBeLessThanOrEqual(150);
+    expect(Buffer.byteLength(contents[0] ?? "")).toBeLessThanOrEqual(9000);
     contents.slice(2).forEach((content, index_) => {
       expect(
         content.split("\n").length,
@@ -137,5 +138,23 @@ describe("portable SAH Agent Skill", () => {
       expect(landingPage).toContain(".sah/design");
       expect(landingPage).not.toContain("~/.codex/skills");
     }
+  });
+
+  it("keeps route-specific context and current planning ahead of archived history", async () => {
+    const skill = await readSkillFile("SKILL.md");
+    const plan = await readFile(
+      join(repositoryRoot, ".agent", "PLANS.md"),
+      "utf8",
+    );
+    expect(skill).toContain("Select the route before loading references");
+    expect(skill).toContain("no new design bundle solely for ceremony");
+    expect(skill).toContain("A proposed decision blocks its dependent slice");
+    expect(skill).toContain("--json=compact");
+    expect(plan.split("\n").length).toBeLessThanOrEqual(80);
+    expect(plan).toMatch(/Start with \[Run \d+\]\(plans\/run-\d+\.md\)/u);
+    expect(plan.indexOf("Start with")).toBeLessThan(
+      plan.indexOf("Completed history"),
+    );
+    expect(plan).toContain("plans/run-15-20.md");
   });
 });

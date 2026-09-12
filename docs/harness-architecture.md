@@ -51,6 +51,11 @@ results into stable SAH diagnostics before reference and stage validators run. T
 validate` adapter only parses invocation, selects human or JSON presentation, and maps result
 status to exit 0, 1, or 2. [Validation CLI usage](validation-cli.md) owns the public contract.
 
+The schema adapter keeps one compiled registry for identical installed schema contents. Every
+load still reads all source bytes; changes recompile, and missing or invalid sources fail closed.
+Returned schema documents are detached copies. This reuses predicates, never bundle results,
+and preserves the independent current-state snapshot reads and fingerprint checks below.
+
 The next slice exposes `advanceBundle(directory, targetStage, options?)`. The repository evaluates an
 exact-next supported target against the same loaded snapshot, then replaces only manifest
 lifecycle metadata through a flushed same-directory temporary file and rename. It refuses

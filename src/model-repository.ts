@@ -731,7 +731,18 @@ export async function resumeBundle(directory: string): Promise<ResumeResult> {
     handoff?.slices
       .filter((slice) => slice.status === "blocked")
       .map((slice) => slice.id) ?? [];
-  const dependencyOrder = handoff?.slices.map((slice) => slice.id) ?? [];
+  // S12 validation rejects dangling/cyclic dependencies before this projection.
+  // Storage order is only the stable tie-breaker, never an execution dependency.
+  const slicesById = new Map(handoff?.slices.map((slice) => [slice.id, slice]));
+  const dependencyOrder: string[] = [];
+  const visited = new Set<string>();
+  const visit = (id: string): void => {
+    if (visited.has(id)) return;
+    visited.add(id);
+    slicesById.get(id)?.dependsOnSliceRefs.forEach(visit);
+    dependencyOrder.push(id);
+  };
+  handoff?.slices.forEach(({ id }) => visit(id));
   const stage = prepared.manifest.lifecycle.completedStage;
   const nextAction =
     stages.indexOf(stage) < stages.indexOf("S12")
@@ -743,7 +754,7 @@ export async function resumeBundle(directory: string): Promise<ResumeResult> {
           : "resolve-blockers";
   const status = nextAction === "resolve-blockers" ? "blocked" : "ready";
   const bundle = validation.bundle;
-  return resumeResult(status, prepared.bundleRoot, [], {
+  return resumeResult(status, prepared.bundleRoot, validation.diagnostics, {
     ...(bundle === undefined ? {} : { bundle }),
     bundleFingerprint: designFingerprint(prepared.manifest, prepared.artifacts),
     nextAction,

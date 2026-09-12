@@ -307,11 +307,33 @@ function detectCycles(bundleIds: string[], edges: LineageEdge[]): string[][] {
   const visited = new Set<string>();
   const stack: string[] = [];
   const cycles: string[][] = [];
+
+  function canonicalCycle(closedPath: string[]): string[] {
+    const nodes = closedPath.slice(0, -1);
+    if (nodes.length === 0) return closedPath;
+    // A DFS stack contains unique nodes: its smallest node selects one rotation.
+    let startIndex = 0;
+    let smallest = nodes[0] ?? "";
+    nodes.forEach((node, index) => {
+      if (node < smallest) {
+        startIndex = index;
+        smallest = node;
+      }
+    });
+    return [
+      ...nodes.slice(startIndex),
+      ...nodes.slice(0, startIndex),
+      smallest,
+    ];
+  }
+
   function visit(id: string): void {
     if (visiting.has(id)) {
       const index = stack.indexOf(id);
       cycles.push(
-        (index < 0 ? [...stack, id] : [...stack.slice(index), id]).sort(),
+        canonicalCycle(
+          index < 0 ? [...stack, id] : [...stack.slice(index), id],
+        ),
       );
       return;
     }
@@ -324,12 +346,13 @@ function detectCycles(bundleIds: string[], edges: LineageEdge[]): string[][] {
     visited.add(id);
   }
   for (const id of [...bundleIds].sort()) visit(id);
-  return cycles.filter(
-    (cycle, index) =>
-      cycles.findIndex(
-        (candidate) => candidate.join("\0") === cycle.join("\0"),
-      ) === index,
-  );
+  const seen = new Set<string>();
+  return cycles.filter((cycle) => {
+    const key = cycle.join("\0");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function ancestorSet(

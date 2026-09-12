@@ -13,6 +13,77 @@ import {
 
 afterEach(cleanupFixtures);
 
+describe("resumeBundle", () => {
+  it("retains assisted warnings without turning them into a blocking failure", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{ qualityAssessments: Array<{ result: string }> }>(
+      bundle,
+      "architecture.json",
+      (model) => {
+        for (const assessment of model.qualityAssessments)
+          assessment.result = "risk";
+      },
+    );
+    const validation = await validateBundle(bundle);
+    const resume = await resumeBundle(bundle);
+
+    expect(validation.status).toBe("passed");
+    expect(validation.summary.warnings).toBeGreaterThan(0);
+    expect(resume.status).toBe("ready");
+    expect(resume.diagnostics).toEqual(validation.diagnostics);
+    expect(resume.summary).toEqual(validation.summary);
+  });
+
+  it("orders prerequisites before dependents while retaining stable independent order", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      slices: Array<{ id: string; dependsOnSliceRefs: string[] }>;
+    }>(bundle, "implementation-handoff.json", (handoff) => {
+      const template = handoff.slices[0];
+      if (template === undefined)
+        throw new Error("Fixture must contain a slice");
+      handoff.slices = [
+        { ...template, id: "publish", dependsOnSliceRefs: ["check", "build"] },
+        { ...template, id: "independent", dependsOnSliceRefs: [] },
+        { ...template, id: "check", dependsOnSliceRefs: ["build"] },
+        { ...template, id: "build", dependsOnSliceRefs: [] },
+      ];
+    });
+    const resume = await resumeBundle(bundle);
+    expect(resume.status).toBe("ready");
+    expect(resume.dependencyOrder).toEqual([
+      "build",
+      "check",
+      "publish",
+      "independent",
+    ]);
+    expect(new Set(resume.dependencyOrder).size).toBe(4);
+    expect(await resumeBundle(bundle)).toEqual(resume);
+  });
+
+  it("blocks a cyclic handoff instead of suggesting an execution order", async () => {
+    const bundle = await copyFixture();
+    await mutateJson<{
+      slices: Array<{ id: string; dependsOnSliceRefs: string[] }>;
+    }>(bundle, "implementation-handoff.json", (handoff) => {
+      const template = handoff.slices[0];
+      if (template === undefined)
+        throw new Error("Fixture must contain a slice");
+      handoff.slices = [
+        { ...template, id: "a", dependsOnSliceRefs: ["b"] },
+        { ...template, id: "b", dependsOnSliceRefs: ["a"] },
+      ];
+    });
+    const resume = await resumeBundle(bundle);
+    expect(resume.status).toBe("blocked");
+    expect(resume.dependencyOrder).toEqual([]);
+    expect(resume.nextAction).toBeUndefined();
+    expect(resume.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "STAGE_S12_DEPENDENCY_CYCLE" }),
+    );
+  });
+});
+
 describe("validateBundle", () => {
   it("passes the valid simple-crud S12 bundle", async () => {
     const validation = await validateBundle(fixtureDirectory);

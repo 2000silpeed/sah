@@ -53,6 +53,47 @@ async function runCli(arguments_: string[]): Promise<ProcessResult> {
   });
 }
 
+describe("sah JSON presentation", () => {
+  it.each([
+    ["validate", fixtureDirectory],
+    ["resume", fixtureDirectory],
+    ["current", bookmarkLineageDirectory],
+    ["verify", fixtureDirectory, verificationTargetDirectory],
+    ["validate", "missing-설계-🌱"],
+    ["unsupported-command"],
+    ["benchmark-trajectory", "missing-run", "--status"],
+  ])("preserves the full result and exit status for %s", async (...args) => {
+    const pretty = await runCli([...args, "--json"]);
+    const compact = await runCli([...args, "--json=compact"]);
+    const expected: unknown = JSON.parse(pretty.stdout);
+
+    expect(compact.code).toBe(pretty.code);
+    expect(compact.stderr).toBe(pretty.stderr);
+    expect(compact.stderr).toBe("");
+    expect(JSON.parse(compact.stdout)).toEqual(expected);
+    expect(pretty.stdout).toBe(`${JSON.stringify(expected, null, 2)}\n`);
+    expect(compact.stdout).toBe(`${JSON.stringify(expected)}\n`);
+    expect(Buffer.byteLength(compact.stdout)).toBeLessThan(
+      Buffer.byteLength(pretty.stdout),
+    );
+  });
+
+  it.each([
+    ["--json=compact", "--json"],
+    ["--json", "--json=compact"],
+    ["--json=compact", "--json=compact"],
+  ])("rejects conflicting or repeated JSON modes: %s %s", async (...flags) => {
+    const execution = await runCli(["validate", fixtureDirectory, ...flags]);
+    expect(execution.code).toBe(2);
+    expect(JSON.parse(execution.stdout)).toMatchObject({
+      status: "operational-error",
+      diagnostics: [
+        expect.objectContaining({ code: "CLI_INVALID_INVOCATION" }),
+      ],
+    });
+  });
+});
+
 describe("sah resume CLI", () => {
   it("emits a schema-tagged deterministic handoff", async () => {
     const execution = await runCli(["resume", fixtureDirectory, "--json"]);

@@ -74,6 +74,14 @@ type RegistryLoadResult =
   | { ok: true; registry: SchemaRegistry }
   | { ok: false; diagnostics: SahDiagnostic[] };
 
+type CachedRegistry = {
+  sources: readonly string[];
+  documents: SchemaDocument[];
+  validate: SchemaRegistry["validate"];
+};
+
+let cachedRegistry: CachedRegistry | undefined;
+
 function isObject(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -199,6 +207,23 @@ function schemaCode(keyword: string): string {
   return `SCHEMA_${keyword.replaceAll(/[^a-zA-Z0-9]+/g, "_").toUpperCase()}`;
 }
 
+function sameSources(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((source, index) => source === right[index])
+  );
+}
+
+function registryFromCache(cache: CachedRegistry): SchemaRegistry {
+  return {
+    documents: structuredClone(cache.documents),
+    validate: cache.validate,
+  };
+}
+
 function translateErrors(
   errors: ErrorObject[] | null | undefined,
   artifactPath: string,
@@ -222,11 +247,21 @@ function translateErrors(
 }
 
 export async function loadSchemaRegistry(): Promise<RegistryLoadResult> {
-  const documents: SchemaDocument[] = [];
   try {
-    for (const file of schemaFiles) {
+    const sources = await Promise.all(
+      schemaFiles.map((file) => readFile(`${schemaDirectory}${file}`, "utf8")),
+    );
+    if (
+      cachedRegistry !== undefined &&
+      sameSources(cachedRegistry.sources, sources)
+    ) {
+      return { ok: true, registry: registryFromCache(cachedRegistry) };
+    }
+
+    const documents: SchemaDocument[] = [];
+    for (const [index, file] of schemaFiles.entries()) {
       const path = `${schemaDirectory}${file}`;
-      const schema = JSON.parse(await readFile(path, "utf8")) as unknown;
+      const schema = JSON.parse(sources[index] ?? "") as unknown;
       if (!isObject(schema) || typeof schema.$id !== "string") {
         throw new Error(`${file} has no schema $id`);
       }
@@ -263,33 +298,37 @@ export async function loadSchemaRegistry(): Promise<RegistryLoadResult> {
       validators.set(id, validator);
     }
 
+    const validate: SchemaRegistry["validate"] = (
+      schemaId,
+      data,
+      artifactPath,
+      category = "validation",
+    ) => {
+      const validator = validators.get(schemaId);
+      if (validator === undefined) {
+        return [
+          {
+            code: "SCHEMA_ID_UNSUPPORTED",
+            category: "operational",
+            capability: "JSON Schema shape and formats",
+            severity: "error",
+            artifactPath,
+            reference: schemaId,
+            message: `Declared schema ${schemaId} is not installed.`,
+            expected: "a canonical schema ID shipped with this SAH version",
+            repair:
+              "Use the schema ID required for this artifact role or upgrade SAH.",
+          },
+        ];
+      }
+      return validator(data)
+        ? []
+        : translateErrors(validator.errors, artifactPath, category);
+    };
+    cachedRegistry = { sources, documents, validate };
     return {
       ok: true,
-      registry: {
-        documents,
-        validate: (schemaId, data, artifactPath, category = "validation") => {
-          const validator = validators.get(schemaId);
-          if (validator === undefined) {
-            return [
-              {
-                code: "SCHEMA_ID_UNSUPPORTED",
-                category: "operational",
-                capability: "JSON Schema shape and formats",
-                severity: "error",
-                artifactPath,
-                reference: schemaId,
-                message: `Declared schema ${schemaId} is not installed.`,
-                expected: "a canonical schema ID shipped with this SAH version",
-                repair:
-                  "Use the schema ID required for this artifact role or upgrade SAH.",
-              },
-            ];
-          }
-          return validator(data)
-            ? []
-            : translateErrors(validator.errors, artifactPath, category);
-        },
-      },
+      registry: registryFromCache(cachedRegistry),
     };
   } catch (error) {
     return {

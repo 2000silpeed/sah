@@ -465,6 +465,9 @@ export async function resolveCurrentArchitecture(
       ({ diagnostics: headDiagnostics }) => headDiagnostics,
     ),
   ];
+  const resolvedPairs = new Set(
+    projections.flatMap(({ resolvedPairs: pairs }) => [...pairs]),
+  );
   for (let leftIndex = 0; leftIndex < activeCandidates.length; leftIndex += 1) {
     const left = activeCandidates[leftIndex];
     if (left === undefined) continue;
@@ -475,9 +478,6 @@ export async function resolveCurrentArchitecture(
     ) {
       const right = activeCandidates[rightIndex];
       if (right === undefined) continue;
-      const resolvedPairs = new Set(
-        projections.flatMap(({ resolvedPairs: pairs }) => [...pairs]),
-      );
       const conflict = headConflict(left, right, resolvedPairs);
       if (conflict === undefined) continue;
       conflicts.push(conflict);

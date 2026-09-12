@@ -20,6 +20,8 @@ records the isolated benchmark preparation contract; [Run 31 plan](../.agent/pla
 records the benchmark trajectory capture seam.
 The [Run 37 plan](../.agent/plans/run-37.md) records the contextual disposition evidence path and
 ARN M-008 adoption.
+The [Run 38 plan](../.agent/plans/run-38.md) records context-cost and continuation refactoring;
+[Runs 15–20](../.agent/plans/run-15-20.md) preserve the history removed from the active entry.
 
 ## Product and reasoning authority
 
@@ -272,6 +274,8 @@ All schemas use Draft 2020-12, contain examples, and carry field writer/reader a
   schema-validated artifacts without becoming another serialized contract.
 - [Schema validation](../src/schema-validation.ts) — privately adapts Ajv Draft 2020-12 errors
   and audits field traces.
+- [Schema cache regressions](../test/schema-cache.test.ts) — verify fresh content checks,
+  compiled predicate reuse, mutation isolation, and failure/recovery behavior.
 - [Reference validation](../src/reference-validation.ts) — checks unique IDs, typed references,
   root links, option ownership, and decision/constraint backlinks.
 - [Stage validation](../src/stage-validation.ts) — applies observable S5–S12 gates from the

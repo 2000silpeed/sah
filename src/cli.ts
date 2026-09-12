@@ -81,11 +81,13 @@ const usage = [
   "       sah loop-complete <sah.loop.json> <iteration-completion.json> [--json]",
   "       sah checker-review <checker-review.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]",
   "       sah review-disposition <review-disposition.json> [--target-revision <target-revision>] [--design-fingerprint <sha256>] [--json]",
+  "",
+  "All commands accept --json=compact for complete JSON without indentation.",
 ].join("\n");
 
 type ParsedArguments = {
   positional: string[];
-  json: boolean;
+  json: boolean | "compact";
   sourceMappingPath?: string;
   changedPaths?: string[];
   checkRecordPath?: string;
@@ -108,7 +110,7 @@ type ParsedArguments = {
 
 function parseArguments(arguments_: string[]): ParsedArguments {
   const positional: string[] = [];
-  let json = false;
+  let json: ParsedArguments["json"] = false;
   let sourceMappingPath: string | undefined;
   let recordPath: string | undefined;
   let checkRecordPath: string | undefined;
@@ -128,10 +130,10 @@ function parseArguments(arguments_: string[]): ParsedArguments {
   const changedPaths: string[] = [];
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
-    if (argument === "--json") {
+    if (argument === "--json" || argument === "--json=compact") {
       if (json)
         return { positional, json, error: "--json may be supplied only once." };
-      json = true;
+      json = argument === "--json=compact" ? "compact" : true;
       continue;
     }
     if (argument === "--repair") {
@@ -414,6 +416,10 @@ function parseArguments(arguments_: string[]): ParsedArguments {
       : { benchmarkAdjudicationFile }),
     ...(repair ? { repair: true } : {}),
   };
+}
+
+function formatJson(value: object, mode: ParsedArguments["json"]): string {
+  return JSON.stringify(value, null, mode === "compact" ? undefined : 2);
 }
 
 function invocationError(message: string): ValidationResult {
@@ -1137,7 +1143,7 @@ async function runBenchmarkTrajectory(
       "benchmark-trajectory requires exactly one run directory and exactly one of --entry-file or --status.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1145,7 +1151,7 @@ async function runBenchmarkTrajectory(
   if (parsed.benchmarkTrajectoryStatus === true) {
     const inspected = await inspectBenchmarkTrajectory(runDirectory);
     process.stdout.write(
-      `${json ? JSON.stringify(inspected, null, 2) : formatTrajectoryHuman(inspected)}\n`,
+      `${json ? formatJson(inspected, json) : formatTrajectoryHuman(inspected)}\n`,
     );
     return exitCode(inspected);
   }
@@ -1157,7 +1163,7 @@ async function runBenchmarkTrajectory(
       `--entry-file could not be read: ${error instanceof Error ? error.message : String(error)}`,
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1169,7 +1175,7 @@ async function runBenchmarkTrajectory(
       "--entry-file does not contain valid JSON.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1179,13 +1185,13 @@ async function runBenchmarkTrajectory(
       `The --entry-file envelope requires ${options}. $schema is stamped automatically.`,
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
   const appended = await appendBenchmarkTrajectoryEntry(runDirectory, options);
   process.stdout.write(
-    `${json ? JSON.stringify(appended, null, 2) : formatTrajectoryHuman(appended)}\n`,
+    `${json ? formatJson(appended, json) : formatTrajectoryHuman(appended)}\n`,
   );
   return exitCode(appended);
 }
@@ -1196,7 +1202,7 @@ async function main(arguments_: string[]): Promise<number> {
   if (parsed.error !== undefined) {
     const invalid = invocationError(parsed.error);
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1217,7 +1223,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--run-id, --comparison-id, and --mode are supported only by benchmark-prepare.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1230,7 +1236,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--entry-file and --status are supported only by benchmark-trajectory.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1243,7 +1249,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--bundle and --adjudication are supported only by benchmark-verdict.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1251,7 +1257,7 @@ async function main(arguments_: string[]): Promise<number> {
   if (parsed.cwd !== undefined && positional[0] !== "loop-checks") {
     const invalid = invocationError("--cwd is supported only by loop-checks.");
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1260,7 +1266,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--check-record is supported only by verify.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1272,7 +1278,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--disposition-record is supported only by verify.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1295,7 +1301,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--target-revision and --design-fingerprint are supported only by loop-bind, loop-checks, loop-accept-next, checker-review, and review-disposition; verify accepts only --target-revision.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1304,7 +1310,7 @@ async function main(arguments_: string[]): Promise<number> {
       "--repair is supported only by loop-accept-next.",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+      `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
     );
     return 2;
   }
@@ -1330,7 +1336,7 @@ async function main(arguments_: string[]): Promise<number> {
         `${parsed.benchmarkMode} is not a valid benchmark mode; use treatment or control.`,
       );
       process.stdout.write(
-        `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+        `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
       );
       return 2;
     }
@@ -1344,7 +1350,7 @@ async function main(arguments_: string[]): Promise<number> {
       },
     );
     process.stdout.write(
-      `${json ? JSON.stringify(prepared, null, 2) : formatBenchmarkRunHuman(prepared)}\n`,
+      `${json ? formatJson(prepared, json) : formatBenchmarkRunHuman(prepared)}\n`,
     );
     return exitCode(prepared);
   }
@@ -1373,7 +1379,7 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const frozen = await freezeBenchmarkCapture(positional[1] ?? "");
     process.stdout.write(
-      `${json ? JSON.stringify(frozen, null, 2) : formatFreezeHuman(frozen)}\n`,
+      `${json ? formatJson(frozen, json) : formatFreezeHuman(frozen)}\n`,
     );
     return exitCode(frozen);
   }
@@ -1401,7 +1407,7 @@ async function main(arguments_: string[]): Promise<number> {
       positional[2] ?? "",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(scored, null, 2) : formatJudgeHuman(scored)}\n`,
+      `${json ? formatJson(scored, json) : formatJudgeHuman(scored)}\n`,
     );
     return exitCode(scored);
   }
@@ -1434,7 +1440,7 @@ async function main(arguments_: string[]): Promise<number> {
         : { recordFile: parsed.recordPath }),
     });
     process.stdout.write(
-      `${json ? JSON.stringify(assembled, null, 2) : formatVerdictHuman(assembled)}\n`,
+      `${json ? formatJson(assembled, json) : formatVerdictHuman(assembled)}\n`,
     );
     return exitCode(assembled);
   }
@@ -1464,7 +1470,7 @@ async function main(arguments_: string[]): Promise<number> {
       positional[2] ?? "",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(compared, null, 2) : formatCompareHuman(compared)}\n`,
+      `${json ? formatJson(compared, json) : formatCompareHuman(compared)}\n`,
     );
     return exitCode(compared);
   }
@@ -1479,7 +1485,7 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const validation = await validateBundle(positional[1] ?? "");
     process.stdout.write(
-      `${json ? JSON.stringify(validation, null, 2) : formatValidationHuman(validation)}\n`,
+      `${json ? formatJson(validation, json) : formatValidationHuman(validation)}\n`,
     );
     return exitCode(validation);
   }
@@ -1496,7 +1502,7 @@ async function main(arguments_: string[]): Promise<number> {
         `${String(positional[2])} is not a valid lifecycle target stage.`,
       );
       process.stdout.write(
-        `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+        `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
       );
       return 2;
     }
@@ -1506,7 +1512,7 @@ async function main(arguments_: string[]): Promise<number> {
         : { verificationRecordPath: parsed.verificationRecordPath }),
     });
     process.stdout.write(
-      `${json ? JSON.stringify(advance, null, 2) : formatAdvanceHuman(advance)}\n`,
+      `${json ? formatJson(advance, json) : formatAdvanceHuman(advance)}\n`,
     );
     return exitCode(advance);
   }
@@ -1542,7 +1548,7 @@ async function main(arguments_: string[]): Promise<number> {
       options,
     );
     process.stdout.write(
-      `${json ? JSON.stringify(verification, null, 2) : formatVerificationHuman(verification)}\n`,
+      `${json ? formatJson(verification, json) : formatVerificationHuman(verification)}\n`,
     );
     return exitCode(verification);
   }
@@ -1558,7 +1564,7 @@ async function main(arguments_: string[]): Promise<number> {
     const resume = await resumeBundle(positional[1] ?? "");
     const output = json ? resume : formatResumeHuman(resume);
     process.stdout.write(
-      `${typeof output === "string" ? output : JSON.stringify(output, null, 2)}\n`,
+      `${typeof output === "string" ? output : formatJson(output, json)}\n`,
     );
     return exitCode(resume);
   }
@@ -1577,7 +1583,7 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const lineage = await resolveArchitectureLineage(positional[1] ?? "");
     process.stdout.write(
-      `${json ? JSON.stringify(lineage, null, 2) : formatLineageHuman(lineage)}\n`,
+      `${json ? formatJson(lineage, json) : formatLineageHuman(lineage)}\n`,
     );
     return exitCode(lineage);
   }
@@ -1596,7 +1602,7 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const current = await resolveCurrentArchitecture(positional[1] ?? "");
     process.stdout.write(
-      `${json ? JSON.stringify(current, null, 2) : formatCurrentArchitectureHuman(current)}\n`,
+      `${json ? formatJson(current, json) : formatCurrentArchitectureHuman(current)}\n`,
     );
     return exitCode(current);
   }
@@ -1611,7 +1617,7 @@ async function main(arguments_: string[]): Promise<number> {
   ) {
     const loop = await evaluateIterationLoop(positional[1] ?? "");
     process.stdout.write(
-      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+      `${json ? formatJson(loop, json) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
   }
@@ -1631,7 +1637,7 @@ async function main(arguments_: string[]): Promise<number> {
       designFingerprint: parsed.designFingerprint ?? "",
     });
     process.stdout.write(
-      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+      `${json ? formatJson(loop, json) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
   }
@@ -1653,7 +1659,7 @@ async function main(arguments_: string[]): Promise<number> {
       },
     });
     process.stdout.write(
-      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+      `${json ? formatJson(loop, json) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
   }
@@ -1673,7 +1679,7 @@ async function main(arguments_: string[]): Promise<number> {
       positional[2] ?? "",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+      `${json ? formatJson(loop, json) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
   }
@@ -1694,7 +1700,7 @@ async function main(arguments_: string[]): Promise<number> {
     const output =
       json && checks.outcome !== undefined ? checks.outcome : checks;
     process.stdout.write(
-      `${json ? JSON.stringify(output, null, 2) : formatChecksHuman(checks)}\n`,
+      `${json ? formatJson(output, json) : formatChecksHuman(checks)}\n`,
     );
     return exitCode(checks);
   }
@@ -1712,7 +1718,7 @@ async function main(arguments_: string[]): Promise<number> {
       positional[2] ?? "",
     );
     process.stdout.write(
-      `${json ? JSON.stringify(loop, null, 2) : formatLoopHuman(loop)}\n`,
+      `${json ? formatJson(loop, json) : formatLoopHuman(loop)}\n`,
     );
     return exitCode(loop);
   }
@@ -1736,7 +1742,7 @@ async function main(arguments_: string[]): Promise<number> {
         : { designFingerprint: parsed.designFingerprint }),
     });
     process.stdout.write(
-      `${json ? JSON.stringify(review, null, 2) : formatCheckerReviewHuman(review)}\n`,
+      `${json ? formatJson(review, json) : formatCheckerReviewHuman(review)}\n`,
     );
     return exitCode(review);
   }
@@ -1762,7 +1768,7 @@ async function main(arguments_: string[]): Promise<number> {
         : { designFingerprint: parsed.designFingerprint }),
     });
     process.stdout.write(
-      `${json ? JSON.stringify(disposition, null, 2) : formatReviewDispositionHuman(disposition)}\n`,
+      `${json ? formatJson(disposition, json) : formatReviewDispositionHuman(disposition)}\n`,
     );
     return exitCode(disposition);
   }
@@ -1771,7 +1777,7 @@ async function main(arguments_: string[]): Promise<number> {
     "The command and arguments do not match a supported invocation.",
   );
   process.stdout.write(
-    `${json ? JSON.stringify(invalid, null, 2) : formatValidationHuman(invalid)}\n`,
+    `${json ? formatJson(invalid, json) : formatValidationHuman(invalid)}\n`,
   );
   return 2;
 }

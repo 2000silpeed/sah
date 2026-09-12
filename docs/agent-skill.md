@@ -20,6 +20,13 @@ With the skill, the host coding agent becomes SAH's conversational and implement
 6. runs target tests plus changed and full SAH verification; and
 7. advances S13 only with eligible full evidence.
 
+This is the full architecture route. A reversible local change that preserves invariants,
+ownership, boundaries, data contracts, and security uses the [fast feedback loop](frontier-first.md) without
+creating a bundle solely for ceremony. The skill loads references for the selected route and
+keeps source locators rather than copying all history. Existing loop routes and accepted target
+authority still govern; fast-path success does not establish S13. Agent-facing CLI calls may use
+`--json=compact` to retain the entire result with less whitespace.
+
 When an existing target has an explicit `.sah` root, the skill first runs the read-only
 `sah current <sah-root> --json` projection, then uses `sah resume` for a selected head. Active
 decisions, superseded history, exact open triggers, pending judgments, and conflicts are context

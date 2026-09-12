@@ -12,6 +12,13 @@ Give the JSON (or the human output) to the next agent together with the reposito
 `bundleFingerprint` lets the agent detect that the design changed since a previous handoff. The
 projection reports `author-design`, `implement-ready-slices`, `resolve-blockers`, or `complete`.
 
+`dependencyOrder` visits each prerequisite before its dependent, using declared slice/dependency
+order to break ties deterministically. Storage order alone does not establish execution order.
+Ready/blocked slice lists retain declared membership and order; a ready slice is not proof that
+its dependencies were implemented. Non-blocking validation warnings remain in the result with
+their classification and summary counts, so a resumed agent sees the same review obligations.
+Use `--json=compact` to pass the complete result with less whitespace; no evidence is omitted.
+
 This is deliberately local and model-neutral. The bundle remains the authority; the output is a
 regenerable view, not a database or a second lifecycle record. Run it again after editing a bundle,
 advancing a stage, or switching target repositories. SAH does not inspect chat history, guess that
