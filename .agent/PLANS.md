@@ -1,7 +1,7 @@
 # SAH ExecPlan
 
-Start with [Run 38](plans/run-38.md), the latest completed refactor of context cost and deterministic
-continuation. Read completed plans only when their decision or evidence is relevant.
+Start with [Run 39](plans/run-39.md), the latest verified Vitest security upgrade.
+Read completed plans only when their decision or evidence is relevant.
 
 ## Planning contract
 
@@ -35,3 +35,4 @@ the outcome changes or more than half of remaining work must be reframed.
 - [Run 35](plans/run-35.md) — completed execution decisions and verification.
 - [Run 36](plans/run-36.md) — completed execution decisions and verification.
 - [Run 37](plans/run-37.md) — completed execution decisions and verification.
+- [Run 38](plans/run-38.md) — completed context-cost and continuation refactoring.

@@ -22,6 +22,7 @@ The [Run 37 plan](../.agent/plans/run-37.md) records the contextual disposition 
 ARN M-008 adoption.
 The [Run 38 plan](../.agent/plans/run-38.md) records context-cost and continuation refactoring;
 [Runs 15–20](../.agent/plans/run-15-20.md) preserve the history removed from the active entry.
+The [Run 39 plan](../.agent/plans/run-39.md) records the patched Vitest upgrade and security audit.
 
 ## Product and reasoning authority
 
